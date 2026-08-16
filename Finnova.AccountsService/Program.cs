@@ -1,0 +1,41 @@
+using FluentValidation;
+using Finnova.Service.Accounts.Commands.CreateAccount;
+using Finnova.Repository;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Controllers
+builder.Services.AddControllers();
+
+// MediatR - register handlers from the Service layer
+var serviceAssembly = typeof(CreateAccountCommand).Assembly;
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssembly(serviceAssembly));
+
+// FluentValidation
+builder.Services.AddValidatorsFromAssembly(serviceAssembly);
+
+// Repository (EF Core + PostgreSQL)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? "Server=localhost;Database=Finnova;Trusted_Connection=True;TrustServerCertificate=True";
+builder.Services.AddFinnovaRepository(connectionString);
+
+// Health checks
+builder.Services.AddHealthChecks();
+
+// Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.MapControllers();
+app.MapHealthChecks("/health");
+
+app.Run();

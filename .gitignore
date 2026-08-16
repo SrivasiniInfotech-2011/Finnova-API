@@ -1,0 +1,21 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.dll
+*.pdb
+*.exe
+
+## IDE
+.vs/
+.idea/
+*.swp
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Environment
+appsettings.*.local.json

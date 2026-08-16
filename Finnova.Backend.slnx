@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="Finnova.AccountsService/Finnova.AccountsService.csproj" />
+  <Project Path="Finnova.ApiGateway/Finnova.ApiGateway.csproj" />
+  <Project Path="Finnova.Models/Finnova.Models.csproj" />
+  <Project Path="Finnova.Repository/Finnova.Repository.csproj" />
+  <Project Path="Finnova.Service/Finnova.Service.csproj" />
+  <Project Path="Finnova.UAService/Finnova.UAService.csproj" />
+</Solution>
