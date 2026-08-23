@@ -1,9 +1,9 @@
-using Mapster;
 using MediatR;
 using Finnova.Models.Contracts.Accounts;
 using Finnova.Models.Domain.Entities;
 using Finnova.Models.Domain.Enums;
 using Finnova.Repository.Interfaces;
+using Finnova.Service.Mappers;
 
 namespace Finnova.Service.Accounts.Commands.CreateAccount;
 
@@ -33,12 +33,11 @@ public class CreateAccountCommandHandler : IRequestHandler<CreateAccountCommand,
         };
 
         await _repository.AddAsync(account, cancellationToken);
-        return account.Adapt<AccountResponse>();
+        return account.ToResponse();
     }
 
     private static string GenerateAccountNumber()
     {
-        // Generate a 12-digit account number
         var random = new Random();
         return $"{random.NextInt64(100000000000, 999999999999)}";
     }

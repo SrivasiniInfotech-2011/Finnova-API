@@ -1,9 +1,9 @@
-using Mapster;
 using MediatR;
 using Finnova.Models.Contracts.Users;
 using Finnova.Models.Domain.Entities;
 using Finnova.Models.Domain.Enums;
 using Finnova.Repository.Interfaces;
+using Finnova.Service.Mappers;
 
 namespace Finnova.Service.Users.Commands.CreateUser;
 
@@ -31,6 +31,6 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, UserR
         };
 
         await _repository.AddAsync(user, cancellationToken);
-        return user.Adapt<UserResponse>();
+        return user.ToResponse();
     }
 }

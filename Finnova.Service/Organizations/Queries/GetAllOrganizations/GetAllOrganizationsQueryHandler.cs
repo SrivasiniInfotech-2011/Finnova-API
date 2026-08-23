@@ -1,7 +1,7 @@
-using Mapster;
 using MediatR;
 using Finnova.Models.Contracts.Organizations;
 using Finnova.Repository.Interfaces;
+using Finnova.Service.Mappers;
 
 namespace Finnova.Service.Organizations.Queries.GetAllOrganizations;
 
@@ -17,6 +17,6 @@ public class GetAllOrganizationsQueryHandler : IRequestHandler<GetAllOrganizatio
     public async Task<List<OrganizationResponse>> Handle(GetAllOrganizationsQuery request, CancellationToken cancellationToken)
     {
         var orgs = await _repository.GetAllAsync(cancellationToken);
-        return orgs.Adapt<List<OrganizationResponse>>();
+        return orgs.ToResponseList();
     }
 }

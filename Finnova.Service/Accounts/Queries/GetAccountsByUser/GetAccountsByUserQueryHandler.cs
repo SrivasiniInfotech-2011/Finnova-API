@@ -1,7 +1,7 @@
-using Mapster;
 using MediatR;
 using Finnova.Models.Contracts.Accounts;
 using Finnova.Repository.Interfaces;
+using Finnova.Service.Mappers;
 
 namespace Finnova.Service.Accounts.Queries.GetAccountsByUser;
 
@@ -17,6 +17,6 @@ public class GetAccountsByUserQueryHandler : IRequestHandler<GetAccountsByUserQu
     public async Task<List<AccountResponse>> Handle(GetAccountsByUserQuery request, CancellationToken cancellationToken)
     {
         var accounts = await _repository.GetByUserIdAsync(request.UserId, cancellationToken);
-        return accounts.Adapt<List<AccountResponse>>();
+        return accounts.ToResponseList();
     }
 }

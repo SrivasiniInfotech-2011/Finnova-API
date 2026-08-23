@@ -1,9 +1,9 @@
-using Mapster;
 using MediatR;
 using Finnova.Models.Contracts.Accounts;
 using Finnova.Models.Domain.Entities;
 using Finnova.Models.Domain.Enums;
 using Finnova.Repository.Interfaces;
+using Finnova.Service.Mappers;
 
 namespace Finnova.Service.Transactions.Commands.CreateTransaction;
 
@@ -27,7 +27,6 @@ public class CreateTransactionCommandHandler : IRequestHandler<CreateTransaction
 
         var type = Enum.Parse<TransactionType>(request.Type, ignoreCase: true);
 
-        // Update balance
         var balanceChange = type switch
         {
             TransactionType.Deposit or TransactionType.Interest => request.Amount,
@@ -55,6 +54,6 @@ public class CreateTransactionCommandHandler : IRequestHandler<CreateTransaction
         await _accountRepository.UpdateAsync(account, cancellationToken);
         await _transactionRepository.AddAsync(transaction, cancellationToken);
 
-        return transaction.Adapt<TransactionResponse>();
+        return transaction.ToResponse();
     }
 }

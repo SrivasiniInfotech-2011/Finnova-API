@@ -1,7 +1,7 @@
-using Mapster;
 using MediatR;
 using Finnova.Models.Contracts.Accounts;
 using Finnova.Repository.Interfaces;
+using Finnova.Service.Mappers;
 
 namespace Finnova.Service.Transactions.Queries.GetTransactionsByAccount;
 
@@ -18,6 +18,6 @@ public class GetTransactionsByAccountQueryHandler : IRequestHandler<GetTransacti
     {
         var transactions = await _repository.GetByAccountIdPagedAsync(
             request.AccountId, request.Page, request.PageSize, cancellationToken);
-        return transactions.Adapt<List<TransactionResponse>>();
+        return transactions.ToResponseList();
     }
 }

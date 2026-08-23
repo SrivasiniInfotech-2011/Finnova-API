@@ -1,8 +1,8 @@
-using Mapster;
 using MediatR;
 using Finnova.Models.Contracts.Accounts;
 using Finnova.Models.Domain.Enums;
 using Finnova.Repository.Interfaces;
+using Finnova.Service.Mappers;
 
 namespace Finnova.Service.Accounts.Commands.CloseAccount;
 
@@ -25,6 +25,6 @@ public class CloseAccountCommandHandler : IRequestHandler<CloseAccountCommand, A
         account.UpdatedAt = DateTime.UtcNow;
 
         await _repository.UpdateAsync(account, cancellationToken);
-        return account.Adapt<AccountResponse>();
+        return account.ToResponse();
     }
 }

@@ -1,7 +1,7 @@
-using Mapster;
 using MediatR;
 using Finnova.Models.Contracts.Users;
 using Finnova.Repository.Interfaces;
+using Finnova.Service.Mappers;
 
 namespace Finnova.Service.Users.Queries.GetUserById;
 
@@ -17,6 +17,6 @@ public class GetUserByIdQueryHandler : IRequestHandler<GetUserByIdQuery, UserRes
     public async Task<UserResponse?> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
     {
         var user = await _repository.GetByIdAsync(request.Id, cancellationToken);
-        return user?.Adapt<UserResponse>();
+        return user?.ToResponse();
     }
 }

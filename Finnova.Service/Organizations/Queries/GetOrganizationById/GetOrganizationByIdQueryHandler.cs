@@ -1,7 +1,7 @@
-using Mapster;
 using MediatR;
 using Finnova.Models.Contracts.Organizations;
 using Finnova.Repository.Interfaces;
+using Finnova.Service.Mappers;
 
 namespace Finnova.Service.Organizations.Queries.GetOrganizationById;
 
@@ -17,6 +17,6 @@ public class GetOrganizationByIdQueryHandler : IRequestHandler<GetOrganizationBy
     public async Task<OrganizationResponse?> Handle(GetOrganizationByIdQuery request, CancellationToken cancellationToken)
     {
         var org = await _repository.GetByIdAsync(request.Id, cancellationToken);
-        return org?.Adapt<OrganizationResponse>();
+        return org?.ToResponse();
     }
 }

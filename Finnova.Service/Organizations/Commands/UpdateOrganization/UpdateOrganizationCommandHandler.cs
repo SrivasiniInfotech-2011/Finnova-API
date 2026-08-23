@@ -1,8 +1,8 @@
-using Mapster;
 using MediatR;
 using Finnova.Models.Contracts.Organizations;
 using Finnova.Models.Domain.Enums;
 using Finnova.Repository.Interfaces;
+using Finnova.Service.Mappers;
 
 namespace Finnova.Service.Organizations.Commands.UpdateOrganization;
 
@@ -23,13 +23,11 @@ public class UpdateOrganizationCommandHandler : IRequestHandler<UpdateOrganizati
         org.Name = request.Name;
         org.Code = request.Code;
         org.Description = request.Description;
-        org.Address = request.Address;
-        org.Phone = request.Phone;
         org.Email = request.Email;
         org.Status = Enum.Parse<OrganizationStatus>(request.Status, ignoreCase: true);
         org.UpdatedAt = DateTime.UtcNow;
 
         await _repository.UpdateAsync(org, cancellationToken);
-        return org.Adapt<OrganizationResponse>();
+        return org.ToResponse();
     }
 }

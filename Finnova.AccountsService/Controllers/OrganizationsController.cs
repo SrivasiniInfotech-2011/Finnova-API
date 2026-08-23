@@ -6,7 +6,7 @@ using Finnova.Service.Organizations.Commands.UpdateOrganization;
 using Finnova.Service.Organizations.Queries.GetAllOrganizations;
 using Finnova.Service.Organizations.Queries.GetOrganizationById;
 
-namespace Finnova.UAService.Controllers;
+namespace Finnova.AccountsService.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

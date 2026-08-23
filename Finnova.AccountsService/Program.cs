@@ -23,16 +23,14 @@ builder.Services.AddFinnovaRepository(connectionString);
 // Health checks
 builder.Services.AddHealthChecks();
 
-// Swagger
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// OpenAPI
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
 }
 
 app.MapControllers();

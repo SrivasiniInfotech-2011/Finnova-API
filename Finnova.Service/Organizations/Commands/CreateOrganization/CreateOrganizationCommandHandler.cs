@@ -1,8 +1,8 @@
-using Mapster;
 using MediatR;
 using Finnova.Models.Contracts.Organizations;
 using Finnova.Models.Domain.Entities;
 using Finnova.Repository.Interfaces;
+using Finnova.Service.Mappers;
 
 namespace Finnova.Service.Organizations.Commands.CreateOrganization;
 
@@ -22,12 +22,10 @@ public class CreateOrganizationCommandHandler : IRequestHandler<CreateOrganizati
             Name = request.Name,
             Code = request.Code,
             Description = request.Description,
-            Address = request.Address,
-            Phone = request.Phone,
             Email = request.Email
         };
 
         await _repository.AddAsync(organization, cancellationToken);
-        return organization.Adapt<OrganizationResponse>();
+        return organization.ToResponse();
     }
 }

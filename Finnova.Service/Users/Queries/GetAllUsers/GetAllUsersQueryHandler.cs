@@ -1,7 +1,7 @@
-using Mapster;
 using MediatR;
 using Finnova.Models.Contracts.Users;
 using Finnova.Repository.Interfaces;
+using Finnova.Service.Mappers;
 
 namespace Finnova.Service.Users.Queries.GetAllUsers;
 
@@ -17,6 +17,6 @@ public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, List<Us
     public async Task<List<UserResponse>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
     {
         var users = await _repository.GetAllAsync(cancellationToken);
-        return users.Adapt<List<UserResponse>>();
+        return users.ToResponseList();
     }
 }

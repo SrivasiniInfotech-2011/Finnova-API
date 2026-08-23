@@ -1,8 +1,8 @@
-using Mapster;
 using MediatR;
 using Finnova.Models.Contracts.Users;
 using Finnova.Models.Domain.Enums;
 using Finnova.Repository.Interfaces;
+using Finnova.Service.Mappers;
 
 namespace Finnova.Service.Users.Commands.UpdateUser;
 
@@ -30,6 +30,6 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, UserR
         user.UpdatedAt = DateTime.UtcNow;
 
         await _repository.UpdateAsync(user, cancellationToken);
-        return user.Adapt<UserResponse>();
+        return user.ToResponse();
     }
 }
