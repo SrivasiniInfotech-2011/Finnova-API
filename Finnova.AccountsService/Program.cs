@@ -16,21 +16,23 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddValidatorsFromAssembly(serviceAssembly);
 
 // Repository (EF Core + PostgreSQL)
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Server=localhost;Database=Finnova;Trusted_Connection=True;TrustServerCertificate=True";
-builder.Services.AddFinnovaRepository(connectionString);
+var connectionString = builder.Configuration.GetConnectionString("FinnovaConnection");
+builder.Services.AddFinnovaRepository(connectionString!);
 
 // Health checks
 builder.Services.AddHealthChecks();
 
-// OpenAPI
+// OpenAPI + Swagger
 builder.Services.AddOpenApi();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.MapControllers();

@@ -9,6 +9,7 @@ public class FinnovaDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Organization> Organizations => Set<Organization>();
+    public DbSet<Branch> Branches => Set<Branch>();
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
 

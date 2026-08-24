@@ -17,10 +17,19 @@ builder.Services.AddCors(options =>
     });
 });
 
+// OpenAPI + Swagger
+builder.Services.AddSwaggerGen();
+
 // Health checks
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseCors("AllowUI");
 app.MapHealthChecks("/health");
