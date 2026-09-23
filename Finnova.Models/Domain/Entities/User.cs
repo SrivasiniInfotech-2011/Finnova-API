@@ -10,6 +10,12 @@ public class User
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string? Phone { get; set; }
+
+    /// <summary>
+    /// PBKDF2 password hash, stored as "salt.hash" (both Base64).
+    /// </summary>
+    public string? PasswordHash { get; set; }
+
     public UserRole Role { get; set; } = UserRole.User;
     public UserStatus Status { get; set; } = UserStatus.Active;
     public Guid? OrganizationId { get; set; }

@@ -1,10 +1,11 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Finnova.Repository;
+using Finnova.Service.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,12 +20,17 @@ builder.Services.AddMediatR(cfg =>
 // FluentValidation
 builder.Services.AddValidatorsFromAssembly(serviceAssembly);
 
-// MediatR validation pipeline — runs FluentValidation before each handler
+// MediatR validation pipeline â€” runs FluentValidation before each handler
 builder.Services.AddTransient(
     typeof(MediatR.IPipelineBehavior<,>),
     typeof(Finnova.Service.Behaviors.ValidationBehavior<,>));
 
-// JWT Bearer authentication (R7.6 — establishing the scheme)
+// Auth token service — required because the shared Finnova.Service assembly (scanned by
+// MediatR above) contains LoginCommandHandler, which depends on ITokenService.
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
+builder.Services.AddScoped<ITokenService, TokenService>();
+
+// JWT Bearer authentication (R7.6 â€” establishing the scheme)
 var jwt = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -43,13 +49,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// SystemAdmin authorization policy — role claim "SystemAdmin" (R7.2/7.3)
+// SystemAdmin authorization policy â€” role claim "SystemAdmin" (R7.2/7.3)
 builder.Services.AddAuthorization(options =>
     options.AddPolicy("SystemAdmin", p => p.RequireRole("SystemAdmin")));
 
 // Repository (EF Core + SQL Server)
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Server=localhost;Database=Finnova;Trusted_Connection=True;TrustServerCertificate=True";
+var connectionString = builder.Configuration.GetConnectionString("FinnovaConnection");
 builder.Services.AddFinnovaRepository(connectionString);
 
 // Health checks

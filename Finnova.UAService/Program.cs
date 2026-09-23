@@ -1,4 +1,5 @@
 using FluentValidation;
+using Finnova.Service.Auth;
 using Finnova.Service.Users.Commands.CreateUser;
 using Finnova.Service.Storage;
 using Finnova.Repository;
@@ -15,6 +16,10 @@ builder.Services.AddMediatR(cfg =>
 
 // FluentValidation
 builder.Services.AddValidatorsFromAssembly(serviceAssembly);
+
+// JWT auth — settings + token service
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 // Repository (EF Core + PostgreSQL)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")

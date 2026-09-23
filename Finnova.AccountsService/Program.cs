@@ -1,7 +1,8 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Finnova.Service.Accounts.Commands.CreateAccount;
 using Finnova.Service.Storage;
 using Finnova.Repository;
+using Finnova.Service.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,11 +17,16 @@ builder.Services.AddMediatR(cfg =>
 // FluentValidation
 builder.Services.AddValidatorsFromAssembly(serviceAssembly);
 
+// Auth token service — required because the shared Finnova.Service assembly (scanned by
+// MediatR above) contains LoginCommandHandler, which depends on ITokenService.
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
+builder.Services.AddScoped<ITokenService, TokenService>();
+
 // Repository (EF Core + PostgreSQL)
 var connectionString = builder.Configuration.GetConnectionString("FinnovaConnection");
 builder.Services.AddFinnovaRepository(connectionString!);
 
-// Blob storage (Azure / AWS) — provider selected via BlobStorage:Provider
+// Blob storage (Azure / AWS) â€” provider selected via BlobStorage:Provider
 builder.Services.AddBlobStorage(builder.Configuration);
 
 // Health checks
@@ -43,3 +49,4 @@ app.MapControllers();
 app.MapHealthChecks("/health");
 
 app.Run();
+
