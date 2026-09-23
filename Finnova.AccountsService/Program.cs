@@ -1,5 +1,6 @@
 using FluentValidation;
 using Finnova.Service.Accounts.Commands.CreateAccount;
+using Finnova.Service.Storage;
 using Finnova.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +19,9 @@ builder.Services.AddValidatorsFromAssembly(serviceAssembly);
 // Repository (EF Core + PostgreSQL)
 var connectionString = builder.Configuration.GetConnectionString("FinnovaConnection");
 builder.Services.AddFinnovaRepository(connectionString!);
+
+// Blob storage (Azure / AWS) — provider selected via BlobStorage:Provider
+builder.Services.AddBlobStorage(builder.Configuration);
 
 // Health checks
 builder.Services.AddHealthChecks();

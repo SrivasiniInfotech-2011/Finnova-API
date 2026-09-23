@@ -18,9 +18,10 @@ public static class DependencyInjection
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
-        services.AddScoped<IBranchRepository, BranchRepository>();
+        services.AddScoped<ILocationRepository, LocationRepository>();
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
+        services.AddScoped<ILookupRepository, LookupRepository>();
 
         return services;
     }

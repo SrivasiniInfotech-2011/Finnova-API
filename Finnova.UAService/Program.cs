@@ -1,5 +1,6 @@
 using FluentValidation;
 using Finnova.Service.Users.Commands.CreateUser;
+using Finnova.Service.Storage;
 using Finnova.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,9 @@ builder.Services.AddValidatorsFromAssembly(serviceAssembly);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "Server=localhost;Database=Finnova;Trusted_Connection=True;TrustServerCertificate=True";
 builder.Services.AddFinnovaRepository(connectionString);
+
+// Blob storage (Azure / AWS) — provider selected via BlobStorage:Provider
+builder.Services.AddBlobStorage(builder.Configuration);
 
 // Health checks
 builder.Services.AddHealthChecks();

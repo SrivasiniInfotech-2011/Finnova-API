@@ -18,6 +18,9 @@ builder.Services.AddCors(options =>
 });
 
 // OpenAPI + Swagger
+// AddSwaggerGen requires the API Explorer services, which are not registered
+// automatically in a controller-less YARP gateway. Register them explicitly.
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Health checks

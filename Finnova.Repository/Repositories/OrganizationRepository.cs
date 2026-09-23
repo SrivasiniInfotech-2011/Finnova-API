@@ -13,4 +13,12 @@ public class OrganizationRepository : RepositoryBase<Organization>, IOrganizatio
     {
         return await DbSet.FirstOrDefaultAsync(o => o.Code == code, cancellationToken);
     }
+
+    public async Task<Organization?> GetCurrentAsync(CancellationToken cancellationToken = default)
+    {
+        // The product supports exactly one company — return the earliest-created record.
+        return await DbSet.AsNoTracking()
+            .OrderBy(o => o.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 }

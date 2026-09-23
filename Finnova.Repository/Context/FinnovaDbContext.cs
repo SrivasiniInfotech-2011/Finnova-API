@@ -9,9 +9,10 @@ public class FinnovaDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Organization> Organizations => Set<Organization>();
-    public DbSet<Branch> Branches => Set<Branch>();
+    public DbSet<Location> Locations => Set<Location>();
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
+    public DbSet<LookupValue> LookupValues => Set<LookupValue>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

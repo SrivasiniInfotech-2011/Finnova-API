@@ -4,5 +4,7 @@
   <Project Path="Finnova.Models/Finnova.Models.csproj" />
   <Project Path="Finnova.Repository/Finnova.Repository.csproj" />
   <Project Path="Finnova.Service/Finnova.Service.csproj" />
+  <Project Path="Finnova.Tests/Finnova.Tests.csproj" />
+  <Project Path="Finnova.SystemAdminService/Finnova.SystemAdminService.csproj" />
   <Project Path="Finnova.UAService/Finnova.UAService.csproj" />
 </Solution>

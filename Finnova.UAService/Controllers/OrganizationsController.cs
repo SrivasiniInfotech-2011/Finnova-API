@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Finnova.Models.Contracts.Organizations;
 using Finnova.Service.Organizations.Commands.CreateOrganization;
 using Finnova.Service.Organizations.Commands.UpdateOrganization;
-using Finnova.Service.Organizations.Queries.GetAllOrganizations;
+using Finnova.Service.Organizations.Queries.GetCurrentOrganization;
 using Finnova.Service.Organizations.Queries.GetOrganizationById;
 
 namespace Finnova.UAService.Controllers;
@@ -19,11 +19,15 @@ public class OrganizationsController : ControllerBase
         _mediator = mediator;
     }
 
-    [HttpGet]
-    public async Task<ActionResult<List<OrganizationResponse>>> GetAll()
+    /// <summary>
+    /// Returns the single company for this product instance.
+    /// The product supports exactly one organization.
+    /// </summary>
+    [HttpGet("current")]
+    public async Task<ActionResult<OrganizationResponse>> GetCurrent()
     {
-        var result = await _mediator.Send(new GetAllOrganizationsQuery());
-        return Ok(result);
+        var result = await _mediator.Send(new GetCurrentOrganizationQuery());
+        return result is null ? NotFound() : Ok(result);
     }
 
     [HttpGet("{id:guid}")]

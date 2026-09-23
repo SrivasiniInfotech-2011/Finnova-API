@@ -1,0 +1,615 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Add `LookupValue` entity": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101603649
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101650533
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101937978
+      }
+    ],
+    "1.2 Add lookup contract records": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101603879
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101652027
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101938623
+      }
+    ],
+    "1.3 Add domain exceptions": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101604092
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101652763
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101941116
+      }
+    ],
+    "2.1 Add `LookupValueConfiguration` and register DbSet": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101604261
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101955575
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790102256745
+      }
+    ],
+    "2.2 Add `ILookupRepository` interface": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101604393
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101956860
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790102253435
+      }
+    ],
+    "2.3 Implement `LookupRepository` and register in DI": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101604543
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790102275624
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790102450818
+      }
+    ],
+    "2.4 Add EF Core migration for `lookup_values` (SQL Server)": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101604688
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171722832
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171877512
+      }
+    ],
+    "3.1 Add `LookupMapper`": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101604847
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101957822
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790102254435
+      }
+    ],
+    "3.3 Add `ValidationBehavior<TRequest,TResponse>` MediatR pipeline": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101605064
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101959088
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790102255855
+      }
+    ],
+    "4.1 Implement `CreateLookupValue` command + handler": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101605212
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790102525958
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790103085372
+      }
+    ],
+    "4.2 Implement `CreateLookupValueCommandValidator`": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101605455
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790103104047
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790170905270
+      }
+    ],
+    "4.5 Implement `UpdateLookupValue` command + handler + validator": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101605619
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790102527031
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790103086760
+      }
+    ],
+    "4.8 Implement `DeleteLookupValue` command + handler": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101605839
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790102528193
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790103087710
+      }
+    ],
+    "4.10 Implement `GetLookupValuesPaged` query + handler + validator": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101605987
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790102529391
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790103089019
+      }
+    ],
+    "4.12 Implement `GetLookupDropdownItems` query + handler": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101606142
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790102530233
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790103089788
+      }
+    ],
+    "5.1 Create the host project and add to solution": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101606333
+      },
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790103105058
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790170906070
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171109177
+      }
+    ],
+    "5.2 Add `ExceptionHandlingMiddleware`": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101606488
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171110506
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171320959
+      }
+    ],
+    "5.3 Configure `Program.cs` (DI, MediatR, validation, JWT, policy, middleware order)": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101606630
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171323198
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171721820
+      }
+    ],
+    "5.4 Implement `LookupController`": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101606951
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171111560
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171322385
+      }
+    ],
+    "6.1 Add SystemAdmin route + cluster and ensure auth passthrough + CORS": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101607183
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171724010
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171878987
+      }
+    ],
+    "7. Checkpoint - backend build and tests": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101607366
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171879730
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171950783
+      }
+    ],
+    "9.1 Implement `lookupsSlice`": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101607503
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790175844577
+      }
+    ],
+    "9.3 Implement `lookupEpics` and wire the root epic": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101607666
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790175845524
+      }
+    ],
+    "10.1 Implement `ModuleTypeFilter` and `LookupMasterPage` shell": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101607833
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790175846861
+      }
+    ],
+    "10.2 Implement `LookupGrid`, `LookupRow`/`EditableRow`, `AddRowForm`, `ErrorBanner`": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101607993
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790175847980
+      }
+    ],
+    "11. Final checkpoint - wire together and verify": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101608139
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790175859020
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790175976319
+      }
+    ],
+    "1. Backend domain model and contracts (Finnova.Models)": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790101941284
+      }
+    ],
+    "3. Service layer — mapper and cross-cutting pipeline (Finnova.Service)": [
+      {
+        "executionId": "5eba3ca0-8915-4ec1-8e14-5c86c9d53729",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790102255992
+      }
+    ],
+    "4. Service layer — CQRS commands and queries (Finnova.Service/Lookup)": [
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790170905945
+      }
+    ],
+    "5. New host `Finnova.SystemAdminService`": [
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171721909
+      }
+    ],
+    "2. Repository layer (Finnova.Repository)": [
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171877675
+      }
+    ],
+    "6. Gateway wiring (Finnova.ApiGateway)": [
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171879080
+      }
+    ],
+    "3.2 Write property test for the mapper": [
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171984266
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790173878043
+      }
+    ],
+    "4.3 Write property tests for create-path uniqueness and round trip": [
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171985574
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790173878961
+      }
+    ],
+    "4.4 Write unit tests for create validator and handler (TC-LKP-01)": [
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790171986461
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790173880131
+      }
+    ],
+    "4.6 Write property tests for update behavior": [
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790172010863
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790173881348
+      }
+    ],
+    "4.7 Write unit tests for update validator and handler": [
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790172011809
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790173882279
+      }
+    ],
+    "4.9 Write property test and unit tests for delete": [
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790172013045
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790173883200
+      }
+    ],
+    "4.11 Write property tests for filtering, ordering, and pagination": [
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790172014003
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790173884439
+      }
+    ],
+    "4.13 Write property tests and unit tests for dropdown query": [
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790172014957
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790173885275
+      }
+    ],
+    "8.1 Authorization integration tests with dev-signed JWTs": [
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790173899244
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790174545847
+      }
+    ],
+    "8.2 Host smoke test and end-to-end create-then-list against SQL Server": [
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790173901551
+      },
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790174546698
+      }
+    ],
+    "8. Backend integration tests (WebApplicationFactory)": [
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790174545989
+      }
+    ],
+    "9. Frontend Redux slice and epics (React + Redux + RxJS)": [
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790175845618
+      }
+    ],
+    "10. Frontend components (React)": [
+      {
+        "executionId": "1967f384-d78c-4ee0-b9e0-5949b97467e7",
+        "chatSessionId": "sess_63626a9d-7286-4cef-b048-9d5cb3c415d0",
+        "timestamp": 1790175848071
+      }
+    ]
+  }
+}
