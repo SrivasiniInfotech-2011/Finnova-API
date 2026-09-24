@@ -1,0 +1,832 @@
+{
+  "pbtResults": {
+    "9.3 Write property test for search filter conjunction": {
+      "status": "passed",
+      "lastRunTimestamp": 1790188928035
+    }
+  },
+  "executionHistory": {
+    "1.1 Add domain entities and enum for nationality + audit trail": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186343099
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186366556
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186561956
+      }
+    ],
+    "1.2 Add nationality contracts (request/response records)": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186343206
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186569327
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186831773
+      }
+    ],
+    "3.1 Add EF Core entity configurations": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186343330
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186570257
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186833184
+      }
+    ],
+    "3.2 Register DbSets on FinnovaDbContext": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186343435
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186842367
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187267207
+      }
+    ],
+    "4.1 Define repository interfaces": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186343587
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186843284
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187268624
+      }
+    ],
+    "4.2 Implement NationalityRepository": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186343682
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187279976
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187692011
+      }
+    ],
+    "4.3 Implement NationalityAuditRepository": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186343781
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187281400
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187693878
+      }
+    ],
+    "4.4 Register repositories in DI": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186343889
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187702173
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187781206
+      }
+    ],
+    "5.1 Generate the AddNationalityAndAudit migration": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186343981
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187787765
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188415176
+      }
+    ],
+    "6.1 Add nationality domain exceptions": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186344071
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186573081
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186834189
+      }
+    ],
+    "6.2 Implement static ToResponse mappers": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186344166
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186844203
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187269556
+      }
+    ],
+    "6.3 Write property test for mappers": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186344257
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187282166
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187690997
+      }
+    ],
+    "7.1 Implement CreateNationalityCommand, validator, and handler": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186344350
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187789120
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188112429
+      }
+    ],
+    "7.2 Write property test for create round trip": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186344461
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188435830
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188677419
+      }
+    ],
+    "7.3 Write property test for code uniqueness on create": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186344557
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188436787
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188678210
+      }
+    ],
+    "7.4 Write property test for IsActive default": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186344664
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188438150
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188679353
+      }
+    ],
+    "7.5 Write property test for audit entry on create": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186344887
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188439072
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188680062
+      }
+    ],
+    "8.1 Implement UpdateNationalityNameCommand, validator, and handler": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186344970
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187790146
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188113347
+      }
+    ],
+    "8.2 Write property test for update name round trip": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186345069
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188439878
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188681069
+      }
+    ],
+    "8.3 Write property test for same-name no-op": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186345157
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188688775
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188957298
+      }
+    ],
+    "8.4 Write property test for audit entry on update": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186345256
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188689817
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188959687
+      }
+    ],
+    "8.5 Write property test for no audit on rejection": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186345369
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188690898
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188955351
+      }
+    ],
+    "9.1 Implement GetNationalitiesPagedQuery, validator, and handler": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186345482
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187791431
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188110973
+      }
+    ],
+    "9.2 Implement GetNationalityAuditTrailQuery and handler": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186345580
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187792232
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188114322
+      }
+    ],
+    "9.3 Write property test for search filter conjunction": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186345687
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188691924
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188956188
+      }
+    ],
+    "9.4 Write property test for pagination consistency": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186345824
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188692710
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188958646
+      }
+    ],
+    "9.5 Write property test for list ordering": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186345969
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188969648
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790189116867
+      }
+    ],
+    "9.6 Write property test for audit trail ordering": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186346151
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188970176
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790189116363
+      }
+    ],
+    "10.1 Add nationality test infrastructure": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186346282
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187283300
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187692927
+      }
+    ],
+    "10.2 Write validator boundary and query-default edge unit tests": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186346841
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188181700
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188417513
+      }
+    ],
+    "10.3 Write not-found, audit-missing-id, and immutability edge tests": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186347399
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188182616
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188418582
+      }
+    ],
+    "11.1 Implement the controller": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186347756
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188180619
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188416102
+      }
+    ],
+    "11.2 Extend ExceptionHandlingMiddleware with the nationality branch": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186348233
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790189136584
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790189419172
+      }
+    ],
+    "11.3 Add gateway UI-alias routes for nationality": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186348352
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790189427579
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790189806466
+      }
+    ],
+    "12. Checkpoint - backend build and tests green": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186348515
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790189833660
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790189991306
+      }
+    ],
+    "13.1 Write authorization integration tests": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186348647
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790189426273
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790189804616
+      }
+    ],
+    "13.2 Write end-to-end create/list/audit integration test": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186348739
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790189428719
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790189805419
+      }
+    ],
+    "14.1 Add model and service interface": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186348834
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186367146
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186562525
+      }
+    ],
+    "14.2 Implement real and mock services + toggle": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186349048
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186573252
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186835122
+      }
+    ],
+    "14.3 Write service unit tests (Vitest)": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186349161
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186845649
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187270491
+      }
+    ],
+    "15.1 Implement NationalityMaster.tsx": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186349252
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186846401
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187271938
+      }
+    ],
+    "15.2 Write page/component tests (Vitest + RTL)": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186349347
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187284088
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187695061
+      }
+    ],
+    "16. Final checkpoint - all builds and tests green": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186349439
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790190009180
+      },
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790190253040
+      }
+    ],
+    "1. Add domain models and contracts": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790186831978
+      }
+    ],
+    "3. Configure persistence for the new entities": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187267354
+      }
+    ],
+    "14. Frontend model and service layer (Finnova-UI repo)": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187270717
+      }
+    ],
+    "6. Implement domain exceptions and mapper": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187691405
+      }
+    ],
+    "15. Frontend NationalityMaster page (Finnova-UI repo)": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187695353
+      }
+    ],
+    "4. Implement the repository layer": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790187781317
+      }
+    ],
+    "5. Add EF Core migration for the new tables": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188415491
+      }
+    ],
+    "10. Add in-memory test infrastructure and edge unit tests": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188419007
+      }
+    ],
+    "7. Implement the create-nationality command": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188680218
+      }
+    ],
+    "8. Implement the update-name command": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790188960008
+      }
+    ],
+    "9. Implement the query handlers": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790189117049
+      }
+    ],
+    "13. Add end-to-end integration tests for the host": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790189805932
+      }
+    ],
+    "11. Wire up the API and middleware": [
+      {
+        "executionId": "b4dfa3be-c21b-413b-83d7-558c9c14d1cc",
+        "chatSessionId": "sess_4dbc331e-0d96-46b6-bbd1-fc7727dd4019",
+        "timestamp": 1790189806657
+      }
+    ]
+  }
+}

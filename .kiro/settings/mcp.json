@@ -1,12 +1,13 @@
 ﻿{
   "mcpServers": {
     "atlassian": {
-      "command": "uvx",
-      "args": ["mcp-atlassian"],
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.atlassian.com/v1/mcp"
+      ],
       "env": {
-        "JIRA_URL": "https://srivasiniit.atlassian.net",
-        "JIRA_USERNAME": "srivatsan.seshadri@srivasiniit.com",
-        "JIRA_API_TOKEN": "ATATT3xFfGF09rL_L2Dgy6XJUkVsnK_kWk3IBJ9DBvGcKZRaJARtXx5JD3_23utLt4s_J4JP_TwAcPjaSzAfpyydGyG47MAzum0L8JQxxvX3XSgCwnlmpyicAot98PrBvjDFVs84qJSWZKw5icy-sCNc1cNGXMJt8Do-6-OBXK-HS6_jlY4bq0E=6B3C2D61",
         "FASTMCP_LOG_LEVEL": "ERROR"
       },
       "disabled": false,

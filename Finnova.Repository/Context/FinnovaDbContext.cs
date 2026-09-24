@@ -13,6 +13,8 @@ public class FinnovaDbContext : DbContext
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<LookupValue> LookupValues => Set<LookupValue>();
+    public DbSet<Nationality> Nationalities => Set<Nationality>();
+    public DbSet<NationalityAuditEntry> NationalityAuditEntries => Set<NationalityAuditEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
