@@ -12,7 +12,7 @@ public class OrganizationConfiguration : IEntityTypeConfiguration<Organization>
         builder.HasKey(o => o.Id);
 
         // Basic Info
-        builder.Property(o => o.Code).IsRequired().HasMaxLength(5);
+        builder.Property(o => o.Code).IsRequired().HasMaxLength(10);
         builder.HasIndex(o => o.Code).IsUnique();
         builder.Property(o => o.Name).IsRequired().HasMaxLength(100);
         builder.Property(o => o.ConstitutionType).HasConversion<string>().HasMaxLength(50);

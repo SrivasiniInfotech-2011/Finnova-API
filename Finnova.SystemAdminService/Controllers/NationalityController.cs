@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -72,3 +72,4 @@ public class NationalityController : ControllerBase
            ?? User.Identity?.Name
            ?? string.Empty;
 }
+

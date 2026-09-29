@@ -1,4 +1,4 @@
-using FsCheck;
+﻿using FsCheck;
 using FsCheck.Xunit;
 using Finnova.Models.Domain.Entities;
 using Finnova.Service.Nationality.Commands.UpdateNationalityName;
@@ -17,7 +17,7 @@ namespace Finnova.Tests.Properties;
 [Properties(Arbitrary = new[] { typeof(NationalityArbitraries) })]
 public class UpdateNationalityRoundTripProperties
 {
-    // Feature: nationality-master-management, Property 4: Update name round trip — for any stored
+    // Feature: nationality-master-management, Property 4: Update name round trip â€” for any stored
     // nationality and any valid new Name that differs from the current one, applying the update
     // persists the change so retrieving the record afterward yields the submitted Name, the
     // record's UpdatedAt is no earlier than its previous value, and Code/Id are unchanged.
@@ -77,3 +77,4 @@ public class UpdateNationalityRoundTripProperties
         });
     }
 }
+

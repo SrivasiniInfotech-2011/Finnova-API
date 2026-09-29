@@ -1,4 +1,4 @@
-using FluentValidation.TestHelper;
+﻿using FluentValidation.TestHelper;
 using Xunit;
 using Finnova.Service.Nationality.Commands.CreateNationality;
 using Finnova.Service.Nationality.Commands.UpdateNationalityName;
@@ -213,3 +213,4 @@ public class NationalityValidatorEdgeTests
         result.ShouldNotHaveValidationErrorFor(x => x.PageSize);
     }
 }
+

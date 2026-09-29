@@ -1,4 +1,4 @@
-using FsCheck;
+﻿using FsCheck;
 using FsCheck.Xunit;
 using Finnova.Models.Domain.Entities;
 using Finnova.Models.Domain.Enums;
@@ -21,7 +21,7 @@ public class UpdateNationalityAuditProperties
 {
     private const string Actor = "admin-1";
 
-    // Feature: nationality-master-management, Property 5: Same-name update is a no-op with no audit —
+    // Feature: nationality-master-management, Property 5: Same-name update is a no-op with no audit â€”
     // for any stored nationality, submitting an update whose Name equals the record's current Name
     // returns the existing record unchanged (Id, Code, Name, IsActive, CreatedAt, UpdatedAt) and
     // writes no audit entry. Validates Requirements 3.5, 4.3.
@@ -69,7 +69,7 @@ public class UpdateNationalityAuditProperties
         });
     }
 
-    // Feature: nationality-master-management, Property 7: Audit entry written on name update — for
+    // Feature: nationality-master-management, Property 7: Audit entry written on name update â€” for
     // any successful name change, exactly one audit entry is recorded with Action = Update,
     // OldName equal to the prior Name, NewName equal to the submitted Name, NationalityId equal to
     // the updated id, ChangedBy equal to the acting administrator, and a UTC timestamp.
@@ -126,7 +126,7 @@ public class UpdateNationalityAuditProperties
         });
     }
 
-    // Feature: nationality-master-management, Property 8: No audit entry on rejection — for any
+    // Feature: nationality-master-management, Property 8: No audit entry on rejection â€” for any
     // update targeting a non-existent id, the handler throws NationalityNotFoundException, the
     // total count of persisted audit entries is unchanged (stays 0), and the store is not mutated.
     // Validates Requirements 4.3.
@@ -185,3 +185,4 @@ public class UpdateNationalityAuditProperties
         });
     }
 }
+

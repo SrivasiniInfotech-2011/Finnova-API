@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Finnova.Models.Domain.Exceptions;
 
 namespace Finnova.SystemAdminService.Middleware;
@@ -61,6 +61,12 @@ public class ExceptionHandlingMiddleware
                 NationalityNotFoundException => (StatusCodes.Status404NotFound, "ERR-NAT-404", ex.Message),
                 NationalityDuplicateCodeException => (StatusCodes.Status409Conflict, NationalityDuplicateCodeException.ErrorCode, ex.Message),
 
+                // ---- new org-hierarchy branch (typed, no message sniffing) ----
+                OrganizationNodeNotFoundException => (404, "ERR-ORG-404", ex.Message),
+                OrganizationNodeDuplicateCodeException => (409, "ERR-ORG-409", ex.Message),
+                OrganizationNodeHasChildrenException => (409, "ERR-ORG-409", ex.Message),
+                OrganizationNodeValidationException => (400, "ERR-ORG-400", ex.Message), // self-parent / cycle / depth / parent-not-exists
+
                 // ---- shared: validation failures and unhandled fallback (path-scoped code) ----
                 FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, validationCode, v.Message),
                 _ => (StatusCodes.Status500InternalServerError, fallbackCode, "Unexpected error.")
@@ -73,3 +79,5 @@ public class ExceptionHandlingMiddleware
         }
     }
 }
+
+

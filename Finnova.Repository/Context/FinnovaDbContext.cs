@@ -1,5 +1,6 @@
-using Microsoft.EntityFrameworkCore;
 using Finnova.Models.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Finnova.Repository.Context;
 
@@ -15,6 +16,8 @@ public class FinnovaDbContext : DbContext
     public DbSet<LookupValue> LookupValues => Set<LookupValue>();
     public DbSet<Nationality> Nationalities => Set<Nationality>();
     public DbSet<NationalityAuditEntry> NationalityAuditEntries => Set<NationalityAuditEntry>();
+    public DbSet<OrganizationNode> OrganizationNodes => Set<OrganizationNode>();
+    public DbSet<OrganizationNodeAuditEntry> OrganizationNodeAuditEntries => Set<OrganizationNodeAuditEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

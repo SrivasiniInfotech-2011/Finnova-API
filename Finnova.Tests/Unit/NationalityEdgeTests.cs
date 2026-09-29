@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using Xunit;
 using Finnova.Models.Contracts.Nationalities;
 using Finnova.Models.Domain.Entities;
@@ -117,3 +117,4 @@ public class NationalityEdgeTests
         Assert.Contains("Name", propertyNames);
     }
 }
+
