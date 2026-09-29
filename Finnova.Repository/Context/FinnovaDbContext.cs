@@ -18,6 +18,8 @@ public class FinnovaDbContext : DbContext
     public DbSet<NationalityAuditEntry> NationalityAuditEntries => Set<NationalityAuditEntry>();
     public DbSet<OrganizationNode> OrganizationNodes => Set<OrganizationNode>();
     public DbSet<OrganizationNodeAuditEntry> OrganizationNodeAuditEntries => Set<OrganizationNodeAuditEntry>();
+    public DbSet<NumberingScheme> NumberingSchemes => Set<NumberingScheme>();
+    public DbSet<NumberingSchemeAuditEntry> NumberingSchemeAuditEntries => Set<NumberingSchemeAuditEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

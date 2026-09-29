@@ -26,6 +26,8 @@ public static class DependencyInjection
         services.AddScoped<INationalityAuditRepository, NationalityAuditRepository>();
         services.AddScoped<IOrganizationNodeRepository, OrganizationNodeRepository>();
         services.AddScoped<IOrganizationNodeAuditRepository, OrganizationNodeAuditRepository>();
+        services.AddScoped<INumberingSchemeRepository, NumberingSchemeRepository>();
+        services.AddScoped<INumberingSchemeAuditRepository, NumberingSchemeAuditRepository>();
         return services;
     }
 }

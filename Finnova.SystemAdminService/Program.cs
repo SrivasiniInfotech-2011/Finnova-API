@@ -9,8 +9,11 @@ using Finnova.Service.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers
-builder.Services.AddControllers();
+// Controllers. Serialize/bind enums by their string names (e.g. "Never", "Global") so the DCN
+// contracts read naturally over the wire and match how the UI sends them.
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 
 // MediatR - register handlers from the Service layer (assembly marker pattern)
 var serviceAssembly = typeof(Finnova.Service.Lookup.Commands.CreateLookupValue.CreateLookupValueCommand).Assembly;

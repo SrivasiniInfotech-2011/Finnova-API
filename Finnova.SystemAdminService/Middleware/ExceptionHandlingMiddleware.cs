@@ -47,8 +47,10 @@ public class ExceptionHandlingMiddleware
             // so nationality requests surface ERR-NAT-* while everything else keeps ERR-LKP-*.
             var isNationality = ctx.Request.Path.StartsWithSegments("/api/nationality",
                 StringComparison.OrdinalIgnoreCase);
-            var validationCode = isNationality ? "ERR-NAT-400" : "ERR-LKP-400";
-            var fallbackCode = isNationality ? "ERR-NAT-500" : "ERR-LKP-500";
+            var isDcn = ctx.Request.Path.StartsWithSegments("/api/dcn",
+                StringComparison.OrdinalIgnoreCase);
+            var validationCode = isDcn ? "ERR-DCN-400" : isNationality ? "ERR-NAT-400" : "ERR-LKP-400";
+            var fallbackCode = isDcn ? "ERR-DCN-500" : isNationality ? "ERR-NAT-500" : "ERR-LKP-500";
 
             var (status, code, detail) = ex switch
             {
@@ -66,6 +68,14 @@ public class ExceptionHandlingMiddleware
                 OrganizationNodeDuplicateCodeException => (409, "ERR-ORG-409", ex.Message),
                 OrganizationNodeHasChildrenException => (409, "ERR-ORG-409", ex.Message),
                 OrganizationNodeValidationException => (400, "ERR-ORG-400", ex.Message), // self-parent / cycle / depth / parent-not-exists
+
+                // ---- new DCN branch (typed, no message sniffing) ----
+                NumberingSchemeNotFoundException => (404, "ERR-DCN-404", ex.Message),
+                NumberingSchemeDuplicateCodeException => (409, "ERR-DCN-409", ex.Message),
+                NumberingSchemeScopeConflictException => (409, "ERR-DCN-409", ex.Message),
+                NumberingSchemeInactiveException => (409, "ERR-DCN-409", ex.Message),
+                NumberSequenceExhaustedException => (409, "ERR-DCN-409", ex.Message),
+                NumberingSchemeValidationException => (400, "ERR-DCN-400", ex.Message), // template / scope-id consistency
 
                 // ---- shared: validation failures and unhandled fallback (path-scoped code) ----
                 FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, validationCode, v.Message),
