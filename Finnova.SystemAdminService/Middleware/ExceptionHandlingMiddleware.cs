@@ -55,6 +55,10 @@ public class ExceptionHandlingMiddleware
             var isCourt = ctx.Request.Path.StartsWithSegments("/api/court",StringComparison.OrdinalIgnoreCase);
             var validationCourtCode = isCourt ? "ERR-CRT-400" : isDcn ? "ERR-DCN-400" : isNationality ? "ERR-NAT-400" : "ERR-LKP-400";
             var fallbackCourtCode = isCourt ? "ERR-CRT-500" : isDcn ? "ERR-DCN-500" : isNationality ? "ERR-NAT-500" : "ERR-LKP-500";
+            var isEntity = ctx.Request.Path.StartsWithSegments("/api/entity",
+    StringComparison.OrdinalIgnoreCase);
+            var validationEntityCode = isEntity ? "ERR-ENT-400" : isCourt ? "ERR-CRT-400" : isDcn ? "ERR-DCN-400" : isNationality ? "ERR-NAT-400" : "ERR-LKP-400";
+            var fallbackEntityCode = isEntity ? "ERR-ENT-500" : isCourt ? "ERR-CRT-500" : isDcn ? "ERR-DCN-500" : isNationality ? "ERR-NAT-500" : "ERR-LKP-500";
             var (status, code, detail) = ex switch
             {
                 // ---- existing lookup branch (unchanged) ----
@@ -83,6 +87,10 @@ public class ExceptionHandlingMiddleware
                 // ---- new Court branch (typed, no message sniffing) ----
                 CourtNotFoundException => (404, "ERR-CRT-404", ex.Message),
                 CourtDuplicateCodeException => (409, "ERR-CRT-409", ex.Message),
+
+                // ---- new Entity branch (typed, no message sniffing) ----
+                EntityNotFoundException => (404, "ERR-ENT-404", ex.Message),
+                EntityDuplicateCodeException => (409, "ERR-ENT-409", ex.Message),
 
                 // ---- shared: validation failures and unhandled fallback (path-scoped code) ----
                 FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, validationCode, v.Message),

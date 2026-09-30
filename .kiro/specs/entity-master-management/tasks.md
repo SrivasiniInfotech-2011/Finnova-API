@@ -1623,104 +1623,112 @@ using Xunit;
 namespace Finnova.Tests.Unit;
 
 /// <summary>
-/// Property-based tests (FsCheck.Xunit, >=100 iterations) over the pure Entity slice logic
-/// (per-type applicability, per-type uniqueness, search substring/ordering). Infrastructure
-/// concerns (concurrency, rollback, auth) are covered by integration tests instead.
+/// Property-based tests (FsCheck.Xunit, >=100 iterations) over the pure Entity slice logic. Only
+/// genuinely pure, synchronous logic is expressed as an FsCheck property (per-type attribute
+/// applicability); the repository/handler behaviors (per-type uniqueness, search substring +
+/// ordering) involve async I/O, so they are deterministic async facts driven over the generated
+/// Entity Types rather than FsCheck properties — FsCheck properties must not block on async work
+/// (no <c>.Result</c> inside <c>Prop.ForAll</c>, which deadlocks and defeats shrinking).
+/// Infrastructure concerns (concurrency, rollback, auth) are covered by integration tests instead.
 /// </summary>
 public class EntityPropertyTests
 {
     private const string Admin = "prop-admin";
+
     private static readonly EntityType[] Types =
         { EntityType.Dealer, EntityType.DebtCollector, EntityType.Insurer, EntityType.Supplier, EntityType.Employer };
 
-    private static string SafeCode(int seed) => "C" + (Math.Abs(seed) % 100000).ToString();
+    private static CreateEntityCommand NewCreate(
+        string code, string name, EntityType type,
+        IReadOnlyDictionary<string, string>? attributes = null)
+        => new(code, name, type, null, null, null, null, null, attributes, null, Admin);
 
-    // Feature: entity-master-management, Property 2: Per-type attribute applicability.
-    [Property(MaxTest = 100)]
-    public Property InapplicableKeyIsRejected_ApplicableKeyIsAccepted(int typeSeed, bool useApplicable)
+    // ---- Property 2: Per-type attribute applicability (pure, synchronous -> real FsCheck property) ----
+
+    // Feature: entity-master-management, Property 2. For any Entity Type, an applicable key
+    // validates clean and any inapplicable key is reported by name.
+    [Property(MaxTest = 200)]
+    public Property Validate_AcceptsApplicableKey_RejectsInapplicableKey(int typeSeed, bool useApplicable)
     {
-        var type = Types[Math.Abs(typeSeed) % Types.Length];
+        var type = Types[Math.Abs((long)typeSeed % Types.Length)];
         var applicableKey = EntityTypeAttributes.Applicable[type].First();
-        var inapplicableKey = EntityTypeAttributes.Applicable
-            .First(kv => kv.Key != type).Value.First();
+        var inapplicableKey = EntityTypeAttributes.Applicable.First(kv => kv.Key != type).Value.First();
+        var key = useApplicable ? applicableKey : inapplicableKey;
 
-        var bag = new Dictionary<string, string>
-        {
-            [useApplicable ? applicableKey : inapplicableKey] = "val",
-        };
+        var inapplicable = EntityTypeAttributes.Validate(
+            type, new Dictionary<string, string> { [key] = "val" });
 
-        var inapplicable = EntityTypeAttributes.Validate(type, bag);
-        // Applicable => empty; inapplicable => non-empty naming the offending key.
-        var ok = useApplicable ? inapplicable.Count == 0 : inapplicable.Contains(inapplicableKey);
+        var ok = useApplicable
+            ? inapplicable.Count == 0
+            : inapplicable.Contains(inapplicableKey);
         return ok.ToProperty();
     }
 
-    // Feature: entity-master-management, Property 3: Per-type code uniqueness.
+    // Feature: entity-master-management, Property 2. A null or empty attribute bag is always valid.
     [Property(MaxTest = 100)]
-    public Property SameCodeAcrossTwoTypes_BothPersist_SameTypeDuplicateRejected(int codeSeed, int typeSeed)
+    public Property Validate_NullOrEmptyBag_IsAlwaysApplicable(int typeSeed, bool useNull)
     {
-        return Prop.ForAll(Arb.From<bool>(), async _ =>
-        {
-            var repo = new InMemoryEntityRepository();
-            var audit = new InMemoryEntityAuditRepository();
-            var handler = new CreateEntityCommandHandler(repo, audit);
-            var code = SafeCode(codeSeed);
-            var typeA = Types[Math.Abs(typeSeed) % Types.Length];
-            var typeB = Types[(Math.Abs(typeSeed) + 1) % Types.Length];
-
-            await handler.Handle(new CreateEntityCommand(
-                code, "A", typeA, null, null, null, null, null, null, null, Admin), CancellationToken.None);
-            await handler.Handle(new CreateEntityCommand(
-                code, "B", typeB, null, null, null, null, null, null, null, Admin), CancellationToken.None);
-
-            var bothPersist = repo.Count == 2;
-
-            var duplicateRejected = false;
-            try
-            {
-                await handler.Handle(new CreateEntityCommand(
-                    code.ToLowerInvariant(), "C", typeA, null, null, null, null, null, null, null, Admin),
-                    CancellationToken.None);
-            }
-            catch (EntityDuplicateCodeException)
-            {
-                duplicateRejected = true;
-            }
-
-            return bothPersist && duplicateRejected && repo.Count == 2;
-        }.Result);
+        var type = Types[Math.Abs((long)typeSeed % Types.Length)];
+        var bag = useNull ? null : new Dictionary<string, string>();
+        return (EntityTypeAttributes.Validate(type, bag).Count == 0).ToProperty();
     }
 
-    // Feature: entity-master-management, Property 5/6: Search substring within filter, ordered Name then Code.
-    [Property(MaxTest = 100)]
-    public Property SearchReturnsSubstringMatches_OrderedByNameThenCode(int typeSeed)
+    // ---- Property 3: Per-type code uniqueness (async I/O -> deterministic async facts) ----
+
+    // Feature: entity-master-management, Property 3. The same code persists once under each of two
+    // distinct types, and a same-type duplicate (case-insensitive) is rejected without adding a row.
+    [Theory]
+    [InlineData(EntityType.Dealer, EntityType.Supplier)]
+    [InlineData(EntityType.Insurer, EntityType.Employer)]
+    [InlineData(EntityType.DebtCollector, EntityType.Dealer)]
+    public async Task SameCodeAcrossTwoTypes_BothPersist_SameTypeDuplicateRejected(
+        EntityType typeA, EntityType typeB)
     {
-        return Prop.ForAll(Arb.From<bool>(), async _ =>
-        {
-            var repo = new InMemoryEntityRepository();
-            var audit = new InMemoryEntityAuditRepository();
-            var handler = new CreateEntityCommandHandler(repo, audit);
-            var type = Types[Math.Abs(typeSeed) % Types.Length];
+        var repo = new InMemoryEntityRepository();
+        var audit = new InMemoryEntityAuditRepository();
+        var handler = new CreateEntityCommandHandler(repo, audit);
+        const string code = "C12345";
 
-            await handler.Handle(new CreateEntityCommand("ALPHA1", "Zeta Traders", type, null, null, null, null, null, null, null, Admin), CancellationToken.None);
-            await handler.Handle(new CreateEntityCommand("ALPHA2", "Alpha Traders", type, null, null, null, null, null, null, null, Admin), CancellationToken.None);
-            await handler.Handle(new CreateEntityCommand("BETA1", "Alpha Traders", type, null, null, null, null, null, null, null, Admin), CancellationToken.None);
+        await handler.Handle(NewCreate(code, "A", typeA), CancellationToken.None);
+        await handler.Handle(NewCreate(code, "B", typeB), CancellationToken.None);
+        Assert.Equal(2, repo.Count);   // same code, different types -> both persist
 
-            var (items, _) = await repo.GetPagedAsync("alpha", type, 1, 100, CancellationToken.None);
+        await Assert.ThrowsAsync<EntityDuplicateCodeException>(() =>
+            handler.Handle(NewCreate(code.ToLowerInvariant(), "C", typeA), CancellationToken.None));
+        Assert.Equal(2, repo.Count);   // duplicate within a type creates no record
+    }
 
-            var allMatch = items.All(i =>
-                i.Code.Contains("alpha", StringComparison.OrdinalIgnoreCase)
-                || i.Name.Contains("alpha", StringComparison.OrdinalIgnoreCase)
-                || (i.RegistrationIdentifier ?? "").Contains("alpha", StringComparison.OrdinalIgnoreCase));
+    // ---- Property 5/6: Search substring within filter, ordered Name asc then Code asc ----
 
-            var ordered = items
-                .Zip(items.Skip(1), (a, b) =>
-                    string.CompareOrdinal(a.Name, b.Name) < 0
-                    || (a.Name == b.Name && string.CompareOrdinal(a.Code, b.Code) <= 0))
-                .All(x => x);
+    // Feature: entity-master-management, Property 5 and 6. A search returns only substring matches
+    // within the Entity Type filter, ordered by Name ascending then Code ascending.
+    [Theory]
+    [InlineData(EntityType.Dealer)]
+    [InlineData(EntityType.Supplier)]
+    [InlineData(EntityType.Employer)]
+    public async Task Search_ReturnsSubstringMatches_OrderedByNameThenCode(EntityType type)
+    {
+        var repo = new InMemoryEntityRepository();
+        var audit = new InMemoryEntityAuditRepository();
+        var handler = new CreateEntityCommandHandler(repo, audit);
 
-            return allMatch && ordered;
-        }.Result);
+        await handler.Handle(NewCreate("ALPHA1", "Zeta Traders", type), CancellationToken.None);
+        await handler.Handle(NewCreate("ALPHA2", "Alpha Traders", type), CancellationToken.None);
+        await handler.Handle(NewCreate("BETA1", "Alpha Traders", type), CancellationToken.None);
+
+        var (items, _) = await repo.GetPagedAsync("alpha", type, 1, 100, CancellationToken.None);
+
+        Assert.All(items, i => Assert.True(
+            i.Code.Contains("alpha", StringComparison.OrdinalIgnoreCase)
+            || i.Name.Contains("alpha", StringComparison.OrdinalIgnoreCase)
+            || (i.RegistrationIdentifier ?? string.Empty).Contains("alpha", StringComparison.OrdinalIgnoreCase)));
+
+        var ordered = items
+            .Zip(items.Skip(1), (a, b) =>
+                string.CompareOrdinal(a.Name, b.Name) < 0
+                || (a.Name == b.Name && string.CompareOrdinal(a.Code, b.Code) <= 0))
+            .All(x => x);
+        Assert.True(ordered);
     }
 }
 ```
@@ -1802,6 +1810,7 @@ public class EntityAuthorizationTests : IClassFixture<SystemAdminAppFactory>
 - [ ]* 8.6 CREATE `Finnova.Tests/Integration/EntityEndToEndTests.cs`
 
 ```csharp
+using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -1858,9 +1867,16 @@ public class EntityEndToEndTests : IClassFixture<SystemAdminAppFactory>
 
         var audit = await client.GetFromJsonAsync<List<AuditDto>>($"/api/entity/{created.Id}/audit");
         Assert.NotNull(audit);
-        Assert.Equal(4, audit!.Count);   // Create, Update, deactivate, reactivate
-        Assert.Equal("Update", audit[0].Action);
-        Assert.Equal("Create", audit[^1].Action);
+        // Create, Update, deactivate, reactivate. Assert on content, not positional order: all four
+        // entries can share a millisecond timestamp in a fast run, and the R5.5 tiebreaker is by Id
+        // (a random Guid), so audit[0]/audit[^1] are not deterministic. Verify the composition and
+        // that the newest-first ordering by ChangedAtUtc holds.
+        Assert.Equal(4, audit!.Count);
+        Assert.Single(audit, a => a.Action == "Create");
+        Assert.Equal(3, audit.Count(a => a.Action == "Update"));   // update + deactivate + reactivate
+        Assert.True(
+            audit.Zip(audit.Skip(1), (a, b) => a.ChangedAtUtc >= b.ChangedAtUtc).All(x => x),
+            "Audit entries must be ordered by ChangedAtUtc descending (R5.5).");
     }
 
     [Fact]

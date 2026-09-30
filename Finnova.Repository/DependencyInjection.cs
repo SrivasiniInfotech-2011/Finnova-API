@@ -30,6 +30,8 @@ public static class DependencyInjection
         services.AddScoped<INumberingSchemeAuditRepository, NumberingSchemeAuditRepository>();
         services.AddScoped<ICourtRepository, CourtRepository>();
         services.AddScoped<ICourtAuditRepository, CourtAuditRepository>();
+        services.AddScoped<IEntityRepository, EntityRepository>();
+        services.AddScoped<IEntityAuditRepository, EntityAuditRepository>();
         return services;
     }
 }
