@@ -28,6 +28,8 @@ public static class DependencyInjection
         services.AddScoped<IOrganizationNodeAuditRepository, OrganizationNodeAuditRepository>();
         services.AddScoped<INumberingSchemeRepository, NumberingSchemeRepository>();
         services.AddScoped<INumberingSchemeAuditRepository, NumberingSchemeAuditRepository>();
+        services.AddScoped<ICourtRepository, CourtRepository>();
+        services.AddScoped<ICourtAuditRepository, CourtAuditRepository>();
         return services;
     }
 }

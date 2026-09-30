@@ -20,7 +20,8 @@ public class FinnovaDbContext : DbContext
     public DbSet<OrganizationNodeAuditEntry> OrganizationNodeAuditEntries => Set<OrganizationNodeAuditEntry>();
     public DbSet<NumberingScheme> NumberingSchemes => Set<NumberingScheme>();
     public DbSet<NumberingSchemeAuditEntry> NumberingSchemeAuditEntries => Set<NumberingSchemeAuditEntry>();
-
+    public DbSet<Court> Courts => Set<Court>();
+    public DbSet<CourtAuditEntry> CourtAuditEntries => Set<CourtAuditEntry>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

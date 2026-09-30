@@ -52,6 +52,9 @@ public class ExceptionHandlingMiddleware
             var validationCode = isDcn ? "ERR-DCN-400" : isNationality ? "ERR-NAT-400" : "ERR-LKP-400";
             var fallbackCode = isDcn ? "ERR-DCN-500" : isNationality ? "ERR-NAT-500" : "ERR-LKP-500";
 
+            var isCourt = ctx.Request.Path.StartsWithSegments("/api/court",StringComparison.OrdinalIgnoreCase);
+            var validationCourtCode = isCourt ? "ERR-CRT-400" : isDcn ? "ERR-DCN-400" : isNationality ? "ERR-NAT-400" : "ERR-LKP-400";
+            var fallbackCourtCode = isCourt ? "ERR-CRT-500" : isDcn ? "ERR-DCN-500" : isNationality ? "ERR-NAT-500" : "ERR-LKP-500";
             var (status, code, detail) = ex switch
             {
                 // ---- existing lookup branch (unchanged) ----
@@ -77,9 +80,14 @@ public class ExceptionHandlingMiddleware
                 NumberSequenceExhaustedException => (409, "ERR-DCN-409", ex.Message),
                 NumberingSchemeValidationException => (400, "ERR-DCN-400", ex.Message), // template / scope-id consistency
 
+                // ---- new Court branch (typed, no message sniffing) ----
+                CourtNotFoundException => (404, "ERR-CRT-404", ex.Message),
+                CourtDuplicateCodeException => (409, "ERR-CRT-409", ex.Message),
+
                 // ---- shared: validation failures and unhandled fallback (path-scoped code) ----
                 FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, validationCode, v.Message),
                 _ => (StatusCodes.Status500InternalServerError, fallbackCode, "Unexpected error.")
+
             };
 
             var problem = new ProblemDetails { Status = status, Title = code, Detail = detail };
