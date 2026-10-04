@@ -1,8 +1,9 @@
-using FluentValidation;
-using Finnova.Service.Auth;
-using Finnova.Service.Users.Commands.CreateUser;
-using Finnova.Service.Storage;
 using Finnova.Repository;
+using Finnova.Service.Auth;
+using Finnova.Service.Storage;
+using Finnova.Service.UserManagement.Abstractions;
+using Finnova.Service.Users.Commands.CreateUser;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,7 +36,8 @@ builder.Services.AddHealthChecks();
 // OpenAPI + Swagger
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
-
+builder.Services.AddScoped<IPasswordPolicy,
+    DefaultPasswordPolicy>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

@@ -24,6 +24,15 @@ public class FinnovaDbContext : DbContext
     public DbSet<CourtAuditEntry> CourtAuditEntries => Set<CourtAuditEntry>();
     public DbSet<EntityMaster> Entities => Set<EntityMaster>();
     public DbSet<EntityAuditEntry> EntityAuditEntries => Set<EntityAuditEntry>();
+    public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
+    public DbSet<UserGroup> UserGroups => Set<UserGroup>();
+    public DbSet<UserGroupMember> UserGroupMembers => Set<UserGroupMember>();
+    public DbSet<FunctionalGroup> FunctionalGroups => Set<FunctionalGroup>();
+    public DbSet<FunctionalGroupFunction> FunctionalGroupFunctions => Set<FunctionalGroupFunction>();
+    public DbSet<FunctionalGroupAssignment> FunctionalGroupAssignments => Set<FunctionalGroupAssignment>();
+    public DbSet<UserAccessAssignment> UserAccessAssignments => Set<UserAccessAssignment>();
+    public DbSet<UserBranchAssociation> UserBranchAssociations => Set<UserBranchAssociation>();
+    public DbSet<UserManagementAuditEntry> UserManagementAuditEntries => Set<UserManagementAuditEntry>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

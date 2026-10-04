@@ -13,9 +13,11 @@ namespace Finnova.Repository.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Remove the old flat Branch module table.
-            migrationBuilder.DropTable(
-                name: "branches");
+            // Remove the old flat Branch module table. Guarded with IF EXISTS because this
+            // migration is the first in the project's history: on a fresh database the legacy
+            // "branches" table never existed, so an unconditional DROP TABLE fails. On an older
+            // database that still carries the pre-migration schema, this drops it as intended.
+            migrationBuilder.Sql("DROP TABLE IF EXISTS [branches];");
 
             // Create the hierarchical locations table.
             migrationBuilder.CreateTable(
