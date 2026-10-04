@@ -1,0 +1,253 @@
+﻿# Finnova backend — four services deployed separately to local Kubernetes.
+#
+# Only the API gateway is exposed to the host (NodePort 30500). The three backend
+# services are ClusterIP (internal only) and are reached by the gateway via their
+# Service DNS names, which match the cluster addresses in ApiGateway/appsettings.json:
+#   finnova-ua-service:5010, finnova-accounts-service:5020, finnova-systemadmin-service:5030
+#
+# Each data service has its OWN connection string key in the finnova-db Secret, so the
+# services can point at different databases / credentials independently:
+#   uaConnectionString          -> finnova-ua-service   (ConnectionStrings:DefaultConnection)
+#   accountsConnectionString    -> finnova-accounts-service   (ConnectionStrings:FinnovaConnection)
+#   systemadminConnectionString -> finnova-systemadmin-service (ConnectionStrings:FinnovaConnection)
+#
+# Databases point at the HOST machine via host.docker.internal. The host SQL Server
+# MUST accept SQL authentication (Integrated/Trusted_Connection cannot work from a
+# Linux container) and allow TCP connections. Edit the Secret below with real creds.
+# They may all point at the same database (as seeded below) or at separate databases.
+# ---------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: finnova-db
+type: Opaque
+stringData:
+  # host.docker.internal resolves to the host machine from Docker Desktop / recent
+  # minikube + kind. Change User Id / Password to real SQL logins on your host.
+  # Give each service its own string; point them at different Databases if desired
+  # (e.g. Database=Finnova_UA / Finnova_Accounts / Finnova_SystemAdmin).
+  uaConnectionString:          "Server=host.docker.internal,1433;Database=Finnova_DB;User Id=sa;Password=Srimadvas@123;TrustServerCertificate=True;Encrypt=False"
+  accountsConnectionString:    "Server=host.docker.internal,1433;Database=Finnova_DB;User Id=sa;Password=Srimadvas@123;TrustServerCertificate=True;Encrypt=False"
+  systemadminConnectionString: "Server=host.docker.internal,1433;Database=Finnova_DB;User Id=sa;Password=Srimadvas@123;TrustServerCertificate=True;Encrypt=False"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: finnova-jwt
+type: Opaque
+stringData:
+  # Shared signing key — UA signs tokens, the other hosts validate them, so all
+  # services must use the SAME key. Replace for anything beyond local play.
+  signingKey: "dev-only-signing-key-change-me-min-32-bytes-long-0123456789"
+---
+# ===================== UA Service (port 5010) =====================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finnova-ua-service
+  labels: { app: finnova-ua-service }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: finnova-ua-service }
+  template:
+    metadata:
+      labels: { app: finnova-ua-service }
+    spec:
+      containers:
+        - name: ua
+          image: finnova-ua-service:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5010
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:5010
+            # UAService reads ConnectionStrings:DefaultConnection
+            - name: ConnectionStrings__DefaultConnection
+              valueFrom:
+                secretKeyRef: { name: finnova-db, key: uaConnectionString }
+            - name: Jwt__SigningKey
+              valueFrom:
+                secretKeyRef: { name: finnova-jwt, key: signingKey }
+            - name: Jwt__Secret
+              valueFrom:
+                secretKeyRef: { name: finnova-jwt, key: signingKey }
+          readinessProbe:
+            httpGet: { path: /health, port: 5010 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 5010 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: finnova-ua-service
+spec:
+  selector: { app: finnova-ua-service }
+  ports:
+    - port: 5010
+      targetPort: 5010
+---
+# ===================== Accounts Service (port 5020) =====================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finnova-accounts-service
+  labels: { app: finnova-accounts-service }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: finnova-accounts-service }
+  template:
+    metadata:
+      labels: { app: finnova-accounts-service }
+    spec:
+      containers:
+        - name: accounts
+          image: finnova-accounts-service:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5020
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:5020
+            # AccountsService reads ConnectionStrings:FinnovaConnection
+            - name: ConnectionStrings__FinnovaConnection
+              valueFrom:
+                secretKeyRef: { name: finnova-db, key: accountsConnectionString }
+            - name: Jwt__SigningKey
+              valueFrom:
+                secretKeyRef: { name: finnova-jwt, key: signingKey }
+            - name: Jwt__Secret
+              valueFrom:
+                secretKeyRef: { name: finnova-jwt, key: signingKey }
+          readinessProbe:
+            httpGet: { path: /health, port: 5020 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 5020 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: finnova-accounts-service
+spec:
+  selector: { app: finnova-accounts-service }
+  ports:
+    - port: 5020
+      targetPort: 5020
+---
+# ===================== SystemAdmin Service (port 5030) =====================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finnova-systemadmin-service
+  labels: { app: finnova-systemadmin-service }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: finnova-systemadmin-service }
+  template:
+    metadata:
+      labels: { app: finnova-systemadmin-service }
+    spec:
+      containers:
+        - name: systemadmin
+          image: finnova-systemadmin-service:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5030
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:5030
+            # SystemAdminService reads ConnectionStrings:FinnovaConnection
+            - name: ConnectionStrings__FinnovaConnection
+              valueFrom:
+                secretKeyRef: { name: finnova-db, key: systemadminConnectionString }
+            - name: Jwt__SigningKey
+              valueFrom:
+                secretKeyRef: { name: finnova-jwt, key: signingKey }
+            - name: Jwt__Secret
+              valueFrom:
+                secretKeyRef: { name: finnova-jwt, key: signingKey }
+          readinessProbe:
+            httpGet: { path: /health, port: 5030 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 5030 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: finnova-systemadmin-service
+spec:
+  selector: { app: finnova-systemadmin-service }
+  ports:
+    - port: 5030
+      targetPort: 5030
+---
+# ===================== API Gateway (port 5000, exposed) =====================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finnova-api-gateway
+  labels: { app: finnova-api-gateway }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: finnova-api-gateway }
+  template:
+    metadata:
+      labels: { app: finnova-api-gateway }
+    spec:
+      containers:
+        - name: gateway
+          image: finnova-api-gateway:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:5000
+            # Allow the UI origin; adjust if your UI runs elsewhere.
+            - name: AllowedOrigins
+              value: http://localhost:3000
+          readinessProbe:
+            httpGet: { path: /health, port: 5000 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 5000 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: finnova-api-gateway
+spec:
+  type: NodePort
+  selector: { app: finnova-api-gateway }
+  ports:
+    - port: 5000
+      targetPort: 5000
+      nodePort: 30500
