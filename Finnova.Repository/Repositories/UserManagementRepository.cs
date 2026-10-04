@@ -16,6 +16,12 @@ public class UserManagementRepository(FinnovaDbContext db)
         return DbSet.AsNoTracking().FirstOrDefaultAsync(x => x.UserCode == c, ct);
     }
 
+    public Task<UserAccount?> GetByUserNameAsync(string userName, CancellationToken ct = default)
+    {
+        var u = userName.Trim();
+        return DbSet.AsNoTracking().FirstOrDefaultAsync(x => x.UserName == u, ct);
+    }
+
     public Task<UserAccount?> GetUserWithAccessAsync(Guid id, CancellationToken ct = default)
         => DbSet.AsNoTracking()
             .Include(x => x.AccessAssignments)
@@ -133,6 +139,16 @@ public class UserManagementRepository(FinnovaDbContext db)
             .Where(x => x.UserAccountId == ownerUserId && x.LineOfBusiness == lob).ToListAsync(ct);
         return (rows, branches);
     }
+
+    public async Task<List<UserAccessAssignment>> GetAccessAssignmentsByUserAsync(Guid userId, CancellationToken ct = default)
+        => await Context.UserAccessAssignments.AsNoTracking()
+            .Where(x => x.UserAccountId == userId)
+            .ToListAsync(ct);
+
+    public async Task<List<ScreenProgram>> GetActiveProgramsAsync(CancellationToken ct = default)
+        => await Context.ScreenPrograms.AsNoTracking()
+            .Where(x => x.IsActive)
+            .ToListAsync(ct);
 
     // ---- List (union of the three kinds) + audit ----
     public async Task<(List<UserListItemResult> Items, int Total)> GetPagedAsync(

@@ -9,7 +9,6 @@ namespace Finnova.Service.Mappers;
 [Mapper(EnumMappingStrategy = EnumMappingStrategy.ByName)]
 public static partial class OrganizationMapper
 {
-    [MapperIgnoreSource(nameof(Organization.Users))]
     public static partial OrganizationResponse ToResponse(this Organization organization);
 
     public static List<OrganizationResponse> ToResponseList(this IEnumerable<Organization> organizations)

@@ -16,20 +16,21 @@ public class TokenService : ITokenService
         _settings = settings.Value;
     }
 
-    public (string Token, int ExpiresInSeconds) GenerateToken(User user)
+    public (string Token, int ExpiresInSeconds) GenerateToken(UserAccount user)
     {
-        var fullName = string.Join(' ',
-            new[] { user.FirstName, user.MiddleName, user.LastName }
-                .Where(s => !string.IsNullOrWhiteSpace(s)));
-
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(JwtRegisteredClaimNames.Email, user.Email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Name, fullName),
+            new(ClaimTypes.Name, user.Name),
         };
+
+        // Email is optional on a user account — only emit the claim when present.
+        if (!string.IsNullOrWhiteSpace(user.Email))
+        {
+            claims.Add(new Claim(JwtRegisteredClaimNames.Email, user.Email));
+        }
 
         // Emit role claim(s). Admin users also receive the "SystemAdmin" role so they
         // satisfy authorization policies that require it (e.g. Lookup admin endpoints).

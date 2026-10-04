@@ -16,7 +16,6 @@ public static class DependencyInjection
         services.AddDbContext<FinnovaDbContext>(options =>
             options.UseSqlServer(connectionString));
 
-        services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
         services.AddScoped<ILocationRepository, LocationRepository>();
         services.AddScoped<IAccountRepository, AccountRepository>();

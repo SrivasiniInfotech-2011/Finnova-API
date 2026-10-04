@@ -13,9 +13,13 @@ public sealed class InMemoryUserManagementRepository : IUserManagementRepository
     public readonly List<UserAccessAssignment> Access = new();
     public readonly List<UserBranchAssociation> Branches = new();
     public readonly List<UserManagementAuditEntry> Audit = new();
+    public readonly List<ScreenProgram> Programs = new();
 
     public Task<UserAccount?> GetUserByCodeAsync(string code, CancellationToken ct = default)
         => Task.FromResult(Users.FirstOrDefault(u => u.UserCode == code.Trim()));
+
+    public Task<UserAccount?> GetByUserNameAsync(string userName, CancellationToken ct = default)
+        => Task.FromResult(Users.FirstOrDefault(u => u.UserName == userName.Trim()));
 
     public Task<UserAccount?> GetUserWithAccessAsync(Guid id, CancellationToken ct = default)
         => Task.FromResult(Users.FirstOrDefault(u => u.Id == id));
@@ -87,6 +91,12 @@ public sealed class InMemoryUserManagementRepository : IUserManagementRepository
         => Task.FromResult((
             Access.Where(a => a.UserAccountId == ownerUserId && a.LineOfBusiness == lob).ToList(),
             Branches.Where(b => b.UserAccountId == ownerUserId && b.LineOfBusiness == lob).ToList()));
+
+    public Task<List<UserAccessAssignment>> GetAccessAssignmentsByUserAsync(Guid userId, CancellationToken ct = default)
+        => Task.FromResult(Access.Where(a => a.UserAccountId == userId).ToList());
+
+    public Task<List<ScreenProgram>> GetActiveProgramsAsync(CancellationToken ct = default)
+        => Task.FromResult(Programs.Where(p => p.IsActive).ToList());
 
     public Task<(List<UserListItemResult> Items, int Total)> GetPagedAsync(
         string? search, UserConfiguration? kind, bool? isActive, int page, int pageSize, CancellationToken ct = default)

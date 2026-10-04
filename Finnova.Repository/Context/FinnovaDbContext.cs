@@ -8,7 +8,6 @@ public class FinnovaDbContext : DbContext
 {
     public FinnovaDbContext(DbContextOptions<FinnovaDbContext> options) : base(options) { }
 
-    public DbSet<User> Users => Set<User>();
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<Location> Locations => Set<Location>();
     public DbSet<Account> Accounts => Set<Account>();
@@ -33,6 +32,7 @@ public class FinnovaDbContext : DbContext
     public DbSet<UserAccessAssignment> UserAccessAssignments => Set<UserAccessAssignment>();
     public DbSet<UserBranchAssociation> UserBranchAssociations => Set<UserBranchAssociation>();
     public DbSet<UserManagementAuditEntry> UserManagementAuditEntries => Set<UserManagementAuditEntry>();
+    public DbSet<ScreenProgram> ScreenPrograms => Set<ScreenProgram>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

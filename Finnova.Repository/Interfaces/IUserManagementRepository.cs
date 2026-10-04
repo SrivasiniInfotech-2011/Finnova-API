@@ -12,6 +12,7 @@ public interface IUserManagementRepository
 {
     // Users
     Task<UserAccount?> GetUserByCodeAsync(string code, CancellationToken ct = default);
+    Task<UserAccount?> GetByUserNameAsync(string userName, CancellationToken ct = default);
     Task<UserAccount?> GetUserWithAccessAsync(Guid id, CancellationToken ct = default);
     Task<bool> UserCodeExistsAsync(string code, CancellationToken ct = default);
     Task AddUserAsync(UserAccount user, CancellationToken ct = default);
@@ -35,6 +36,8 @@ public interface IUserManagementRepository
         IEnumerable<UserAccessAssignment> rows, IEnumerable<UserBranchAssociation> branches, CancellationToken ct = default);
     Task<(List<UserAccessAssignment> Rows, List<UserBranchAssociation> Branches)> GetAccessAsync(
         Guid ownerUserId, string lob, CancellationToken ct = default);
+    Task<List<UserAccessAssignment>> GetAccessAssignmentsByUserAsync(Guid userId, CancellationToken ct = default);
+    Task<List<ScreenProgram>> GetActiveProgramsAsync(CancellationToken ct = default);
 
     // List + audit
     Task<(List<UserListItemResult> Items, int Total)> GetPagedAsync(

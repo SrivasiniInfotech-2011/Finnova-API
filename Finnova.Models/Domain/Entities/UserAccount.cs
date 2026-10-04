@@ -12,8 +12,10 @@ public class UserAccount
     public Guid Id { get; set; } = Guid.NewGuid();
 
     public string UserCode { get; set; } = string.Empty;     // generated, 4-6, uppercase, unique (R2)
+    public string UserName { get; set; } = string.Empty;     // login credential, unique, required
     public string Name { get; set; } = string.Empty;         // max 50, English, mandatory (R3.2/3.3)
     public string PasswordHash { get; set; } = string.Empty; // PBKDF2 "salt.hash" (never plaintext) (R3.4/3.5)
+    public UserRole Role { get; set; } = UserRole.User;      // authorization role (JWT role claim source)
 
     public DateTime DateOfJoining { get; set; }              // defaults to system date (R3.7)
     public string Designation { get; set; } = string.Empty;  // max 40, Lookup-backed (R3.9/3.13)
