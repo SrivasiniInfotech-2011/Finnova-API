@@ -10,9 +10,9 @@ namespace Finnova.Service.UserManagement.Helpers;
 /// </summary>
 public static class AccessAssignmentMerger
 {
-    public static (List<AccessRightRow> Rows, List<string> Branches) Merge(
-        (IEnumerable<AccessRightRow> Rows, IEnumerable<string> Branches) current,
-        (IEnumerable<AccessRightRow> Rows, IEnumerable<string> Branches) source)
+    public static (List<AccessRightRow> Rows, List<BranchSelection> Branches) Merge(
+        (IEnumerable<AccessRightRow> Rows, IEnumerable<BranchSelection> Branches) current,
+        (IEnumerable<AccessRightRow> Rows, IEnumerable<BranchSelection> Branches) source)
     {
         var byRole = new Dictionary<string, AccessRightRow>(StringComparer.OrdinalIgnoreCase);
 
@@ -34,11 +34,16 @@ public static class AccessAssignmentMerger
             }
         }
 
-        var branches = current.Branches
-            .Concat(source.Branches)
-            .Where(b => !string.IsNullOrWhiteSpace(b))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        // De-dup branches by a stable key: ALL collapses to one; others by their LocationId Guid.
+        var branches = new List<BranchSelection>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var b in current.Branches.Concat(source.Branches))
+        {
+            var key = b.IsAll ? "ALL" : b.LocationId?.ToString();
+            if (key is null || !seen.Add(key))
+                continue;
+            branches.Add(b);
+        }
 
         return (byRole.Values.ToList(), branches);
     }

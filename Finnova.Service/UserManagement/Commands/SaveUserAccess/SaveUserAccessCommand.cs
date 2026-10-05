@@ -7,6 +7,6 @@ public record SaveUserAccessCommand(
     Guid Id,
     Guid LineOfBusinessId,
     IReadOnlyList<AccessRightRow> Rows,
-    IReadOnlyList<string> BranchCodes,
+    IReadOnlyList<BranchSelection> Branches,
     CopyProfileRequest? CopyProfile,
     string ActingAdmin) : IRequest<UserAccessResponse>;

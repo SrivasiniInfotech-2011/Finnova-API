@@ -33,7 +33,7 @@ public class SaveUserAccessCommandHandler : IRequestHandler<SaveUserAccessComman
         var programsById = (await _repository.GetActiveProgramsAsync(ct)).ToDictionary(p => p.Id);
 
         var rows = request.Rows.ToList();
-        var branches = request.BranchCodes.ToList();
+        var branches = request.Branches.ToList();
 
         // Copy Profile (Create mode): append source rows/branches, de-dup with OR-merge (R10.2).
         if (request.CopyProfile is not null)
@@ -46,7 +46,7 @@ public class SaveUserAccessCommandHandler : IRequestHandler<SaveUserAccessComman
             var merged = AccessAssignmentMerger.Merge(
                 (rows, branches),
                 (srcRows.Select(r => ToRow(r, programsById)),
-                 srcBranches.Select(b => b.BranchCode)));
+                 srcBranches.Select(b => new BranchSelection(b.LocationId, b.IsAll, b.BranchCode))));
             rows = merged.Rows;
             branches = merged.Branches;
         }
@@ -68,13 +68,43 @@ public class SaveUserAccessCommandHandler : IRequestHandler<SaveUserAccessComman
             };
         }).ToList();
 
-        var branchAssociations = branches.Select(b => new UserBranchAssociation
+        // Resolve each selection to a persisted association. ALL => IsAll/null/"ALL" (no location
+        // lookup). Non-ALL => LocationId required and must EXIST in locations (existence only — no
+        // IsActive/Level check, R9); BranchCode is filled from the resolved location's Code.
+        var branchAssociations = new List<UserBranchAssociation>(branches.Count);
+        var persistedSelections = new List<BranchSelection>(branches.Count);
+        foreach (var b in branches)
         {
-            UserAccountId = user.Id,
-            LineOfBusinessId = lob.Id,
-            BranchCode = b,
-            IsAll = string.Equals(b, "ALL", StringComparison.OrdinalIgnoreCase),   // R9.4
-        }).ToList();
+            if (b.IsAll)
+            {
+                branchAssociations.Add(new UserBranchAssociation
+                {
+                    UserAccountId = user.Id,
+                    LineOfBusinessId = lob.Id,
+                    LocationId = null,
+                    BranchCode = "ALL",
+                    IsAll = true,                                      // R9.4
+                });
+                persistedSelections.Add(new BranchSelection(null, true, "ALL"));
+                continue;
+            }
+
+            if (b.LocationId is null)
+                throw new UserValidationException("The selected branch location was not found.");
+
+            var location = await _repository.GetLocationByIdAsync(b.LocationId.Value, ct)
+                ?? throw new UserValidationException("The selected branch location was not found.");
+
+            branchAssociations.Add(new UserBranchAssociation
+            {
+                UserAccountId = user.Id,
+                LineOfBusinessId = lob.Id,
+                LocationId = location.Id,
+                BranchCode = location.Code,
+                IsAll = false,
+            });
+            persistedSelections.Add(new BranchSelection(location.Id, false, location.Code));
+        }
 
         await _repository.ReplaceAccessAsync(user.Id, lob.Id, assignments, branchAssociations, ct);
 
@@ -89,7 +119,7 @@ public class SaveUserAccessCommandHandler : IRequestHandler<SaveUserAccessComman
             ChangedAtUtc = DateTime.UtcNow,
         }, ct);
 
-        return new UserAccessResponse(lob.Id, lob.LOB_Name, rows, branches);
+        return new UserAccessResponse(lob.Id, lob.LOB_Name, rows, persistedSelections);
     }
 
     // Build an AccessRightRow from a stored assignment, enriching program name/display from the

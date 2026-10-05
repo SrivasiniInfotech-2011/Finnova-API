@@ -62,8 +62,15 @@ public record AccessRightRow(
 
 public record CopyProfileRequest(string SourceUserCode, Guid SourceLineOfBusinessId);
 
+/// <summary>
+/// A single branch selection. <paramref name="LocationId"/> is the authoritative FK into locations
+/// (null for the ALL sentinel). <paramref name="BranchCode"/> is reference-only display text; on
+/// input it is optional (the server resolves it from the location's Code, or "ALL").
+/// </summary>
+public record BranchSelection(Guid? LocationId, bool IsAll, string BranchCode = "");
+
 public record SaveUserAccessRequest(
     Guid LineOfBusinessId,
     IReadOnlyList<AccessRightRow> Rows,
-    IReadOnlyList<string> BranchCodes,                         // may contain "ALL" (R9.3/9.4)
+    IReadOnlyList<BranchSelection> Branches,                   // ALL => { locationId:null, isAll:true } (R9.3/9.4)
     CopyProfileRequest? CopyProfile);                          // Create mode only (R10)

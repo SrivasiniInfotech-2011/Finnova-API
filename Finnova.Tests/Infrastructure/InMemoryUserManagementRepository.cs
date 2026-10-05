@@ -15,6 +15,7 @@ public sealed class InMemoryUserManagementRepository : IUserManagementRepository
     public readonly List<UserManagementAuditEntry> Audit = new();
     public readonly List<ScreenProgram> Programs = new();
     public readonly List<LineOfBusiness> Lobs = new();
+    public readonly List<Location> Locations = new();
 
     public Task<UserAccount?> GetUserByCodeAsync(string code, CancellationToken ct = default)
         => Task.FromResult(Users.FirstOrDefault(u => u.UserCode == code.Trim()));
@@ -107,6 +108,9 @@ public sealed class InMemoryUserManagementRepository : IUserManagementRepository
 
     public Task<ScreenProgram?> GetProgramByIdAsync(Guid id, CancellationToken ct = default)
         => Task.FromResult(Programs.FirstOrDefault(p => p.Id == id));
+
+    public Task<Location?> GetLocationByIdAsync(Guid id, CancellationToken ct = default)
+        => Task.FromResult(Locations.FirstOrDefault(l => l.Id == id));
 
     public Task<(List<UserListItemResult> Items, int Total)> GetPagedAsync(
         string? search, UserConfiguration? kind, bool? isActive, int page, int pageSize, CancellationToken ct = default)

@@ -44,6 +44,9 @@ public interface IUserManagementRepository
     Task<LineOfBusiness?> GetLineOfBusinessByIdAsync(Guid id, CancellationToken ct = default);
     Task<ScreenProgram?> GetProgramByIdAsync(Guid id, CancellationToken ct = default);
 
+    // Branch location lookup: fetch the locations row so callers can check existence AND read Code.
+    Task<Location?> GetLocationByIdAsync(Guid id, CancellationToken ct = default);
+
     // List + audit
     Task<(List<UserListItemResult> Items, int Total)> GetPagedAsync(
         string? search, UserConfiguration? kind, bool? isActive, int page, int pageSize, CancellationToken ct = default);

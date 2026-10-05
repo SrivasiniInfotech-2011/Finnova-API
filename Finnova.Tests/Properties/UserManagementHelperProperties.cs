@@ -47,9 +47,13 @@ public class UserManagementHelperProperties
         AccessRightRow Row(string code, bool a, bool m, bool q, bool d)
             => new(code, "RC", Guid.Empty, "P", "P", a, m, q, d);
 
-        var current = (new[] { Row("X", true, false, false, false) }.AsEnumerable(), new[] { "B1" }.AsEnumerable());
+        var loc1 = new BranchSelection(Guid.NewGuid(), false, "B1");
+        var loc2 = new BranchSelection(Guid.NewGuid(), false, "B2");
+
+        var current = (new[] { Row("X", true, false, false, false) }.AsEnumerable(),
+                       new[] { loc1 }.AsEnumerable());
         var source = (new[] { Row("X", false, true, false, false), Row("Y", true, false, false, false) }.AsEnumerable(),
-                      new[] { "B1", "B2" }.AsEnumerable());
+                      new[] { loc1, loc2 }.AsEnumerable());
 
         var (rows, branches) = AccessAssignmentMerger.Merge(current, source);
 
@@ -63,7 +67,7 @@ public class UserManagementHelperProperties
     public Property Merge_WithItself_IsIdempotent(bool a, bool m, bool q, bool d)
     {
         var rows = new[] { new AccessRightRow("X", "RC", Guid.Empty, "P", "P", a, m, q, d) }.AsEnumerable();
-        var branches = new[] { "B1" }.AsEnumerable();
+        var branches = new[] { new BranchSelection(Guid.NewGuid(), false, "B1") }.AsEnumerable();
 
         var (r1, b1) = AccessAssignmentMerger.Merge((rows, branches), (rows, branches));
         return (r1.Count == 1 && b1.Count == 1

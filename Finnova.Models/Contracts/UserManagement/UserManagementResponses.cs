@@ -25,7 +25,7 @@ public record UserAccessResponse(
     Guid LineOfBusinessId,
     string LineOfBusinessName,
     IReadOnlyList<AccessRightRow> Rows,
-    IReadOnlyList<string> BranchCodes);
+    IReadOnlyList<BranchSelection> Branches);
 
 /// <summary>Slim list projection (R13): one row covers all three record kinds via a discriminator.</summary>
 public record UserListItemResponse(
@@ -39,5 +39,6 @@ public record UserManagementAuditEntryResponse(
 public record ReferenceItemResponse(string Code, string Label);     // designation/department/user-type/role-center/LOB
 
 public record BranchTreeNodeResponse(
+    string? Id,                                                     // location Guid (null for ALL + container nodes)
     string Code, string Name, string Level,                         // Location | Region | Branch
     IReadOnlyList<BranchTreeNodeResponse> Children);

@@ -1,4 +1,5 @@
 using Finnova.Models.Contracts.UserManagement;
+using Finnova.Models.Domain.Entities;
 using Finnova.Repository.Interfaces;
 using Finnova.Service.UserManagement.Helpers;
 using Finnova.Service.UserManagement.Internal;
@@ -91,8 +92,38 @@ public class GetRoleCenterProgramsQueryHandler : IRequestHandler<GetRoleCenterPr
 public class GetBranchLocationTreeQueryHandler
     : IRequestHandler<GetBranchLocationTreeQuery, List<BranchTreeNodeResponse>>
 {
-    public Task<List<BranchTreeNodeResponse>> Handle(GetBranchLocationTreeQuery request, CancellationToken ct)
-        => Task.FromResult(BranchTreeCatalog.Tree());   // includes ALL (R9.1-9.3)
+    private readonly ILocationRepository _locations;
+    public GetBranchLocationTreeQueryHandler(ILocationRepository locations) => _locations = locations;
+
+    public async Task<List<BranchTreeNodeResponse>> Handle(GetBranchLocationTreeQuery request, CancellationToken ct)
+    {
+        // Build the branch tree from the real locations master so each node carries a Guid Id the
+        // UI can send back as the authoritative LocationId. Level 5 => "Branch" (selectable leaf),
+        // level 1 => "Location", others => "Region" — preserving the existing UI level vocabulary.
+        var all = await _locations.GetAllFlatAsync(ct);
+        var childrenByParent = all
+            .GroupBy(l => l.ParentId)
+            .ToDictionary(g => g.Key, g => g.OrderBy(l => l.Name, StringComparer.Ordinal).ToList());
+
+        var tree = new List<BranchTreeNodeResponse>
+        {
+            new(null, "ALL", "ALL", "Location", Array.Empty<BranchTreeNodeResponse>()),   // R9.1-9.3
+        };
+
+        var roots = childrenByParent.TryGetValue(null, out var topLevel) ? topLevel : new List<Location>();
+        tree.AddRange(roots.Select(r => Build(r, childrenByParent)));
+        return tree;
+    }
+
+    private static BranchTreeNodeResponse Build(Location node, IReadOnlyDictionary<Guid?, List<Location>> childrenByParent)
+    {
+        var children = childrenByParent.TryGetValue(node.Id, out var kids)
+            ? kids.Select(k => Build(k, childrenByParent)).ToList()
+            : new List<BranchTreeNodeResponse>();
+
+        var level = node.Level switch { 5 => "Branch", 1 => "Location", _ => "Region" };
+        return new BranchTreeNodeResponse(node.Id.ToString(), node.Code, node.Name, level, children);
+    }
 }
 
 public class GetUserLookupsQueryHandler : IRequestHandler<GetUserLookupsQuery, List<ReferenceItemResponse>>

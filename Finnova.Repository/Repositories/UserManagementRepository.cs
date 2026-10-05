@@ -162,6 +162,9 @@ public class UserManagementRepository(FinnovaDbContext db)
     public Task<ScreenProgram?> GetProgramByIdAsync(Guid id, CancellationToken ct = default)
         => Context.ScreenPrograms.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
 
+    public Task<Location?> GetLocationByIdAsync(Guid id, CancellationToken ct = default)
+        => Context.Locations.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);   // existence only; no IsActive filter
+
     // ---- List (union of the three kinds) + audit ----
     public async Task<(List<UserListItemResult> Items, int Total)> GetPagedAsync(
         string? search, UserConfiguration? kind, bool? isActive, int page, int pageSize, CancellationToken ct = default)

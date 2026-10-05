@@ -134,7 +134,7 @@ public class UserManagementController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserAccessResponse>> SaveAccess(Guid id, [FromBody] SaveUserAccessRequest r)
         => Ok(await _mediator.Send(new SaveUserAccessCommand(
-            id, r.LineOfBusinessId, r.Rows, r.BranchCodes, r.CopyProfile, GetActingAdmin())));
+            id, r.LineOfBusinessId, r.Rows, r.Branches, r.CopyProfile, GetActingAdmin())));
 
     /// <summary>Read access assignment for a user + LOB (R10 read / Access tab populate).</summary>
     [HttpGet("{id:guid}/access")]

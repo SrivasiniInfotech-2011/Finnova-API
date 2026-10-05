@@ -37,6 +37,6 @@ public class GetUserAccessQueryHandler : IRequestHandler<GetUserAccessQuery, Use
                     hasProgram ? program!.DisplayName : string.Empty,
                     r.CanAdd, r.CanModify, r.CanQuery, r.CanDelete);
             }).ToList(),
-            branches.Select(b => b.BranchCode).ToList());
+            branches.Select(b => new BranchSelection(b.LocationId, b.IsAll, b.BranchCode)).ToList());
     }
 }

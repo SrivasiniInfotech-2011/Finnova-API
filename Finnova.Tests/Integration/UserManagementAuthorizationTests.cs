@@ -31,7 +31,7 @@ public class UserManagementAuthorizationTests : IClassFixture<SystemAdminAppFact
             { Content = JsonContent.Create(new { Name = "Ops", MemberUserCodes = new[] { "U1001" } }) }) };
         yield return new object[] { "PUT access", (Func<HttpRequestMessage>)(() =>
             new HttpRequestMessage(HttpMethod.Put, $"/api/user/{SampleId}/access")
-            { Content = JsonContent.Create(new { LineOfBusinessId = Guid.Empty, Rows = Array.Empty<object>(), BranchCodes = new[] { "ALL" } }) }) };
+            { Content = JsonContent.Create(new { LineOfBusinessId = Guid.Empty, Rows = Array.Empty<object>(), Branches = new[] { new { locationId = (Guid?)null, isAll = true, branchCode = "ALL" } } }) }) };
     }
 
     [Theory]
