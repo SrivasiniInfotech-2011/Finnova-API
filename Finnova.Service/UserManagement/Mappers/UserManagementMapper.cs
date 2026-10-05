@@ -15,9 +15,18 @@ public static class UserManagementMapper
 
     public static UserGroupMemberResponse ToMemberResponse(this UserAccount x) => new(x.UserCode, x.Name, x.IsActive);
 
-    public static FunctionalGroupResponse ToResponse(this FunctionalGroup x) => new(
+    /// <summary>
+    /// Maps a functional group to its response. Since FunctionalGroupFunction stores only ProgramId,
+    /// the caller supplies a ProgramId -> ProgramName lookup (resolved from the programs master); an
+    /// unresolved id maps to an empty name.
+    /// </summary>
+    public static FunctionalGroupResponse ToResponse(
+        this FunctionalGroup x, IReadOnlyDictionary<Guid, string> programNamesById) => new(
         x.Id, x.FunctionalGroupCode, x.RoleCenterName,
-        x.Functions.Select(f => new FunctionalGroupFunctionResponse(f.ProgramName, f.RoleCode)).ToList(),
+        x.Functions.Select(f => new FunctionalGroupFunctionResponse(
+            f.ProgramId,
+            programNamesById.TryGetValue(f.ProgramId, out var name) ? name : string.Empty,
+            f.RoleCode)).ToList(),
         x.IsActive, x.CreatedAt, x.UpdatedAt);
 
     public static UserListItemResponse ToResponse(this Finnova.Repository.Interfaces.UserListItemResult x) => new(

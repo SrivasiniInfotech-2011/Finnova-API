@@ -14,6 +14,7 @@ public sealed class InMemoryUserManagementRepository : IUserManagementRepository
     public readonly List<UserBranchAssociation> Branches = new();
     public readonly List<UserManagementAuditEntry> Audit = new();
     public readonly List<ScreenProgram> Programs = new();
+    public readonly List<LineOfBusiness> Lobs = new();
 
     public Task<UserAccount?> GetUserByCodeAsync(string code, CancellationToken ct = default)
         => Task.FromResult(Users.FirstOrDefault(u => u.UserCode == code.Trim()));
@@ -76,27 +77,36 @@ public sealed class InMemoryUserManagementRepository : IUserManagementRepository
         return Task.FromResult(q.OrderBy(u => u.UserCode).ToList());
     }
 
-    public Task ReplaceAccessAsync(Guid ownerUserId, string lob,
+    public Task ReplaceAccessAsync(Guid ownerUserId, Guid lobId,
         IEnumerable<UserAccessAssignment> rows, IEnumerable<UserBranchAssociation> branches, CancellationToken ct = default)
     {
-        Access.RemoveAll(a => a.UserAccountId == ownerUserId && a.LineOfBusiness == lob);
-        Branches.RemoveAll(b => b.UserAccountId == ownerUserId && b.LineOfBusiness == lob);
+        Access.RemoveAll(a => a.UserAccountId == ownerUserId && a.LineOfBusinessId == lobId);
+        Branches.RemoveAll(b => b.UserAccountId == ownerUserId && b.LineOfBusinessId == lobId);
         Access.AddRange(rows);
         Branches.AddRange(branches);
         return Task.CompletedTask;
     }
 
     public Task<(List<UserAccessAssignment> Rows, List<UserBranchAssociation> Branches)> GetAccessAsync(
-        Guid ownerUserId, string lob, CancellationToken ct = default)
+        Guid ownerUserId, Guid lobId, CancellationToken ct = default)
         => Task.FromResult((
-            Access.Where(a => a.UserAccountId == ownerUserId && a.LineOfBusiness == lob).ToList(),
-            Branches.Where(b => b.UserAccountId == ownerUserId && b.LineOfBusiness == lob).ToList()));
+            Access.Where(a => a.UserAccountId == ownerUserId && a.LineOfBusinessId == lobId).ToList(),
+            Branches.Where(b => b.UserAccountId == ownerUserId && b.LineOfBusinessId == lobId).ToList()));
 
     public Task<List<UserAccessAssignment>> GetAccessAssignmentsByUserAsync(Guid userId, CancellationToken ct = default)
         => Task.FromResult(Access.Where(a => a.UserAccountId == userId).ToList());
 
     public Task<List<ScreenProgram>> GetActiveProgramsAsync(CancellationToken ct = default)
         => Task.FromResult(Programs.Where(p => p.IsActive).ToList());
+
+    public Task<List<LineOfBusiness>> GetActiveLinesOfBusinessAsync(CancellationToken ct = default)
+        => Task.FromResult(Lobs.Where(l => l.IsActive).OrderBy(l => l.LOB_Name).ToList());
+
+    public Task<LineOfBusiness?> GetLineOfBusinessByIdAsync(Guid id, CancellationToken ct = default)
+        => Task.FromResult(Lobs.FirstOrDefault(l => l.Id == id));
+
+    public Task<ScreenProgram?> GetProgramByIdAsync(Guid id, CancellationToken ct = default)
+        => Task.FromResult(Programs.FirstOrDefault(p => p.Id == id));
 
     public Task<(List<UserListItemResult> Items, int Total)> GetPagedAsync(
         string? search, UserConfiguration? kind, bool? isActive, int page, int pageSize, CancellationToken ct = default)

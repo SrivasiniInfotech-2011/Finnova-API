@@ -20,11 +20,31 @@ public class GetActiveUsersQueryHandler : IRequestHandler<GetActiveUsersQuery, L
 }
 
 public class GetAccessibleLinesOfBusinessQueryHandler
-    : IRequestHandler<GetAccessibleLinesOfBusinessQuery, List<ReferenceItemResponse>>
+    : IRequestHandler<GetAccessibleLinesOfBusinessQuery, List<LineOfBusinessRefResponse>>
 {
-    public Task<List<ReferenceItemResponse>> Handle(GetAccessibleLinesOfBusinessQuery request, CancellationToken ct)
-        => Task.FromResult(LineOfBusinessCatalog.ActiveLinesOfBusiness()
-            .Select(l => new ReferenceItemResponse(l, l)).ToList());
+    private readonly IUserManagementRepository _repository;
+    public GetAccessibleLinesOfBusinessQueryHandler(IUserManagementRepository repository) => _repository = repository;
+
+    public async Task<List<LineOfBusinessRefResponse>> Handle(GetAccessibleLinesOfBusinessQuery request, CancellationToken ct)
+    {
+        var lobs = await _repository.GetActiveLinesOfBusinessAsync(ct);
+        return lobs.Select(l => new LineOfBusinessRefResponse(l.Id, l.LOB_Name, l.LOB_Description)).ToList();
+    }
+}
+
+public class GetProgramsRefQueryHandler : IRequestHandler<GetProgramsRefQuery, List<ProgramRefResponse>>
+{
+    private readonly IUserManagementRepository _repository;
+    public GetProgramsRefQueryHandler(IUserManagementRepository repository) => _repository = repository;
+
+    public async Task<List<ProgramRefResponse>> Handle(GetProgramsRefQuery request, CancellationToken ct)
+    {
+        var programs = await _repository.GetActiveProgramsAsync(ct);
+        return programs
+            .OrderBy(p => p.ProgramName, StringComparer.Ordinal)
+            .Select(p => new ProgramRefResponse(p.Id, p.ProgramName, p.DisplayName))
+            .ToList();
+    }
 }
 
 public class GetRoleCentersQueryHandler : IRequestHandler<GetRoleCentersQuery, List<ReferenceItemResponse>>
@@ -39,12 +59,33 @@ public class GetRoleCentersQueryHandler : IRequestHandler<GetRoleCentersQuery, L
 
 public class GetRoleCenterProgramsQueryHandler : IRequestHandler<GetRoleCenterProgramsQuery, List<AccessRightRow>>
 {
-    public Task<List<AccessRightRow>> Handle(GetRoleCenterProgramsQuery request, CancellationToken ct)
-        => Task.FromResult(RoleCenterCatalog.ProgramsFor(request.RoleCenterName)
-            .Select(p => new AccessRightRow(
-                RoleCodeBuilder.Build(request.RoleCenterName, p),            // R8.4
-                request.RoleCenterName, p, false, false, false, false))
-            .ToList());
+    private readonly IUserManagementRepository _repository;
+    public GetRoleCenterProgramsQueryHandler(IUserManagementRepository repository) => _repository = repository;
+
+    public async Task<List<AccessRightRow>> Handle(GetRoleCenterProgramsQuery request, CancellationToken ct)
+    {
+        // Resolve each catalog program NAME to its active programs row so the emitted row carries
+        // the FK (ProgramId) and a DisplayName label; names with no active program row are skipped.
+        var byName = (await _repository.GetActiveProgramsAsync(ct))
+            .ToDictionary(p => p.ProgramName, StringComparer.OrdinalIgnoreCase);
+
+        var rows = new List<AccessRightRow>();
+        foreach (var name in RoleCenterCatalog.ProgramsFor(request.RoleCenterName))
+        {
+            if (!byName.TryGetValue(name, out var program))
+                continue;
+
+            rows.Add(new AccessRightRow(
+                RoleCodeBuilder.Build(request.RoleCenterName, program.ProgramName),   // R8.4
+                request.RoleCenterName,
+                program.Id,
+                program.ProgramName,
+                program.DisplayName,
+                false, false, false, false));
+        }
+
+        return rows;
+    }
 }
 
 public class GetBranchLocationTreeQueryHandler

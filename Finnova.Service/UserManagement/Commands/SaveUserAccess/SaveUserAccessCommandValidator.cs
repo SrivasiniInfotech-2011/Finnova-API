@@ -6,7 +6,7 @@ public class SaveUserAccessCommandValidator : AbstractValidator<SaveUserAccessCo
 {
     public SaveUserAccessCommandValidator()
     {
-        RuleFor(x => x.LineOfBusiness)
+        RuleFor(x => x.LineOfBusinessId)
             .NotEmpty().WithMessage("Please select at least one Line of Business");   // R7.4
 
         RuleFor(x => x.BranchCodes)

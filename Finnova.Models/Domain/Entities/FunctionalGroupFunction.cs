@@ -5,6 +5,6 @@ public class FunctionalGroupFunction
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid FunctionalGroupId { get; set; }               // FK -> functional_groups
-    public string ProgramName { get; set; } = string.Empty;
+    public Guid ProgramId { get; set; }                       // FK -> programs
     public string RoleCode { get; set; } = string.Empty;      // RoleCenterName + ProgramName (R8.4)
 }

@@ -45,7 +45,7 @@ public class UserManagementHelperProperties
     {
         var r = new System.Random(seed);
         AccessRightRow Row(string code, bool a, bool m, bool q, bool d)
-            => new(code, "RC", "P", a, m, q, d);
+            => new(code, "RC", Guid.Empty, "P", "P", a, m, q, d);
 
         var current = (new[] { Row("X", true, false, false, false) }.AsEnumerable(), new[] { "B1" }.AsEnumerable());
         var source = (new[] { Row("X", false, true, false, false), Row("Y", true, false, false, false) }.AsEnumerable(),
@@ -62,7 +62,7 @@ public class UserManagementHelperProperties
     [Property(MaxTest = 100)]
     public Property Merge_WithItself_IsIdempotent(bool a, bool m, bool q, bool d)
     {
-        var rows = new[] { new AccessRightRow("X", "RC", "P", a, m, q, d) }.AsEnumerable();
+        var rows = new[] { new AccessRightRow("X", "RC", Guid.Empty, "P", "P", a, m, q, d) }.AsEnumerable();
         var branches = new[] { "B1" }.AsEnumerable();
 
         var (r1, b1) = AccessAssignmentMerger.Merge((rows, branches), (rows, branches));

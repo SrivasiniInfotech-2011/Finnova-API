@@ -134,15 +134,15 @@ public class UserManagementController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserAccessResponse>> SaveAccess(Guid id, [FromBody] SaveUserAccessRequest r)
         => Ok(await _mediator.Send(new SaveUserAccessCommand(
-            id, r.LineOfBusiness, r.Rows, r.BranchCodes, r.CopyProfile, GetActingAdmin())));
+            id, r.LineOfBusinessId, r.Rows, r.BranchCodes, r.CopyProfile, GetActingAdmin())));
 
     /// <summary>Read access assignment for a user + LOB (R10 read / Access tab populate).</summary>
     [HttpGet("{id:guid}/access")]
     [Authorize(Policy = "SystemAdmin")]
     [ProducesResponseType(typeof(UserAccessResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<UserAccessResponse>> GetAccess(Guid id, [FromQuery] string lob)
-        => Ok(await _mediator.Send(new GetUserAccessQuery(id, lob)));
+    public async Task<ActionResult<UserAccessResponse>> GetAccess(Guid id, [FromQuery] Guid lobId)
+        => Ok(await _mediator.Send(new GetUserAccessQuery(id, lobId)));
 
     /// <summary>Audit trail for a record, newest-first (R14).</summary>
     [HttpGet("{id:guid}/audit")]
@@ -159,11 +159,17 @@ public class UserManagementController : ControllerBase
     public async Task<ActionResult<List<UserGroupMemberResponse>>> GetActiveUsers([FromQuery] string? search)
         => Ok(await _mediator.Send(new GetActiveUsersQuery(search)));
 
-    /// <summary>Admin-accessible, active, Role-Code-linked LOBs (R7.1/7.3).</summary>
+    /// <summary>Active LOBs sourced from the lines_of_business master (R7.1/7.3).</summary>
     [HttpGet("ref/lines-of-business")]
     [Authorize(Policy = "SystemAdmin")]
-    public async Task<ActionResult<List<ReferenceItemResponse>>> GetLinesOfBusiness()
+    public async Task<ActionResult<List<LineOfBusinessRefResponse>>> GetLinesOfBusiness()
         => Ok(await _mediator.Send(new GetAccessibleLinesOfBusinessQuery()));
+
+    /// <summary>Active programs sourced from the programs master.</summary>
+    [HttpGet("ref/programs")]
+    [Authorize(Policy = "SystemAdmin")]
+    public async Task<ActionResult<List<ProgramRefResponse>>> GetPrograms()
+        => Ok(await _mediator.Send(new GetProgramsRefQuery()));
 
     /// <summary>Active role centers, includes ALL (R8.1/9.5).</summary>
     [HttpGet("ref/role-centers")]

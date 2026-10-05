@@ -29,20 +29,19 @@ public class GetMyPermissionsQueryHandler
             return new MyPermissionsResponse(true, all);
         }
 
-        // Only screen keys that exist in the active program registry are returned.
-        var activeNames = activePrograms
-            .Select(p => p.ProgramName)
-            .ToHashSet();
+        // Program keys that exist in the active registry, resolved by Id -> ProgramName. The emitted
+        // ProgramName stays byte-identical to today's gating string the UI resolves against.
+        var nameById = activePrograms.ToDictionary(p => p.Id, p => p.ProgramName);
 
         var rows = await _userRepository.GetAccessAssignmentsByUserAsync(request.UserId, cancellationToken);
 
-        // Collapse the (possibly many) rows per screen key by OR-ing the four flags, keep only
-        // keys present in the active registry, and omit programs the user has no rows for.
+        // Collapse the (possibly many) rows per program by OR-ing the four flags, keep only programs
+        // present in the active registry, and omit programs the user has no rows for.
         var programs = rows
-            .Where(r => activeNames.Contains(r.ProgramName))
-            .GroupBy(r => r.ProgramName)
+            .Where(r => nameById.ContainsKey(r.ProgramId))
+            .GroupBy(r => r.ProgramId)
             .Select(g => new ScreenPermissionResponse(
-                g.Key,
+                nameById[g.Key],
                 g.Any(r => r.CanAdd),
                 g.Any(r => r.CanModify),
                 g.Any(r => r.CanQuery),

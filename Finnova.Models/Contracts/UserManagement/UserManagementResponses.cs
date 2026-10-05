@@ -14,7 +14,7 @@ public record UserGroupResponse(
     IReadOnlyList<UserGroupMemberResponse> Members, bool IsActive,
     DateTime CreatedAt, DateTime UpdatedAt);
 
-public record FunctionalGroupFunctionResponse(string ProgramName, string RoleCode);
+public record FunctionalGroupFunctionResponse(Guid ProgramId, string ProgramName, string RoleCode);
 
 public record FunctionalGroupResponse(
     Guid Id, string FunctionalGroupCode, string RoleCenterName,
@@ -22,7 +22,8 @@ public record FunctionalGroupResponse(
     DateTime CreatedAt, DateTime UpdatedAt);
 
 public record UserAccessResponse(
-    string LineOfBusiness,
+    Guid LineOfBusinessId,
+    string LineOfBusinessName,
     IReadOnlyList<AccessRightRow> Rows,
     IReadOnlyList<string> BranchCodes);
 

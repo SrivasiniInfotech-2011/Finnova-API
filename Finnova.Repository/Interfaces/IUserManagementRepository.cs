@@ -32,12 +32,17 @@ public interface IUserManagementRepository
     Task<List<UserAccount>> SearchActiveUsersAsync(string? search, CancellationToken ct = default);
 
     // Access
-    Task ReplaceAccessAsync(Guid ownerUserId, string lob,
+    Task ReplaceAccessAsync(Guid ownerUserId, Guid lobId,
         IEnumerable<UserAccessAssignment> rows, IEnumerable<UserBranchAssociation> branches, CancellationToken ct = default);
     Task<(List<UserAccessAssignment> Rows, List<UserBranchAssociation> Branches)> GetAccessAsync(
-        Guid ownerUserId, string lob, CancellationToken ct = default);
+        Guid ownerUserId, Guid lobId, CancellationToken ct = default);
     Task<List<UserAccessAssignment>> GetAccessAssignmentsByUserAsync(Guid userId, CancellationToken ct = default);
     Task<List<ScreenProgram>> GetActiveProgramsAsync(CancellationToken ct = default);
+
+    // Master lookups (lines_of_business / programs)
+    Task<List<LineOfBusiness>> GetActiveLinesOfBusinessAsync(CancellationToken ct = default);
+    Task<LineOfBusiness?> GetLineOfBusinessByIdAsync(Guid id, CancellationToken ct = default);
+    Task<ScreenProgram?> GetProgramByIdAsync(Guid id, CancellationToken ct = default);
 
     // List + audit
     Task<(List<UserListItemResult> Items, int Total)> GetPagedAsync(

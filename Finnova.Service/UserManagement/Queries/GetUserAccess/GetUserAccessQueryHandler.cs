@@ -16,11 +16,27 @@ public class GetUserAccessQueryHandler : IRequestHandler<GetUserAccessQuery, Use
         var user = await _repository.GetUserWithAccessAsync(request.Id, ct)
             ?? throw new UserNotFoundException(request.Id.ToString());
 
-        var (rows, branches) = await _repository.GetAccessAsync(request.Id, request.LineOfBusiness, ct);
+        var lob = await _repository.GetLineOfBusinessByIdAsync(request.LineOfBusinessId, ct)
+            ?? throw new UserValidationException("The selected Line of Business was not found.");
+
+        // Resolve each row's ProgramId -> ProgramName/DisplayName from the active-programs lookup.
+        var programsById = (await _repository.GetActiveProgramsAsync(ct))
+            .ToDictionary(p => p.Id);
+
+        var (rows, branches) = await _repository.GetAccessAsync(request.Id, request.LineOfBusinessId, ct);
+
         return new UserAccessResponse(
-            request.LineOfBusiness,
-            rows.Select(r => new AccessRightRow(r.RoleCode, r.RoleCenterName, r.ProgramName,
-                r.CanAdd, r.CanModify, r.CanQuery, r.CanDelete)).ToList(),
+            lob.Id,
+            lob.LOB_Name,
+            rows.Select(r =>
+            {
+                var hasProgram = programsById.TryGetValue(r.ProgramId, out var program);
+                return new AccessRightRow(
+                    r.RoleCode, r.RoleCenterName, r.ProgramId,
+                    hasProgram ? program!.ProgramName : string.Empty,
+                    hasProgram ? program!.DisplayName : string.Empty,
+                    r.CanAdd, r.CanModify, r.CanQuery, r.CanDelete);
+            }).ToList(),
             branches.Select(b => b.BranchCode).ToList());
     }
 }

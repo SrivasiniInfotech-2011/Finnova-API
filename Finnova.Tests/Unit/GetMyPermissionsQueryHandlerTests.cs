@@ -12,12 +12,12 @@ public class GetMyPermissionsQueryHandlerTests
         new() { Id = Guid.NewGuid(), ProgramName = name, DisplayName = name, IsActive = true };
 
     private static UserAccessAssignment Row(
-        Guid userId, string program, bool add = false, bool modify = false, bool query = false, bool delete = false) =>
+        Guid userId, Guid programId, bool add = false, bool modify = false, bool query = false, bool delete = false) =>
         new()
         {
             Id = Guid.NewGuid(),
             UserAccountId = userId,
-            ProgramName = program,
+            ProgramId = programId,
             CanAdd = add,
             CanModify = modify,
             CanQuery = query,
@@ -62,11 +62,12 @@ public class GetMyPermissionsQueryHandlerTests
     public async Task NonAdmin_TwoRowsSameProgram_CollapsedByOr()
     {
         var userId = Guid.NewGuid();
-        var active = new[] { Program("LookupMaster") };
+        var lookup = Program("LookupMaster");
+        var active = new[] { lookup };
         var rows = new[]
         {
-            Row(userId, "LookupMaster", add: true, query: false),
-            Row(userId, "LookupMaster", add: false, query: true, delete: true)
+            Row(userId, lookup.Id, add: true, query: false),
+            Row(userId, lookup.Id, add: false, query: true, delete: true)
         };
         var repo = Repo(active, rows);
         var handler = new GetMyPermissionsQueryHandler(repo.Object);
@@ -87,11 +88,12 @@ public class GetMyPermissionsQueryHandlerTests
     public async Task NonAdmin_ProgramNotInActiveRegistry_Omitted()
     {
         var userId = Guid.NewGuid();
-        var active = new[] { Program("LookupMaster") };
+        var lookup = Program("LookupMaster");
+        var active = new[] { lookup };
         var rows = new[]
         {
-            Row(userId, "LookupMaster", query: true),
-            Row(userId, "RetiredScreen", add: true, query: true)
+            Row(userId, lookup.Id, query: true),
+            Row(userId, Guid.NewGuid(), add: true, query: true)   // program id not in active registry
         };
         var repo = Repo(active, rows);
         var handler = new GetMyPermissionsQueryHandler(repo.Object);
@@ -107,8 +109,9 @@ public class GetMyPermissionsQueryHandlerTests
     public async Task NonAdmin_ActiveProgramWithNoRows_Omitted()
     {
         var userId = Guid.NewGuid();
-        var active = new[] { Program("LookupMaster"), Program("UserManagement") };
-        var rows = new[] { Row(userId, "LookupMaster", query: true) };
+        var lookup = Program("LookupMaster");
+        var active = new[] { lookup, Program("UserManagement") };
+        var rows = new[] { Row(userId, lookup.Id, query: true) };
         var repo = Repo(active, rows);
         var handler = new GetMyPermissionsQueryHandler(repo.Object);
 

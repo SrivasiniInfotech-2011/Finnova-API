@@ -5,7 +5,7 @@ namespace Finnova.Service.UserManagement.Commands.SaveUserAccess;
 
 public record SaveUserAccessCommand(
     Guid Id,
-    string LineOfBusiness,
+    Guid LineOfBusinessId,
     IReadOnlyList<AccessRightRow> Rows,
     IReadOnlyList<string> BranchCodes,
     CopyProfileRequest? CopyProfile,

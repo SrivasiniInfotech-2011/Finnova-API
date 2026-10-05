@@ -21,18 +21,33 @@ public class CreateFunctionalGroupCommandHandler : IRequestHandler<CreateFunctio
             request.RoleCenterName,
             candidate => _repository.FunctionalGroupCodeExistsAsync(candidate, ct).GetAwaiter().GetResult());
 
+        // Resolve each catalog program NAME to its active programs row so each clubbed function
+        // carries the FK (ProgramId); names with no active program row are skipped.
+        var programsByName = (await _repository.GetActiveProgramsAsync(ct))
+            .ToDictionary(p => p.ProgramName, StringComparer.OrdinalIgnoreCase);
+
+        var functions = new List<FunctionalGroupFunction>();
+        var programNamesById = new Dictionary<Guid, string>();
+        foreach (var name in RoleCenterCatalog.ProgramsFor(request.RoleCenterName))
+        {
+            if (!programsByName.TryGetValue(name, out var program))
+                continue;
+
+            functions.Add(new FunctionalGroupFunction
+            {
+                ProgramId = program.Id,
+                RoleCode = RoleCodeBuilder.Build(request.RoleCenterName, program.ProgramName),
+            });
+            programNamesById[program.Id] = program.ProgramName;
+        }
+
         var fg = new FunctionalGroup
         {
             FunctionalGroupCode = code,
             RoleCenterName = request.RoleCenterName.Trim(),
             IsActive = request.IsActive ?? true,
             // Club all programs attached to the Role Center into the group (R6.1/6.3).
-            Functions = RoleCenterCatalog.ProgramsFor(request.RoleCenterName)
-                .Select(p => new FunctionalGroupFunction
-                {
-                    ProgramName = p,
-                    RoleCode = RoleCodeBuilder.Build(request.RoleCenterName, p),
-                }).ToList(),
+            Functions = functions,
         };
 
         await _repository.AddFunctionalGroupAsync(fg, ct);
@@ -48,6 +63,6 @@ public class CreateFunctionalGroupCommandHandler : IRequestHandler<CreateFunctio
             ChangedAtUtc = DateTime.UtcNow,
         }, ct);
 
-        return fg.ToResponse();
+        return fg.ToResponse(programNamesById);
     }
 }

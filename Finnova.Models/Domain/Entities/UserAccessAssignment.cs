@@ -12,9 +12,9 @@ public class UserAccessAssignment
     public Guid? UserAccountId { get; set; }                  // owner: a user ...
     public Guid? UserGroupId { get; set; }                    // ... or a user group (exactly one non-null)
 
-    public string LineOfBusiness { get; set; } = string.Empty; // selected LOB (R7)
+    public Guid LineOfBusinessId { get; set; }                 // FK -> lines_of_business (R7)
     public string RoleCenterName { get; set; } = string.Empty; // "ALL" allowed (R9.5)
-    public string ProgramName { get; set; } = string.Empty;
+    public Guid ProgramId { get; set; }                        // FK -> programs
     public string RoleCode { get; set; } = string.Empty;       // RoleCenterName + ProgramName (R8.4)
 
     public bool CanAdd { get; set; }                           // (R8.6)

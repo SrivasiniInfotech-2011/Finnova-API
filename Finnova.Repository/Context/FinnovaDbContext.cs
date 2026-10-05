@@ -33,6 +33,7 @@ public class FinnovaDbContext : DbContext
     public DbSet<UserBranchAssociation> UserBranchAssociations => Set<UserBranchAssociation>();
     public DbSet<UserManagementAuditEntry> UserManagementAuditEntries => Set<UserManagementAuditEntry>();
     public DbSet<ScreenProgram> ScreenPrograms => Set<ScreenProgram>();
+    public DbSet<LineOfBusiness> LinesOfBusiness => Set<LineOfBusiness>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

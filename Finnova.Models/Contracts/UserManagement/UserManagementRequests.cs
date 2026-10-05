@@ -52,16 +52,18 @@ public record UpdateUserGroupRequest(
 public record AccessRightRow(
     string RoleCode,
     string RoleCenterName,
-    string ProgramName,
+    Guid ProgramId,                                            // FK -> programs.Id
+    string ProgramName,                                        // retained: stable key + RoleCode parity
+    string DisplayName,                                        // programs.DisplayName (UI label)
     bool CanAdd,
     bool CanModify,
     bool CanQuery,
     bool CanDelete);
 
-public record CopyProfileRequest(string SourceUserCode, string SourceLineOfBusiness);
+public record CopyProfileRequest(string SourceUserCode, Guid SourceLineOfBusinessId);
 
 public record SaveUserAccessRequest(
-    string LineOfBusiness,
+    Guid LineOfBusinessId,
     IReadOnlyList<AccessRightRow> Rows,
     IReadOnlyList<string> BranchCodes,                         // may contain "ALL" (R9.3/9.4)
     CopyProfileRequest? CopyProfile);                          // Create mode only (R10)

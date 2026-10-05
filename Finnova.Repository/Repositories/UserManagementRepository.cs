@@ -114,15 +114,15 @@ public class UserManagementRepository(FinnovaDbContext db)
     }
 
     // ---- Access (replace the (owner, LOB) slice atomically) ----
-    public async Task ReplaceAccessAsync(Guid ownerUserId, string lob,
+    public async Task ReplaceAccessAsync(Guid ownerUserId, Guid lobId,
         IEnumerable<UserAccessAssignment> rows, IEnumerable<UserBranchAssociation> branches, CancellationToken ct = default)
     {
         var existingRows = await Context.UserAccessAssignments
-            .Where(x => x.UserAccountId == ownerUserId && x.LineOfBusiness == lob).ToListAsync(ct);
+            .Where(x => x.UserAccountId == ownerUserId && x.LineOfBusinessId == lobId).ToListAsync(ct);
         Context.UserAccessAssignments.RemoveRange(existingRows);
 
         var existingBranches = await Context.UserBranchAssociations
-            .Where(x => x.UserAccountId == ownerUserId && x.LineOfBusiness == lob).ToListAsync(ct);
+            .Where(x => x.UserAccountId == ownerUserId && x.LineOfBusinessId == lobId).ToListAsync(ct);
         Context.UserBranchAssociations.RemoveRange(existingBranches);
 
         await Context.UserAccessAssignments.AddRangeAsync(rows, ct);
@@ -131,12 +131,12 @@ public class UserManagementRepository(FinnovaDbContext db)
     }
 
     public async Task<(List<UserAccessAssignment> Rows, List<UserBranchAssociation> Branches)> GetAccessAsync(
-        Guid ownerUserId, string lob, CancellationToken ct = default)
+        Guid ownerUserId, Guid lobId, CancellationToken ct = default)
     {
         var rows = await Context.UserAccessAssignments.AsNoTracking()
-            .Where(x => x.UserAccountId == ownerUserId && x.LineOfBusiness == lob).ToListAsync(ct);
+            .Where(x => x.UserAccountId == ownerUserId && x.LineOfBusinessId == lobId).ToListAsync(ct);
         var branches = await Context.UserBranchAssociations.AsNoTracking()
-            .Where(x => x.UserAccountId == ownerUserId && x.LineOfBusiness == lob).ToListAsync(ct);
+            .Where(x => x.UserAccountId == ownerUserId && x.LineOfBusinessId == lobId).ToListAsync(ct);
         return (rows, branches);
     }
 
@@ -149,6 +149,18 @@ public class UserManagementRepository(FinnovaDbContext db)
         => await Context.ScreenPrograms.AsNoTracking()
             .Where(x => x.IsActive)
             .ToListAsync(ct);
+
+    public async Task<List<LineOfBusiness>> GetActiveLinesOfBusinessAsync(CancellationToken ct = default)
+        => await Context.LinesOfBusiness.AsNoTracking()
+            .Where(x => x.IsActive)
+            .OrderBy(x => x.LOB_Name)
+            .ToListAsync(ct);
+
+    public Task<LineOfBusiness?> GetLineOfBusinessByIdAsync(Guid id, CancellationToken ct = default)
+        => Context.LinesOfBusiness.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+
+    public Task<ScreenProgram?> GetProgramByIdAsync(Guid id, CancellationToken ct = default)
+        => Context.ScreenPrograms.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
 
     // ---- List (union of the three kinds) + audit ----
     public async Task<(List<UserListItemResult> Items, int Total)> GetPagedAsync(

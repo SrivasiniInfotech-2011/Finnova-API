@@ -3,4 +3,4 @@ using MediatR;
 
 namespace Finnova.Service.UserManagement.Queries.GetUserAccess;
 
-public record GetUserAccessQuery(Guid Id, string LineOfBusiness) : IRequest<UserAccessResponse>;
+public record GetUserAccessQuery(Guid Id, Guid LineOfBusinessId) : IRequest<UserAccessResponse>;
