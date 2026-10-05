@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Finnova.Models.Domain.Exceptions;
 
 namespace Finnova.SystemAdminService.Middleware;
@@ -55,10 +55,12 @@ public class ExceptionHandlingMiddleware
             var isCourt = ctx.Request.Path.StartsWithSegments("/api/court",StringComparison.OrdinalIgnoreCase);
             var validationCourtCode = isCourt ? "ERR-CRT-400" : isDcn ? "ERR-DCN-400" : isNationality ? "ERR-NAT-400" : "ERR-LKP-400";
             var fallbackCourtCode = isCourt ? "ERR-CRT-500" : isDcn ? "ERR-DCN-500" : isNationality ? "ERR-NAT-500" : "ERR-LKP-500";
-            var isEntity = ctx.Request.Path.StartsWithSegments("/api/entity",
-    StringComparison.OrdinalIgnoreCase);
+            var isEntity = ctx.Request.Path.StartsWithSegments("/api/entity",    StringComparison.OrdinalIgnoreCase);
             var validationEntityCode = isEntity ? "ERR-ENT-400" : isCourt ? "ERR-CRT-400" : isDcn ? "ERR-DCN-400" : isNationality ? "ERR-NAT-400" : "ERR-LKP-400";
             var fallbackEntityCode = isEntity ? "ERR-ENT-500" : isCourt ? "ERR-CRT-500" : isDcn ? "ERR-DCN-500" : isNationality ? "ERR-NAT-500" : "ERR-LKP-500";
+            var isDraweeBank = ctx.Request.Path.StartsWithSegments("/api/draweebank",StringComparison.OrdinalIgnoreCase);
+            var validationDraweeBankCode = isDraweeBank ? "ERR-DRB-400" : validationCode;
+            var fallbackDraweeBankCode = isDraweeBank ? "ERR-DRB-500" : fallbackCode;
             var (status, code, detail) = ex switch
             {
                 // ---- existing lookup branch (unchanged) ----
@@ -92,9 +94,17 @@ public class ExceptionHandlingMiddleware
                 EntityNotFoundException => (404, "ERR-ENT-404", ex.Message),
                 EntityDuplicateCodeException => (409, "ERR-ENT-409", ex.Message),
 
+                // ---- new Drawee Bank branch (typed, no message sniffing) ----
+                DraweeBankNotFoundException => (404, "ERR-DRB-404", ex.Message),
+                ChallanRuleNotFoundException => (404, "ERR-DRB-404", ex.Message),
+                DraweeBankDuplicateCodeException => (409, "ERR-DRB-409", ex.Message),
+                DraweeBranchDuplicatePlaceCodeException => (409, "ERR-DRB-409", ex.Message),
+                ChallanRuleDuplicateCodeException => (409, "ERR-DRB-409", ex.Message),
+                DraweeBankValidationException => (400, "ERR-DRB-400", ex.Message),
+
                 // ---- shared: validation failures and unhandled fallback (path-scoped code) ----
-                FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, validationCode, v.Message),
-                _ => (StatusCodes.Status500InternalServerError, fallbackCode, "Unexpected error.")
+                FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, validationDraweeBankCode, v.Message),
+                _ => (StatusCodes.Status500InternalServerError, fallbackDraweeBankCode, "Unexpected error.")
 
             };
 
