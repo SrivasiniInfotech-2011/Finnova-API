@@ -31,6 +31,8 @@ public static class DependencyInjection
         services.AddScoped<ICourtAuditRepository, CourtAuditRepository>();
         services.AddScoped<IEntityRepository, EntityRepository>();
         services.AddScoped<IEntityAuditRepository, EntityAuditRepository>();
+        services.AddScoped<IDraweeBankRepository, DraweeBankRepository>();
+        services.AddScoped<IDraweeBankAuditRepository, DraweeBankAuditRepository>();
         services.AddScoped<IUserManagementRepository, UserManagementRepository>();
         return services;
     }

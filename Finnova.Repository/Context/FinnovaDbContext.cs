@@ -34,6 +34,11 @@ public class FinnovaDbContext : DbContext
     public DbSet<UserManagementAuditEntry> UserManagementAuditEntries => Set<UserManagementAuditEntry>();
     public DbSet<ScreenProgram> ScreenPrograms => Set<ScreenProgram>();
     public DbSet<LineOfBusiness> LinesOfBusiness => Set<LineOfBusiness>();
+    public DbSet<DraweeBank> DraweeBanks => Set<DraweeBank>();
+    public DbSet<DraweeBranch> DraweeBranches => Set<DraweeBranch>();
+    public DbSet<RestrictionDetail> RestrictionDetails => Set<RestrictionDetail>();
+    public DbSet<ChallanRule> ChallanRules => Set<ChallanRule>();
+    public DbSet<DraweeBankAuditEntry> DraweeBankAuditEntries => Set<DraweeBankAuditEntry>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
