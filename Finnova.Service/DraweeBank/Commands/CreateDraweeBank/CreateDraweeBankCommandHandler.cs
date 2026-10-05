@@ -33,7 +33,7 @@ public class CreateDraweeBankCommandHandler : IRequestHandler<CreateDraweeBankCo
         if (await _repository.ExistsByBankCodeAsync(code, null, ct))
             throw new DraweeBankDuplicateCodeException();
 
-        var bank = new DraweeBank
+        var bank = new Finnova.Models.Domain.Entities.DraweeBank
         {
             BankCode = code,
             BankName = request.BankName,

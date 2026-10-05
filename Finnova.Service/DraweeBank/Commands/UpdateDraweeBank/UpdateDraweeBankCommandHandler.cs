@@ -37,7 +37,7 @@ public class UpdateDraweeBankCommandHandler : IRequestHandler<UpdateDraweeBankCo
         var desired = BuildDesired(request);
         var after = DraweeBankSnapshot.Of(desired);
         if (string.Equals(before, after, StringComparison.Ordinal))
-            return bank..ToResponse();
+            return bank.ToResponse();
 
         // Apply the diff: new name, replace branch set (removal cascades, R3.7), set/clear restriction.
         bank.BankName = request.BankName;
