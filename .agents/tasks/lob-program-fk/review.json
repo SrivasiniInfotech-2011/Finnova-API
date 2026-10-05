@@ -1,0 +1,16 @@
+{
+  "verdict": "APPROVED",
+  "findings": [
+    {
+      "severity": "LOW",
+      "label": "Branch-tree param now carries a Guid",
+      "detail": "AccessStep passes access.lineOfBusinessId into getBranchTree(lob), forwarded as the 'lob' query string to an endpoint whose handler (BranchTreeCatalog.Tree()) ignores the argument. No runtime break (static tree), but the param now carries an Id against a name-shaped contract. Out of this ticket's FK scope; rename/retype when the branch tree is wired to a real LOB-scoped source."
+    },
+    {
+      "severity": "LOW",
+      "label": "LineOfBusinessCatalog retained for role-code linkage",
+      "detail": "The hardcoded catalog no longer backs the LOV (now reads the table) but is still the source of truth for the 'LOB must be linked to role codes' rule via HasRoleCodes(lob.LOB_Name). The three seeded LOB_Names match the catalog, so the rule holds; a future rename of a seeded LOB would silently diverge. Consider moving the linkage flag onto the master row."
+    }
+  ],
+  "reviewDoc": "d:\\Projects\\Finnova\\Finnova-API\\.agents\\tasks\\lob-program-fk\\review.md"
+}

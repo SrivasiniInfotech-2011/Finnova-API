@@ -1,0 +1,16 @@
+{
+  "verdict": "APPROVED",
+  "findings": [
+    {
+      "severity": "info",
+      "file": "Finnova.UAService/Program.cs",
+      "detail": "A code comment labels the EF provider as PostgreSQL while the generated migration (20261004172132_AddScreenProgramsAndPermissions.cs) uses SQL Server types (uniqueidentifier/datetime2/bit). This mirrors the pre-existing provider setup and is not introduced by this feature; the migration was generated with the SystemAdminService startup project and NOT applied, as required. No action needed for this feature."
+    },
+    {
+      "severity": "info",
+      "file": "D:/Projects/Finnova/Finnova-UI (branch main)",
+      "detail": "The UI branch is 4 commits ahead of origin, but those commits are a separate pre-existing 'routed add-edit screens' task. All permission-feature files are untracked (PermissionsContext.tsx, useScreenPermissions.ts, permission.* service/model/interface/mock/real) or modified-but-unstaged (Login.tsx, auth.model.ts, master pages/forms/grids). Nothing from this feature is committed in either repo, satisfying the requirement."
+    }
+  ],
+  "summary": "Both repos fully meet the per-screen permission requirements and are green. Backend: ScreenProgram 'programs' table + 9 seeded rows, authorized GET /api/auth/me/permissions on the UA host returning { isAdmin, programs:[{ programName, canAdd, canModify, canQuery, canDelete }] }, Admin/SystemAdmin bypass to all-true, handler collapses multiple rows per ProgramName by OR-ing active-registry keys, UA JwtBearer wiring with UseAuthentication/UseAuthorization before MapControllers and signing key/issuer/audience matching TokenService (which emits NameIdentifier+Sub and the SystemAdmin role for Admins), and migration 20261004172132_AddScreenProgramsAndPermissions generated but NOT applied. Permissions are NOT in the JWT. dotnet build Finnova.Backend.slnx succeeds with 0 warnings; dotnet test = 383 passed (incl. 4 GetMyPermissions handler tests). UI: permission model/service (interface/real/mock/toggle) + barrels with exact camelCase parity, PermissionsProvider nested inside AuthProvider, useScreenPermissions hook, Add/Edit/Delete/Save gated across all 8 master pages/forms/grids with correct ProgramName keys (DcnMaster->DocumentNumberControl, OrgHierarchyMaster->OrganizationHierarchy) and existing gating (canQuery, isSystemLocked) preserved, and login email->userName fixed end-to-end. npm run build succeeds (only a pre-existing chunk-size warning); npm test = 184 passed across 31 files. Nothing committed for this feature in either repo."
+}
