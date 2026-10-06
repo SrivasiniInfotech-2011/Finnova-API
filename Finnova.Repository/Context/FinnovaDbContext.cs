@@ -8,7 +8,6 @@ public class FinnovaDbContext : DbContext
 {
     public FinnovaDbContext(DbContextOptions<FinnovaDbContext> options) : base(options) { }
 
-    public DbSet<User> Users => Set<User>();
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<Location> Locations => Set<Location>();
     public DbSet<Account> Accounts => Set<Account>();
@@ -24,6 +23,17 @@ public class FinnovaDbContext : DbContext
     public DbSet<CourtAuditEntry> CourtAuditEntries => Set<CourtAuditEntry>();
     public DbSet<EntityMaster> Entities => Set<EntityMaster>();
     public DbSet<EntityAuditEntry> EntityAuditEntries => Set<EntityAuditEntry>();
+    public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
+    public DbSet<UserGroup> UserGroups => Set<UserGroup>();
+    public DbSet<UserGroupMember> UserGroupMembers => Set<UserGroupMember>();
+    public DbSet<FunctionalGroup> FunctionalGroups => Set<FunctionalGroup>();
+    public DbSet<FunctionalGroupFunction> FunctionalGroupFunctions => Set<FunctionalGroupFunction>();
+    public DbSet<FunctionalGroupAssignment> FunctionalGroupAssignments => Set<FunctionalGroupAssignment>();
+    public DbSet<UserAccessAssignment> UserAccessAssignments => Set<UserAccessAssignment>();
+    public DbSet<UserBranchAssociation> UserBranchAssociations => Set<UserBranchAssociation>();
+    public DbSet<UserManagementAuditEntry> UserManagementAuditEntries => Set<UserManagementAuditEntry>();
+    public DbSet<ScreenProgram> ScreenPrograms => Set<ScreenProgram>();
+    public DbSet<LineOfBusiness> LinesOfBusiness => Set<LineOfBusiness>();
     public DbSet<DraweeBank> DraweeBanks => Set<DraweeBank>();
     public DbSet<DraweeBranch> DraweeBranches => Set<DraweeBranch>();
     public DbSet<RestrictionDetail> RestrictionDetails => Set<RestrictionDetail>();

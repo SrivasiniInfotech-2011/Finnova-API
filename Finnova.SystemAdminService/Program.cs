@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Finnova.Repository;
 using Finnova.Service.Auth;
+using Finnova.Service.UserManagement.Abstractions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -83,7 +84,9 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
-
+// GPS password policy (consumed by User Management). Dev default; swap for the real policy via DI.
+builder.Services.AddScoped<IPasswordPolicy,
+    DefaultPasswordPolicy>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

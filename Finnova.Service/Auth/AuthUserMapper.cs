@@ -7,19 +7,15 @@ namespace Finnova.Service.Auth;
 public static class AuthUserMapper
 {
     /// <summary>
-    /// Maps the domain User to the UI-facing auth user shape.
+    /// Maps the domain UserAccount to the UI-facing auth user shape.
     /// The UI expects roles as ADMIN / MANAGER / ANALYST / CLIENT.
     /// </summary>
-    public static AuthUserDto ToAuthUser(this User user)
+    public static AuthUserDto ToAuthUser(this UserAccount user)
     {
-        var fullName = string.Join(' ',
-            new[] { user.FirstName, user.MiddleName, user.LastName }
-                .Where(s => !string.IsNullOrWhiteSpace(s)));
-
         return new AuthUserDto(
             Id: user.Id.ToString(),
-            Name: fullName,
-            Email: user.Email,
+            Name: user.Name,
+            Email: user.Email ?? string.Empty,
             Role: MapRole(user.Role));
     }
 

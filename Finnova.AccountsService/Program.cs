@@ -1,8 +1,9 @@
-﻿using FluentValidation;
-using Finnova.Service.Accounts.Commands.CreateAccount;
-using Finnova.Service.Storage;
 using Finnova.Repository;
+using Finnova.Service.Accounts.Commands.CreateAccount;
 using Finnova.Service.Auth;
+using Finnova.Service.Storage;
+using Finnova.Service.UserManagement.Abstractions;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +22,8 @@ builder.Services.AddValidatorsFromAssembly(serviceAssembly);
 // MediatR above) contains LoginCommandHandler, which depends on ITokenService.
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
 builder.Services.AddScoped<ITokenService, TokenService>();
-
+builder.Services.AddScoped<IPasswordPolicy,
+    DefaultPasswordPolicy>();
 // Repository (EF Core + PostgreSQL)
 var connectionString = builder.Configuration.GetConnectionString("FinnovaConnection");
 builder.Services.AddFinnovaRepository(connectionString!);

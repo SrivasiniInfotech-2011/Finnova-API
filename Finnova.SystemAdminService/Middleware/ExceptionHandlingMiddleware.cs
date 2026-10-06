@@ -52,7 +52,7 @@ public class ExceptionHandlingMiddleware
             var validationCode = isDcn ? "ERR-DCN-400" : isNationality ? "ERR-NAT-400" : "ERR-LKP-400";
             var fallbackCode = isDcn ? "ERR-DCN-500" : isNationality ? "ERR-NAT-500" : "ERR-LKP-500";
 
-            var isCourt = ctx.Request.Path.StartsWithSegments("/api/court",StringComparison.OrdinalIgnoreCase);
+            var isCourt = ctx.Request.Path.StartsWithSegments("/api/court", StringComparison.OrdinalIgnoreCase);
             var validationCourtCode = isCourt ? "ERR-CRT-400" : isDcn ? "ERR-DCN-400" : isNationality ? "ERR-NAT-400" : "ERR-LKP-400";
             var fallbackCourtCode = isCourt ? "ERR-CRT-500" : isDcn ? "ERR-DCN-500" : isNationality ? "ERR-NAT-500" : "ERR-LKP-500";
             var isEntity = ctx.Request.Path.StartsWithSegments("/api/entity",    StringComparison.OrdinalIgnoreCase);
@@ -61,6 +61,9 @@ public class ExceptionHandlingMiddleware
             var isDraweeBank = ctx.Request.Path.StartsWithSegments("/api/draweebank",StringComparison.OrdinalIgnoreCase);
             var validationDraweeBankCode = isDraweeBank ? "ERR-DRB-400" : validationCode;
             var fallbackDraweeBankCode = isDraweeBank ? "ERR-DRB-500" : fallbackCode;
+            var isUser = ctx.Request.Path.StartsWithSegments("/api/user", StringComparison.OrdinalIgnoreCase);
+            var validationUserCode = isUser ? "ERR-USR-400" : validationEntityCode;
+            var fallbackUserCode = isUser ? "ERR-USR-500" : fallbackEntityCode;
             var (status, code, detail) = ex switch
             {
                 // ---- existing lookup branch (unchanged) ----
@@ -93,6 +96,14 @@ public class ExceptionHandlingMiddleware
                 // ---- new Entity branch (typed, no message sniffing) ----
                 EntityNotFoundException => (404, "ERR-ENT-404", ex.Message),
                 EntityDuplicateCodeException => (409, "ERR-ENT-409", ex.Message),
+                EntityInvalidAttributesException => (400, "ERR-ENT-400", ex.Message), // inapplicable per-type attribute (R1.6/R4.3)
+
+                // ---- new User Management branch (typed, no message sniffing) ----
+                UserNotFoundException => (404, "ERR-USR-404", ex.Message),
+                UserDuplicateCodeException => (409, "ERR-USR-409", ex.Message),
+                UserInactiveMemberException => (409, "ERR-USR-409", ex.Message),
+                AuditEntryImmutableException => (409, "ERR-USR-409", ex.Message),
+                UserValidationException => (400, "ERR-USR-400", ex.Message),
 
                 // ---- new Drawee Bank branch (typed, no message sniffing) ----
                 DraweeBankNotFoundException => (404, "ERR-DRB-404", ex.Message),
@@ -103,8 +114,8 @@ public class ExceptionHandlingMiddleware
                 DraweeBankValidationException => (400, "ERR-DRB-400", ex.Message),
 
                 // ---- shared: validation failures and unhandled fallback (path-scoped code) ----
-                FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, validationDraweeBankCode, v.Message),
-                _ => (StatusCodes.Status500InternalServerError, fallbackDraweeBankCode, "Unexpected error.")
+                FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, validationUserCode, v.Message),
+                _ => (StatusCodes.Status500InternalServerError, fallbackUserCode, "Unexpected error.")
 
             };
 

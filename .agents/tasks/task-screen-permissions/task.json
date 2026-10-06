@@ -1,0 +1,7 @@
+{
+  "task_id": "task-screen-permissions",
+  "task_description": "Per-screen (per-program) permission gating across two repos. Backend (Finnova-API): new ScreenProgram master table + seed, UserAccessAssignment collapse logic, authorized GET /api/auth/me/permissions endpoint, UA host JwtBearer wiring, EF migration, handler unit tests. Frontend (Finnova-UI): permission model + service (interface/real/mock/toggle) + PermissionsContext + useScreenPermissions hook, gate Add/Edit/Delete/Save across master pages and forms, fix login email->userName, Vitest tests. No commits in either repo.",
+  "status": "pending",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

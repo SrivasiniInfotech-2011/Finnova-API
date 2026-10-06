@@ -440,6 +440,155 @@ namespace Finnova.Repository.Migrations
                     b.ToTable("entities", (string)null);
                 });
 
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.FunctionalGroup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FunctionalGroupCode")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("nvarchar(6)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RoleCenterName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FunctionalGroupCode")
+                        .IsUnique();
+
+                    b.ToTable("functional_groups", (string)null);
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.FunctionalGroupAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("FunctionalGroupId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UserAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UserGroupId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FunctionalGroupId", "UserAccountId");
+
+                    b.HasIndex("FunctionalGroupId", "UserGroupId");
+
+                    b.ToTable("functional_group_assignments", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_functional_group_assignments_owner", "([UserAccountId] IS NOT NULL AND [UserGroupId] IS NULL) OR ([UserAccountId] IS NULL AND [UserGroupId] IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.FunctionalGroupFunction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("FunctionalGroupId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProgramId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RoleCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProgramId");
+
+                    b.HasIndex("FunctionalGroupId", "RoleCode")
+                        .IsUnique();
+
+                    b.ToTable("functional_group_functions", (string)null);
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.LineOfBusiness", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LOB_Description")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<string>("LOB_Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LOB_Name")
+                        .IsUnique();
+
+                    b.ToTable("lines_of_business", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0002-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            LOB_Description = "Loans and credit products for individual retail customers.",
+                            LOB_Name = "Retail Lending",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0002-000000000002"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            LOB_Description = "Credit facilities for corporate and business customers.",
+                            LOB_Name = "Corporate Lending",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0002-000000000003"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            LOB_Description = "Asset leasing and hire-purchase finance.",
+                            LOB_Name = "Leasing",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
+                });
+
             modelBuilder.Entity("Finnova.Models.Domain.Entities.Location", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1194,6 +1343,135 @@ namespace Finnova.Repository.Migrations
                     b.ToTable("restriction_details", (string)null);
                 });
 
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.ScreenProgram", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Module")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ProgramName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProgramName")
+                        .IsUnique();
+
+                    b.ToTable("programs", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0001-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayName = "Lookup Master",
+                            IsActive = true,
+                            Module = "SystemAdmin",
+                            ProgramName = "LookupMaster",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0001-000000000002"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayName = "Nationality Master",
+                            IsActive = true,
+                            Module = "SystemAdmin",
+                            ProgramName = "NationalityMaster",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0001-000000000003"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayName = "Organization Hierarchy",
+                            IsActive = true,
+                            Module = "SystemAdmin",
+                            ProgramName = "OrganizationHierarchy",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0001-000000000004"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayName = "Document Number Control",
+                            IsActive = true,
+                            Module = "SystemAdmin",
+                            ProgramName = "DocumentNumberControl",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0001-000000000005"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayName = "Court Master",
+                            IsActive = true,
+                            Module = "SystemAdmin",
+                            ProgramName = "CourtMaster",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0001-000000000006"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayName = "Entity Master",
+                            IsActive = true,
+                            Module = "SystemAdmin",
+                            ProgramName = "EntityMaster",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0001-000000000007"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayName = "User Management",
+                            IsActive = true,
+                            Module = "SystemAdmin",
+                            ProgramName = "UserManagement",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0001-000000000008"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayName = "Location Master",
+                            IsActive = true,
+                            Module = "SystemAdmin",
+                            ProgramName = "LocationMaster",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0001-000000000009"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayName = "Organization",
+                            IsActive = true,
+                            Module = "SystemAdmin",
+                            ProgramName = "Organization",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
+                });
+
             modelBuilder.Entity("Finnova.Models.Domain.Entities.Transaction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1247,7 +1525,63 @@ namespace Finnova.Repository.Migrations
                     b.ToTable("transactions", (string)null);
                 });
 
-            modelBuilder.Entity("Finnova.Models.Domain.Entities.User", b =>
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.UserAccessAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("CanAdd")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanDelete")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanModify")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanQuery")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("LineOfBusinessId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProgramId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RoleCenterName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("RoleCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("UserAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UserGroupId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LineOfBusinessId");
+
+                    b.HasIndex("ProgramId");
+
+                    b.HasIndex("UserAccountId", "LineOfBusinessId", "RoleCode");
+
+                    b.HasIndex("UserGroupId", "LineOfBusinessId", "RoleCode");
+
+                    b.ToTable("user_access_assignments", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_user_access_assignments_owner", "([UserAccountId] IS NOT NULL AND [UserGroupId] IS NULL) OR ([UserAccountId] IS NULL AND [UserGroupId] IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.UserAccount", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1256,42 +1590,41 @@ namespace Finnova.Repository.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime>("DateOfJoining")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Department")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("Designation")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
                     b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
 
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<string>("MobileNumber")
+                        .HasMaxLength(12)
+                        .HasColumnType("nvarchar(12)");
 
-                    b.Property<string>("MiddleName")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<Guid?>("OrganizationId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("PasswordHash")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Phone")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("Role")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("Status")
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -1299,28 +1632,291 @@ namespace Finnova.Repository.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("UserCode")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("nvarchar(6)");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("UserType")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("Email")
+                    b.HasIndex("Name");
+
+                    b.HasIndex("UserCode")
                         .IsUnique();
 
-                    b.HasIndex("OrganizationId");
+                    b.HasIndex("UserName")
+                        .IsUnique();
 
-                    b.ToTable("users", (string)null);
+                    b.ToTable("user_accounts", (string)null);
 
                     b.HasData(
                         new
                         {
-                            Id = new Guid("00000000-0000-0000-0001-000000000001"),
+                            Id = new Guid("00000000-0000-0000-0002-000000000000"),
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DateOfJoining = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Department = "Administration",
+                            Designation = "Administrator",
                             Email = "admin@finnova.com",
-                            FirstName = "Admin",
-                            LastName = "User",
+                            IsActive = true,
+                            Name = "Admin User",
                             PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEA==.7gQDaNbD2TJ9Tv/U3z+oOOw+byXCRpvOoV5EbjMrc1w=",
                             Role = "Admin",
-                            Status = "Active",
-                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserCode = "ADMIN",
+                            UserName = "admin",
+                            UserType = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0002-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DateOfJoining = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Department = "Operations",
+                            Designation = "Manager",
+                            Email = "rohan.mehta@finnova.com",
+                            IsActive = true,
+                            MobileNumber = "9820012345",
+                            Name = "Rohan Mehta",
+                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEA==.65aXkOppO1PIxiPNP45E/WmbZbtGN3dbC+lchI1ZTh8=",
+                            Role = "User",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserCode = "USR001",
+                            UserName = "usr001",
+                            UserType = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0002-000000000002"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DateOfJoining = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Department = "Finance",
+                            Designation = "Officer",
+                            Email = "priya.nair@finnova.com",
+                            IsActive = true,
+                            MobileNumber = "9845023456",
+                            Name = "Priya Nair",
+                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEA==.65aXkOppO1PIxiPNP45E/WmbZbtGN3dbC+lchI1ZTh8=",
+                            Role = "User",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserCode = "USR002",
+                            UserName = "usr002",
+                            UserType = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0002-000000000003"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DateOfJoining = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Department = "Retail Banking",
+                            Designation = "Teller",
+                            Email = "arjun.rao@finnova.com",
+                            IsActive = true,
+                            MobileNumber = "9731034567",
+                            Name = "Arjun Rao",
+                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEA==.65aXkOppO1PIxiPNP45E/WmbZbtGN3dbC+lchI1ZTh8=",
+                            Role = "User",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserCode = "USR003",
+                            UserName = "usr003",
+                            UserType = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0002-000000000004"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DateOfJoining = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Department = "Retail Banking",
+                            Designation = "Branch Head",
+                            Email = "sneha.gupta@finnova.com",
+                            IsActive = true,
+                            MobileNumber = "9920045678",
+                            Name = "Sneha Gupta",
+                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEA==.65aXkOppO1PIxiPNP45E/WmbZbtGN3dbC+lchI1ZTh8=",
+                            Role = "User",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserCode = "USR004",
+                            UserName = "usr004",
+                            UserType = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0002-000000000005"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DateOfJoining = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Department = "Risk",
+                            Designation = "Analyst",
+                            IsActive = false,
+                            Name = "Vikram Shah",
+                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEA==.65aXkOppO1PIxiPNP45E/WmbZbtGN3dbC+lchI1ZTh8=",
+                            Role = "User",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserCode = "USR005",
+                            UserName = "usr005",
+                            UserType = 0
                         });
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.UserBranchAssociation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BranchCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsAll")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("LineOfBusinessId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("LocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UserAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UserGroupId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LineOfBusinessId");
+
+                    b.HasIndex("LocationId");
+
+                    b.HasIndex("UserAccountId", "LineOfBusinessId");
+
+                    b.HasIndex("UserGroupId", "LineOfBusinessId");
+
+                    b.ToTable("user_branch_associations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_user_branch_associations_owner", "([UserAccountId] IS NOT NULL AND [UserGroupId] IS NULL) OR ([UserAccountId] IS NULL AND [UserGroupId] IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.UserGroup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserGroupCode")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("nvarchar(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("UserGroupCode")
+                        .IsUnique();
+
+                    b.ToTable("user_groups", (string)null);
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.UserGroupMember", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserGroupId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserGroupId", "UserAccountId")
+                        .IsUnique();
+
+                    b.ToTable("user_group_members", (string)null);
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.UserManagementAuditEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ChangedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ChangedBy")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("NewValues")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OldValues")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("RecordId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("RecordKind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RecordId", "ChangedAtUtc");
+
+                    b.ToTable("user_management_audit", (string)null);
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.FunctionalGroupFunction", b =>
+                {
+                    b.HasOne("Finnova.Models.Domain.Entities.FunctionalGroup", null)
+                        .WithMany("Functions")
+                        .HasForeignKey("FunctionalGroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Finnova.Models.Domain.Entities.ScreenProgram", null)
+                        .WithMany()
+                        .HasForeignKey("ProgramId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Finnova.Models.Domain.Entities.DraweeBranch", b =>
@@ -1370,14 +1966,57 @@ namespace Finnova.Repository.Migrations
                     b.Navigation("Account");
                 });
 
-            modelBuilder.Entity("Finnova.Models.Domain.Entities.User", b =>
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.UserAccessAssignment", b =>
                 {
-                    b.HasOne("Finnova.Models.Domain.Entities.Organization", "Organization")
-                        .WithMany("Users")
-                        .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                    b.HasOne("Finnova.Models.Domain.Entities.LineOfBusiness", null)
+                        .WithMany()
+                        .HasForeignKey("LineOfBusinessId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.Navigation("Organization");
+                    b.HasOne("Finnova.Models.Domain.Entities.ScreenProgram", null)
+                        .WithMany()
+                        .HasForeignKey("ProgramId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Finnova.Models.Domain.Entities.UserAccount", null)
+                        .WithMany("AccessAssignments")
+                        .HasForeignKey("UserAccountId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.UserBranchAssociation", b =>
+                {
+                    b.HasOne("Finnova.Models.Domain.Entities.LineOfBusiness", null)
+                        .WithMany()
+                        .HasForeignKey("LineOfBusinessId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Finnova.Models.Domain.Entities.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Finnova.Models.Domain.Entities.UserAccount", null)
+                        .WithMany("BranchAssociations")
+                        .HasForeignKey("UserAccountId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.UserGroupMember", b =>
+                {
+                    b.HasOne("Finnova.Models.Domain.Entities.UserGroup", null)
+                        .WithMany("Members")
+                        .HasForeignKey("UserGroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.FunctionalGroup", b =>
+                {
+                    b.Navigation("Functions");
                 });
 
             modelBuilder.Entity("Finnova.Models.Domain.Entities.DraweeBank", b =>
@@ -1392,9 +2031,16 @@ namespace Finnova.Repository.Migrations
                     b.Navigation("Children");
                 });
 
-            modelBuilder.Entity("Finnova.Models.Domain.Entities.Organization", b =>
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.UserAccount", b =>
                 {
-                    b.Navigation("Users");
+                    b.Navigation("AccessAssignments");
+
+                    b.Navigation("BranchAssociations");
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.UserGroup", b =>
+                {
+                    b.Navigation("Members");
                 });
 #pragma warning restore 612, 618
         }
