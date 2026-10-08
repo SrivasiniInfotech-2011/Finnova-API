@@ -34,6 +34,11 @@ public static class DependencyInjection
         services.AddScoped<IDraweeBankRepository, DraweeBankRepository>();
         services.AddScoped<IDraweeBankAuditRepository, DraweeBankAuditRepository>();
         services.AddScoped<IUserManagementRepository, UserManagementRepository>();
+        services.AddScoped<IClassCodeRepository, ClassCodeRepository>();
+        services.AddScoped<IMakeCodeRepository, MakeCodeRepository>();
+        services.AddScoped<ITypeCodeRepository, TypeCodeRepository>();
+        services.AddScoped<IModelCodeRepository, ModelCodeRepository>();
+        services.AddScoped<IAssetRepository, AssetRepository>();
         return services;
     }
 }

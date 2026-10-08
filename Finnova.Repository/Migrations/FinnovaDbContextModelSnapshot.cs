@@ -1231,6 +1231,39 @@ namespace Finnova.Repository.Migrations
                         .IsUnique();
 
                     b.ToTable("organizations", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0003-000000000001"),
+                            AccountingCurrency = "INR",
+                            CeoName = "Managing Director",
+                            Code = "FINNOVA",
+                            CommunicationAddress = "1 Finnova Tower, Bandra Kurla Complex",
+                            CommunicationCity = "Mumbai",
+                            CommunicationCountry = "India",
+                            CommunicationPincode = "400051",
+                            CommunicationState = "Maharashtra",
+                            ConstitutionType = "PrivateLtd",
+                            CorporateAddress = "1 Finnova Tower, Bandra Kurla Complex",
+                            CorporateCity = "Mumbai",
+                            CorporateCountry = "India",
+                            CorporatePincode = "400051",
+                            CorporateState = "Maharashtra",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Default organization for this Finnova instance.",
+                            Email = "info@finnova.com",
+                            GstNumber = "27AAACF1234F1Z5",
+                            Mobile = "9820010000",
+                            Name = "Finnova Financial Services Ltd",
+                            PanNumber = "AAACF1234F",
+                            RegistrationDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            RegistrationNumber = "U65999MH2024PTC000001",
+                            Status = "Active",
+                            Telephone = "02261001000",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Website = "https://www.finnova.com"
+                        });
                 });
 
             modelBuilder.Entity("Finnova.Models.Domain.Entities.OrganizationNode", b =>
@@ -1904,6 +1937,15 @@ namespace Finnova.Repository.Migrations
                     b.ToTable("user_management_audit", (string)null);
                 });
 
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.DraweeBranch", b =>
+                {
+                    b.HasOne("Finnova.Models.Domain.Entities.DraweeBank", null)
+                        .WithMany("Branches")
+                        .HasForeignKey("DraweeBankId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Finnova.Models.Domain.Entities.FunctionalGroupFunction", b =>
                 {
                     b.HasOne("Finnova.Models.Domain.Entities.FunctionalGroup", null)
@@ -1916,15 +1958,6 @@ namespace Finnova.Repository.Migrations
                         .WithMany()
                         .HasForeignKey("ProgramId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Finnova.Models.Domain.Entities.DraweeBranch", b =>
-                {
-                    b.HasOne("Finnova.Models.Domain.Entities.DraweeBank", null)
-                        .WithMany("Branches")
-                        .HasForeignKey("DraweeBankId")
-                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
@@ -2014,16 +2047,16 @@ namespace Finnova.Repository.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Finnova.Models.Domain.Entities.FunctionalGroup", b =>
-                {
-                    b.Navigation("Functions");
-                });
-
             modelBuilder.Entity("Finnova.Models.Domain.Entities.DraweeBank", b =>
                 {
                     b.Navigation("Branches");
 
                     b.Navigation("Restriction");
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.FunctionalGroup", b =>
+                {
+                    b.Navigation("Functions");
                 });
 
             modelBuilder.Entity("Finnova.Models.Domain.Entities.Location", b =>

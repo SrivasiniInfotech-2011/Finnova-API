@@ -1,6 +1,5 @@
-using System.Security.Claims;
-using System.Text;
 using Finnova.Repository;
+using Finnova.Service.Assets.CodeGeneration;
 using Finnova.Service.Auth;
 using Finnova.Service.Auth.Commands.Login;
 using Finnova.Service.Storage;
@@ -8,6 +7,8 @@ using Finnova.Service.UserManagement.Abstractions;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +26,7 @@ builder.Services.AddValidatorsFromAssembly(serviceAssembly);
 // JWT auth — settings + token service
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
 builder.Services.AddScoped<ITokenService, TokenService>();
-
+builder.Services.AddScoped<IAssetCodeGenerator, AssetCodeGenerator>();
 // JWT Bearer authentication — mirrors the SystemAdmin host so authorized endpoints (e.g. the
 // per-screen permissions endpoint) can validate the token this host issues.
 var jwt = builder.Configuration.GetSection("Jwt");
@@ -48,8 +49,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 // Repository (EF Core + PostgreSQL)
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Server=localhost;Database=Finnova;Trusted_Connection=True;TrustServerCertificate=True";
+var connectionString = builder.Configuration.GetConnectionString("FinnovaConnection");
 builder.Services.AddFinnovaRepository(connectionString);
 
 // Blob storage (Azure / AWS) — provider selected via BlobStorage:Provider

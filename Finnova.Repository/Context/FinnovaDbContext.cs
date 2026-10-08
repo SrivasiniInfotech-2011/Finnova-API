@@ -39,6 +39,11 @@ public class FinnovaDbContext : DbContext
     public DbSet<RestrictionDetail> RestrictionDetails => Set<RestrictionDetail>();
     public DbSet<ChallanRule> ChallanRules => Set<ChallanRule>();
     public DbSet<DraweeBankAuditEntry> DraweeBankAuditEntries => Set<DraweeBankAuditEntry>();
+    public DbSet<ClassCode> ClassCodes => Set<ClassCode>();
+    public DbSet<MakeCode> MakeCodes => Set<MakeCode>();
+    public DbSet<Finnova.Models.Domain.Entities.TypeCode> TypeCodes => Set<Finnova.Models.Domain.Entities.TypeCode>();
+    public DbSet<ModelCode> ModelCodes => Set<ModelCode>();
+    public DbSet<Asset> Assets => Set<Asset>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

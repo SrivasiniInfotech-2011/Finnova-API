@@ -1,12 +1,13 @@
-using System.Security.Claims;
-using System.Text;
+using Finnova.Repository;
+using Finnova.Service.Assets.CodeGeneration;
+using Finnova.Service.Auth;
+using Finnova.Service.UserManagement.Abstractions;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-using Finnova.Repository;
-using Finnova.Service.Auth;
-using Finnova.Service.UserManagement.Abstractions;
+using System.Security.Claims;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,7 +34,7 @@ builder.Services.AddTransient(
 // MediatR above) contains LoginCommandHandler, which depends on ITokenService.
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
 builder.Services.AddScoped<ITokenService, TokenService>();
-
+builder.Services.AddScoped<IAssetCodeGenerator, AssetCodeGenerator>();
 // JWT Bearer authentication (R7.6 â€” establishing the scheme)
 var jwt = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -87,6 +88,8 @@ builder.Services.AddSwaggerGen(options =>
 // GPS password policy (consumed by User Management). Dev default; swap for the real policy via DI.
 builder.Services.AddScoped<IPasswordPolicy,
     DefaultPasswordPolicy>();
+// Asset Master — pure, deterministic Asset Code generator (R3.2, R3.3).
+builder.Services.AddScoped<IAssetCodeGenerator, AssetCodeGenerator>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
