@@ -1,0 +1,17 @@
+# QA gateway hostname. Only the gateway is exposed; backends remain ClusterIP.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: finnova-ingress
+spec:
+  rules:
+    - host: api.qa.finnova.example
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: finnova-api-gateway
+                port:
+                  number: 5000

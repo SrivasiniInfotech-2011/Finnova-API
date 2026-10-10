@@ -1,0 +1,6 @@
+# QA: Staging environment (Swagger available to testers). JSON6902 on the first
+# container's ASPNETCORE_ENVIRONMENT (env index 0 in base). No imagePullPolicy override
+# — registry images pull normally.
+- op: replace
+  path: /spec/template/spec/containers/0/env/0/value
+  value: Staging

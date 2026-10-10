@@ -1,0 +1,52 @@
+# UA Service (port 5010). Environment-agnostic base: overlays set the image tag,
+# ASPNETCORE_ENVIRONMENT, replicas, and the secret source.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finnova-ua-service
+  labels: { app: finnova-ua-service }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: finnova-ua-service }
+  template:
+    metadata:
+      labels: { app: finnova-ua-service }
+    spec:
+      containers:
+        - name: ua
+          image: finnova-ua-service # tag set per overlay (images: in kustomization)
+          ports:
+            - containerPort: 5010
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production # overlays relax to Development/Staging as needed
+            - name: ASPNETCORE_URLS
+              value: http://+:5010
+            - name: ConnectionStrings__FinnovaConnection
+              valueFrom:
+                secretKeyRef: { name: finnova-db, key: uaConnectionString }
+            - name: Jwt__SigningKey
+              valueFrom:
+                secretKeyRef: { name: finnova-jwt, key: signingKey }
+            - name: Jwt__Secret
+              valueFrom:
+                secretKeyRef: { name: finnova-jwt, key: signingKey }
+          readinessProbe:
+            httpGet: { path: /health, port: 5010 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 5010 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: finnova-ua-service
+spec:
+  selector: { app: finnova-ua-service }
+  ports:
+    - port: 5010
+      targetPort: 5010

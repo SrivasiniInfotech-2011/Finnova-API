@@ -1,0 +1,20 @@
+# Base Ingress: the gateway as the single entry point only. The host is a placeholder
+# that every overlay patches to its real hostname. The local overlay additionally adds
+# direct <svc>.finnova.local hosts for individual service testing; STG/Prod never do.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: finnova-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: finnova.example # overlays patch this to the real per-env host
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: finnova-api-gateway
+                port:
+                  number: 5000

@@ -1,0 +1,51 @@
+# Accounts Service (port 5020). Environment-agnostic base.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finnova-accounts-service
+  labels: { app: finnova-accounts-service }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: finnova-accounts-service }
+  template:
+    metadata:
+      labels: { app: finnova-accounts-service }
+    spec:
+      containers:
+        - name: accounts
+          image: finnova-accounts-service # tag set per overlay
+          ports:
+            - containerPort: 5020
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:5020
+            - name: ConnectionStrings__FinnovaConnection
+              valueFrom:
+                secretKeyRef: { name: finnova-db, key: accountsConnectionString }
+            - name: Jwt__SigningKey
+              valueFrom:
+                secretKeyRef: { name: finnova-jwt, key: signingKey }
+            - name: Jwt__Secret
+              valueFrom:
+                secretKeyRef: { name: finnova-jwt, key: signingKey }
+          readinessProbe:
+            httpGet: { path: /health, port: 5020 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 5020 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: finnova-accounts-service
+spec:
+  selector: { app: finnova-accounts-service }
+  ports:
+    - port: 5020
+      targetPort: 5020

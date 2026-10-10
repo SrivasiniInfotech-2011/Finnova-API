@@ -1,0 +1,32 @@
+# Local overlay — Docker Desktop Kubernetes (Kubeadm). Reproduces the single finnova.yaml:
+#   :local images (imagePullPolicy Never), Development on every service, gateway as NodePort 30500,
+#   direct *.finnova.local hosts for individual-service testing, and the dev Secrets inline.
+#
+# Apply:   kubectl apply -k k8s/overlays/local
+# Preview: kubectl kustomize k8s/overlays/local
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - secrets.yaml
+
+# Local images built from the solution root (see k8s/README.md section 2); shared with the
+# Kubeadm cluster image store, so no load step is needed.
+images:
+  - name: finnova-ua-service
+    newName: finnova-ua-service
+    newTag: local
+  - name: finnova-accounts-service
+    newName: finnova-accounts-service
+    newTag: local
+  - name: finnova-systemadmin-service
+    newName: finnova-systemadmin-service
+    newTag: local
+  - name: finnova-api-gateway
+    newName: finnova-api-gateway
+    newTag: local
+
+patches:
+  - path: patches.yaml
+  - path: ingress.yaml

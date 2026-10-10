@@ -47,11 +47,11 @@ public class AssetController : ControllerBase
     [HttpGet("class-codes")]
     public async Task<ActionResult<PaginatedResponse<ClassCodeResponse>>> GetClassCodes(
         [FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-        => Ok(await _mediator.Send(new GetMakeCodesPagedQuery(search, page, pageSize)));
+        => Ok(await _mediator.Send(new GetClassCodesPagedQuery(search, page, pageSize)));
 
     [HttpGet("class-codes/active")]
     public async Task<ActionResult<List<CodeListItemResponse>>> GetActiveClassCodes()
-        => Ok(await _mediator.Send(new GetActiveMakeCodesQuery()));
+        => Ok(await _mediator.Send(new GetActiveClassCodesQuery()));
 
     [HttpPost("class-codes")]
     public async Task<ActionResult<ClassCodeResponse>> CreateClassCode([FromBody] CreateClassCodeRequest r)

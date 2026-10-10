@@ -1,0 +1,4 @@
+# STG: Staging environment. JSON6902 on the first container's ASPNETCORE_ENVIRONMENT.
+- op: replace
+  path: /spec/template/spec/containers/0/env/0/value
+  value: Staging

@@ -1,0 +1,14 @@
+# Shared, environment-agnostic resources. Apply an overlay, never this base directly:
+#   kubectl apply -k k8s/overlays/local   (or qa / stg / prod)
+#
+# Base intentionally omits Secrets and image tags — each overlay supplies its own
+# finnova-db / finnova-jwt Secret source and sets image tags via `images:`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ua.yaml
+  - accounts.yaml
+  - systemadmin.yaml
+  - gateway.yaml
+  - ingress.yaml

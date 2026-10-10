@@ -1,0 +1,45 @@
+# PROD overlay — Production env (Swagger OFF, inherited from base default so no env
+# patch), gateway host with TLS + HTTPS redirect, 2+ replicas, and an HPA on the
+# gateway. Promote the SAME image tag that passed STG. Secrets from a real store.
+#
+# Apply:  kubectl apply -k k8s/overlays/prod
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: finnova-prod
+
+resources:
+  - ../../base
+  - secrets-placeholder.yaml
+  - hpa-gateway.yaml
+
+images:
+  - name: finnova-ua-service
+    newName: <registry>/finnova-ua-service
+    newTag: <gitsha>
+  - name: finnova-accounts-service
+    newName: <registry>/finnova-accounts-service
+    newTag: <gitsha>
+  - name: finnova-systemadmin-service
+    newName: <registry>/finnova-systemadmin-service
+    newTag: <gitsha>
+  - name: finnova-api-gateway
+    newName: <registry>/finnova-api-gateway
+    newTag: <gitsha>
+
+# Baseline replicas; the HPA scales the gateway above this under load.
+replicas:
+  - name: finnova-ua-service
+    count: 2
+  - name: finnova-accounts-service
+    count: 2
+  - name: finnova-systemadmin-service
+    count: 2
+  - name: finnova-api-gateway
+    count: 2
+
+# NOTE: base already defaults ASPNETCORE_ENVIRONMENT=Production, so Prod needs no env
+# patch — Swagger stays off. Only the gateway host/TLS and CORS origin are patched.
+patches:
+  - path: patch-ingress-host.yaml
+  - path: patch-gateway-cors.yaml

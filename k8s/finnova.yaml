@@ -7,7 +7,7 @@
 #
 # Each data service has its OWN connection string key in the finnova-db Secret, so the
 # services can point at different databases / credentials independently:
-#   uaConnectionString          -> finnova-ua-service   (ConnectionStrings:DefaultConnection)
+#   uaConnectionString          -> finnova-ua-service   (ConnectionStrings:FinnovaConnection)
 #   accountsConnectionString    -> finnova-accounts-service   (ConnectionStrings:FinnovaConnection)
 #   systemadminConnectionString -> finnova-systemadmin-service (ConnectionStrings:FinnovaConnection)
 #
@@ -63,11 +63,11 @@ spec:
             - containerPort: 5010
           env:
             - name: ASPNETCORE_ENVIRONMENT
-              value: Production
+              value: Development
             - name: ASPNETCORE_URLS
               value: http://+:5010
-            # UAService reads ConnectionStrings:DefaultConnection
-            - name: ConnectionStrings__DefaultConnection
+            # UAService reads ConnectionStrings:FinnovaConnection
+            - name: ConnectionStrings__FinnovaConnection
               valueFrom:
                 secretKeyRef: { name: finnova-db, key: uaConnectionString }
             - name: Jwt__SigningKey
@@ -117,7 +117,7 @@ spec:
             - containerPort: 5020
           env:
             - name: ASPNETCORE_ENVIRONMENT
-              value: Production
+              value: Development
             - name: ASPNETCORE_URLS
               value: http://+:5020
             # AccountsService reads ConnectionStrings:FinnovaConnection
@@ -171,7 +171,7 @@ spec:
             - containerPort: 5030
           env:
             - name: ASPNETCORE_ENVIRONMENT
-              value: Production
+              value: Development
             - name: ASPNETCORE_URLS
               value: http://+:5030
             # SystemAdminService reads ConnectionStrings:FinnovaConnection
@@ -225,7 +225,7 @@ spec:
             - containerPort: 5000
           env:
             - name: ASPNETCORE_ENVIRONMENT
-              value: Production
+              value: Development
             - name: ASPNETCORE_URLS
               value: http://+:5000
             # Allow the UI origin; adjust if your UI runs elsewhere.
@@ -251,3 +251,68 @@ spec:
     - port: 5000
       targetPort: 5000
       nodePort: 30500
+---
+# ===================== Ingress (hostname-based access) =====================
+# Requires an ingress controller in the cluster. For Docker Desktop (Kubeadm) install
+# ingress-nginx (pinned release), see k8s/README.md section 7:
+#   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.15.1/deploy/static/provider/cloud/deploy.yaml
+#
+# Hostnames resolve via the Windows hosts file (C:\Windows\System32\drivers\etc\hosts):
+#   127.0.0.1  gateway.finnova.local ua.finnova.local accounts.finnova.local systemadmin.finnova.local
+#
+# - gateway.finnova.local    -> gateway (the real entry point; mirrors production topology)
+# - <svc>.finnova.local      -> each backend directly, for individual service testing ONLY.
+#   These bypass the gateway and are a local-dev convenience; do NOT replicate the direct
+#   backend hosts in STG/Prod (see README "Promoting across environments").
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: finnova-ingress
+  annotations:
+    # Local HTTP-only testing; no TLS redirect. Remove in TLS-terminating environments.
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    # The gateway: single entry point, routes /api/ua, /api/accounts, /api/systemadmin internally.
+    - host: gateway.finnova.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: finnova-api-gateway
+                port:
+                  number: 5000
+    # Direct-to-backend hosts for individual service testing (bypass the gateway).
+    - host: ua.finnova.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: finnova-ua-service
+                port:
+                  number: 5010
+    - host: accounts.finnova.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: finnova-accounts-service
+                port:
+                  number: 5020
+    - host: systemadmin.finnova.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: finnova-systemadmin-service
+                port:
+                  number: 5030

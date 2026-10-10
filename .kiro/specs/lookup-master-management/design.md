@@ -1035,7 +1035,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization(options =>
     options.AddPolicy("SystemAdmin", p => p.RequireRole("SystemAdmin")));
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+var connectionString = builder.Configuration.GetConnectionString("FinnovaConnection")
     ?? "Server=localhost;Database=Finnova;Trusted_Connection=True;TrustServerCertificate=True";
 builder.Services.AddFinnovaRepository(connectionString); // SQL Server (correction #1)
 
