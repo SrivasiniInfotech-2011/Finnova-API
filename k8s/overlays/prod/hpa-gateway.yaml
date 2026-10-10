@@ -1,0 +1,21 @@
+# Horizontal Pod Autoscaler for the gateway (the public entry point). Scales on CPU.
+# Requires metrics-server in the cluster and CPU resource requests on the container
+# (set those via a resources patch when you finalize Prod sizing).
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: finnova-api-gateway
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: finnova-api-gateway
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

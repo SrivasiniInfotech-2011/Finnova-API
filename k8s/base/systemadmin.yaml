@@ -1,0 +1,51 @@
+# SystemAdmin Service (port 5030). Environment-agnostic base.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finnova-systemadmin-service
+  labels: { app: finnova-systemadmin-service }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: finnova-systemadmin-service }
+  template:
+    metadata:
+      labels: { app: finnova-systemadmin-service }
+    spec:
+      containers:
+        - name: systemadmin
+          image: finnova-systemadmin-service # tag set per overlay
+          ports:
+            - containerPort: 5030
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:5030
+            - name: ConnectionStrings__FinnovaConnection
+              valueFrom:
+                secretKeyRef: { name: finnova-db, key: systemadminConnectionString }
+            - name: Jwt__SigningKey
+              valueFrom:
+                secretKeyRef: { name: finnova-jwt, key: signingKey }
+            - name: Jwt__Secret
+              valueFrom:
+                secretKeyRef: { name: finnova-jwt, key: signingKey }
+          readinessProbe:
+            httpGet: { path: /health, port: 5030 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 5030 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: finnova-systemadmin-service
+spec:
+  selector: { app: finnova-systemadmin-service }
+  ports:
+    - port: 5030
+      targetPort: 5030

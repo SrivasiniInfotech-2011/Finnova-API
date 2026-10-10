@@ -1,0 +1,12 @@
+# Expose the gateway on the host via NodePort 30500 (Docker Desktop maps it to
+# localhost:30500). Strategic merge: replaces the Service spec's type and ports.
+apiVersion: v1
+kind: Service
+metadata:
+  name: finnova-api-gateway
+spec:
+  type: NodePort
+  ports:
+    - port: 5000
+      targetPort: 5000
+      nodePort: 30500

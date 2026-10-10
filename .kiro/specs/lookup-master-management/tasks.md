@@ -193,7 +193,7 @@ Dependency notes carried from the design:
     - Create `Finnova.SystemAdminService` ASP.NET Core Web API project mirroring the existing host
       pattern (`AccountsService`/`UAService`); reference `Finnova.Service`, `Finnova.Repository`,
       `Finnova.Models`; add to `Finnova.Backend.slnx`; add `Jwt` config (Issuer/Audience/SigningKey)
-      and `DefaultConnection` to `appsettings.json`
+      and `FinnovaConnection` to `appsettings.json`
     - _Requirements: 7.6_ (design correction #3, Host auth wiring)
 
   - [x] 5.2 Add `ExceptionHandlingMiddleware`

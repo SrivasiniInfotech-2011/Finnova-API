@@ -1,4 +1,4 @@
-using Finnova.Models.Contracts.UserManagement;
+﻿using Finnova.Models.Contracts.UserManagement;
 using Finnova.Models.Domain.Entities;
 using Finnova.Repository.Interfaces;
 using Finnova.Service.UserManagement.Helpers;
@@ -99,10 +99,10 @@ public class GetBranchLocationTreeQueryHandler
     {
         // Build the branch tree from the real locations master so each node carries a Guid Id the
         // UI can send back as the authoritative LocationId. Level 5 => "Branch" (selectable leaf),
-        // level 1 => "Location", others => "Region" — preserving the existing UI level vocabulary.
+        // level 1 => "Location", others => "Region" -- preserving the existing UI level vocabulary.
         var all = await _locations.GetAllFlatAsync(ct);
         var childrenByParent = all
-            .GroupBy(l => l.ParentId)
+            .GroupBy(l => l.ParentId ?? Guid.Empty)   // null parent => Guid.Empty root sentinel (avoids null dictionary key)
             .ToDictionary(g => g.Key, g => g.OrderBy(l => l.Name, StringComparer.Ordinal).ToList());
 
         var tree = new List<BranchTreeNodeResponse>
@@ -110,12 +110,12 @@ public class GetBranchLocationTreeQueryHandler
             new(null, "ALL", "ALL", "Location", Array.Empty<BranchTreeNodeResponse>()),   // R9.1-9.3
         };
 
-        var roots = childrenByParent.TryGetValue(null, out var topLevel) ? topLevel : new List<Location>();
+        var roots = childrenByParent.TryGetValue(Guid.Empty, out var topLevel) ? topLevel : new List<Location>();
         tree.AddRange(roots.Select(r => Build(r, childrenByParent)));
         return tree;
     }
 
-    private static BranchTreeNodeResponse Build(Location node, IReadOnlyDictionary<Guid?, List<Location>> childrenByParent)
+    private static BranchTreeNodeResponse Build(Location node, IReadOnlyDictionary<Guid, List<Location>> childrenByParent)
     {
         var children = childrenByParent.TryGetValue(node.Id, out var kids)
             ? kids.Select(k => Build(k, childrenByParent)).ToList()

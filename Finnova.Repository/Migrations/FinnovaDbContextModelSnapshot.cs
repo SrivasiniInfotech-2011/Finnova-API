@@ -95,6 +95,96 @@ namespace Finnova.Repository.Migrations
                     b.ToTable("accounts", (string)null);
                 });
 
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.Asset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AssetCode")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("BookDepreciationCategory")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("BookDepreciationRate")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<Guid>("ClassCodeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("GuidelineLimit")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("MakeCodeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ModelCodeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("StockDepreciationCategory")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("StockDepreciationRate")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<Guid>("TypeCodeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetCode")
+                        .IsUnique();
+
+                    b.HasIndex("ClassCodeId");
+
+                    b.HasIndex("MakeCodeId");
+
+                    b.HasIndex("ModelCodeId");
+
+                    b.HasIndex("TypeCodeId");
+
+                    b.ToTable("assets", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-00a5-000000000001"),
+                            AssetCode = "LAP-000001",
+                            BookDepreciationCategory = "Straight Line",
+                            BookDepreciationRate = 25.00m,
+                            ClassCodeId = new Guid("00000000-0000-0000-00a1-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Standard Issue Laptop",
+                            GuidelineLimit = 60000.00m,
+                            IsActive = true,
+                            StockDepreciationCategory = "WDV",
+                            StockDepreciationRate = 15.00m,
+                            TypeCodeId = new Guid("00000000-0000-0000-00a3-000000000001"),
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
+                });
+
             modelBuilder.Entity("Finnova.Models.Domain.Entities.ChallanRule", b =>
                 {
                     b.Property<Guid>("Id")
@@ -139,6 +229,68 @@ namespace Finnova.Repository.Migrations
                         .IsUnique();
 
                     b.ToTable("challan_rules", (string)null);
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.ClassCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("class_codes", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-00a1-000000000001"),
+                            Code = "LAP",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Laptops & Computers",
+                            IsActive = true,
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-00a1-000000000002"),
+                            Code = "FUR",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Furniture & Fixtures",
+                            IsActive = true,
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-00a1-000000000003"),
+                            Code = "VEH",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Vehicles",
+                            IsActive = true,
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("Finnova.Models.Domain.Entities.Court", b =>
@@ -914,6 +1066,121 @@ namespace Finnova.Repository.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.MakeCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("make_codes", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-00a2-000000000001"),
+                            Code = "DEL",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Dell",
+                            IsActive = true,
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-00a2-000000000002"),
+                            Code = "HP",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "HP",
+                            IsActive = true,
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-00a2-000000000003"),
+                            Code = "TAT",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tata",
+                            IsActive = true,
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.ModelCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("model_codes", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-00a4-000000000001"),
+                            Code = "MDL1",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Model 2024 Series",
+                            IsActive = true,
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-00a4-000000000002"),
+                            Code = "MDL2",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Model 2023 Series",
+                            IsActive = true,
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
+                });
+
             modelBuilder.Entity("Finnova.Models.Domain.Entities.Nationality", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1231,6 +1498,39 @@ namespace Finnova.Repository.Migrations
                         .IsUnique();
 
                     b.ToTable("organizations", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0003-000000000001"),
+                            AccountingCurrency = "INR",
+                            CeoName = "Managing Director",
+                            Code = "FINNOVA",
+                            CommunicationAddress = "1 Finnova Tower, Bandra Kurla Complex",
+                            CommunicationCity = "Mumbai",
+                            CommunicationCountry = "India",
+                            CommunicationPincode = "400051",
+                            CommunicationState = "Maharashtra",
+                            ConstitutionType = "PrivateLtd",
+                            CorporateAddress = "1 Finnova Tower, Bandra Kurla Complex",
+                            CorporateCity = "Mumbai",
+                            CorporateCountry = "India",
+                            CorporatePincode = "400051",
+                            CorporateState = "Maharashtra",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Default organization for this Finnova instance.",
+                            Email = "info@finnova.com",
+                            GstNumber = "27AAACF1234F1Z5",
+                            Mobile = "9820010000",
+                            Name = "Finnova Financial Services Ltd",
+                            PanNumber = "AAACF1234F",
+                            RegistrationDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            RegistrationNumber = "U65999MH2024PTC000001",
+                            Status = "Active",
+                            Telephone = "02261001000",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Website = "https://www.finnova.com"
+                        });
                 });
 
             modelBuilder.Entity("Finnova.Models.Domain.Entities.OrganizationNode", b =>
@@ -1523,6 +1823,68 @@ namespace Finnova.Repository.Migrations
                     b.HasIndex("TransactionDate");
 
                     b.ToTable("transactions", (string)null);
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.TypeCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("type_codes", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-00a3-000000000001"),
+                            Code = "HW",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Hardware",
+                            IsActive = true,
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-00a3-000000000002"),
+                            Code = "OFF",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Office Equipment",
+                            IsActive = true,
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-00a3-000000000003"),
+                            Code = "TRN",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Transport",
+                            IsActive = true,
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("Finnova.Models.Domain.Entities.UserAccessAssignment", b =>
@@ -1904,6 +2266,48 @@ namespace Finnova.Repository.Migrations
                     b.ToTable("user_management_audit", (string)null);
                 });
 
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.Asset", b =>
+                {
+                    b.HasOne("Finnova.Models.Domain.Entities.ClassCode", "ClassCode")
+                        .WithMany()
+                        .HasForeignKey("ClassCodeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Finnova.Models.Domain.Entities.MakeCode", "MakeCode")
+                        .WithMany()
+                        .HasForeignKey("MakeCodeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Finnova.Models.Domain.Entities.ModelCode", "ModelCode")
+                        .WithMany()
+                        .HasForeignKey("ModelCodeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Finnova.Models.Domain.Entities.TypeCode", "TypeCode")
+                        .WithMany()
+                        .HasForeignKey("TypeCodeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ClassCode");
+
+                    b.Navigation("MakeCode");
+
+                    b.Navigation("ModelCode");
+
+                    b.Navigation("TypeCode");
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.DraweeBranch", b =>
+                {
+                    b.HasOne("Finnova.Models.Domain.Entities.DraweeBank", null)
+                        .WithMany("Branches")
+                        .HasForeignKey("DraweeBankId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Finnova.Models.Domain.Entities.FunctionalGroupFunction", b =>
                 {
                     b.HasOne("Finnova.Models.Domain.Entities.FunctionalGroup", null)
@@ -1916,15 +2320,6 @@ namespace Finnova.Repository.Migrations
                         .WithMany()
                         .HasForeignKey("ProgramId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Finnova.Models.Domain.Entities.DraweeBranch", b =>
-                {
-                    b.HasOne("Finnova.Models.Domain.Entities.DraweeBank", null)
-                        .WithMany("Branches")
-                        .HasForeignKey("DraweeBankId")
-                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
@@ -2014,16 +2409,16 @@ namespace Finnova.Repository.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Finnova.Models.Domain.Entities.FunctionalGroup", b =>
-                {
-                    b.Navigation("Functions");
-                });
-
             modelBuilder.Entity("Finnova.Models.Domain.Entities.DraweeBank", b =>
                 {
                     b.Navigation("Branches");
 
                     b.Navigation("Restriction");
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.FunctionalGroup", b =>
+                {
+                    b.Navigation("Functions");
                 });
 
             modelBuilder.Entity("Finnova.Models.Domain.Entities.Location", b =>

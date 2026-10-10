@@ -64,6 +64,9 @@ public class ExceptionHandlingMiddleware
             var isUser = ctx.Request.Path.StartsWithSegments("/api/user", StringComparison.OrdinalIgnoreCase);
             var validationUserCode = isUser ? "ERR-USR-400" : validationEntityCode;
             var fallbackUserCode = isUser ? "ERR-USR-500" : fallbackEntityCode;
+            var isAsset = ctx.Request.Path.StartsWithSegments("/api/asset", StringComparison.OrdinalIgnoreCase);
+            var validationAssetCode = isAsset ? "ERR-AST-400" : validationUserCode;
+            var fallbackAssetCode = isAsset ? "ERR-AST-500" : fallbackUserCode;
             var (status, code, detail) = ex switch
             {
                 // ---- existing lookup branch (unchanged) ----
@@ -112,10 +115,15 @@ public class ExceptionHandlingMiddleware
                 DraweeBranchDuplicatePlaceCodeException => (409, "ERR-DRB-409", ex.Message),
                 ChallanRuleDuplicateCodeException => (409, "ERR-DRB-409", ex.Message),
                 DraweeBankValidationException => (400, "ERR-DRB-400", ex.Message),
-
+                // ---- new Asset Master branch (typed, no message sniffing) ----
+                AssetNotFoundException => (404, "ERR-AST-404", ex.Message),
+                CodeNotFoundException => (404, "ERR-AST-404", ex.Message),
+                DuplicateCodeException => (409, "ERR-AST-409", ex.Message),
+                CodeInUseException => (409, "ERR-AST-409", ex.Message),
+                AssetValidationException => (400, "ERR-AST-400", ex.Message),
                 // ---- shared: validation failures and unhandled fallback (path-scoped code) ----
-                FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, validationUserCode, v.Message),
-                _ => (StatusCodes.Status500InternalServerError, fallbackUserCode, "Unexpected error.")
+                FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, validationAssetCode, v.Message),
+                _ => (StatusCodes.Status500InternalServerError, fallbackAssetCode, "Unexpected error.")
 
             };
 

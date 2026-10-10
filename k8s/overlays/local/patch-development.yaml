@@ -1,0 +1,10 @@
+# JSON6902 patch body applied (per Deployment) to the first container: run in
+# Development (Swagger on) and never pull — use the locally built image. The ADD on
+# env index 0 works because in base the first env entry is ASPNETCORE_ENVIRONMENT, so
+# `replace` targets it directly.
+- op: replace
+  path: /spec/template/spec/containers/0/env/0/value
+  value: Development
+- op: add
+  path: /spec/template/spec/containers/0/imagePullPolicy
+  value: Never

@@ -1,0 +1,55 @@
+# Local Ingress rules: gateway at gateway.finnova.local PLUS direct per-service hosts
+# for individual service testing. Replaces the whole rules list and adds the local
+# ssl-redirect: false annotation. Direct backend hosts are local-only — overlays for
+# QA/STG/Prod expose the gateway host alone.
+#
+# Add to C:\Windows\System32\drivers\etc\hosts (as Administrator):
+#   127.0.0.1  gateway.finnova.local ua.finnova.local accounts.finnova.local systemadmin.finnova.local
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: finnova-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+    - host: gateway.finnova.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: finnova-api-gateway
+                port:
+                  number: 5000
+    - host: ua.finnova.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: finnova-ua-service
+                port:
+                  number: 5010
+    - host: accounts.finnova.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: finnova-accounts-service
+                port:
+                  number: 5020
+    - host: systemadmin.finnova.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: finnova-systemadmin-service
+                port:
+                  number: 5030

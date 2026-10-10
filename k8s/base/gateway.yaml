@@ -1,0 +1,48 @@
+# API Gateway (port 5000). The single public entry point. Base Service is ClusterIP;
+# overlays decide external exposure (local = NodePort, cloud = LoadBalancer/ALB).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finnova-api-gateway
+  labels: { app: finnova-api-gateway }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: finnova-api-gateway }
+  template:
+    metadata:
+      labels: { app: finnova-api-gateway }
+    spec:
+      containers:
+        - name: gateway
+          image: finnova-api-gateway # tag set per overlay
+          ports:
+            - containerPort: 5000
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:5000
+            # Allowed UI origin for CORS; overlays set the real per-env origin.
+            - name: AllowedOrigins
+              value: http://localhost:3000
+          readinessProbe:
+            httpGet: { path: /health, port: 5000 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 5000 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: finnova-api-gateway
+spec:
+  # ClusterIP by default; the local overlay patches this to NodePort, cloud overlays
+  # front it with a LoadBalancer / ALB Ingress.
+  selector: { app: finnova-api-gateway }
+  ports:
+    - port: 5000
+      targetPort: 5000

@@ -1,0 +1,74 @@
+# Local patches layered on the shared base.
+#
+# - imagePullPolicy: Never on every container so the cluster uses the locally built :local images
+#   (the base omits pull policy; images: in kustomization.yaml sets the :local tags).
+# - ASPNETCORE_ENVIRONMENT: Development on all four services (Swagger on for local testing).
+#   The base defaults to Production; these strategic-merge env entries override it.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finnova-ua-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: ua
+          imagePullPolicy: Never
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finnova-accounts-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: accounts
+          imagePullPolicy: Never
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finnova-systemadmin-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: systemadmin
+          imagePullPolicy: Never
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finnova-api-gateway
+spec:
+  template:
+    spec:
+      containers:
+        - name: gateway
+          imagePullPolicy: Never
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+---
+# Expose the gateway to the host via NodePort 30500 (Docker Desktop maps it to localhost:30500).
+apiVersion: v1
+kind: Service
+metadata:
+  name: finnova-api-gateway
+spec:
+  type: NodePort
+  ports:
+    - port: 5000
+      targetPort: 5000
+      nodePort: 30500

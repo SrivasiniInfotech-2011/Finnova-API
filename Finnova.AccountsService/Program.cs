@@ -1,5 +1,6 @@
 using Finnova.Repository;
 using Finnova.Service.Accounts.Commands.CreateAccount;
+using Finnova.Service.Assets.CodeGeneration;
 using Finnova.Service.Auth;
 using Finnova.Service.Storage;
 using Finnova.Service.UserManagement.Abstractions;
@@ -24,6 +25,7 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSett
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordPolicy,
     DefaultPasswordPolicy>();
+builder.Services.AddScoped<IAssetCodeGenerator, AssetCodeGenerator>();
 // Repository (EF Core + PostgreSQL)
 var connectionString = builder.Configuration.GetConnectionString("FinnovaConnection");
 builder.Services.AddFinnovaRepository(connectionString!);

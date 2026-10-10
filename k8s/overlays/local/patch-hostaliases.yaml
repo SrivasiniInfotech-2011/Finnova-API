@@ -1,0 +1,26 @@
+# LOCAL-ONLY: make `host.docker.internal` resolve from inside pods.
+#
+# Docker Desktop injects host.docker.internal into plain Docker containers, but NOT into
+# Kubernetes pods — K8s manages /etc/hosts itself. Without this, the connection strings
+# (Server=host.docker.internal,1433) fail to resolve and SqlClient errors with
+# "Network is unreachable". We add a hostAliases entry pointing at the Docker Desktop
+# host-gateway IP so the existing connection strings work unchanged.
+#
+# 192.168.65.254 is the Docker Desktop host-gateway address on Windows/macOS. If your
+# Docker Desktop uses a different host IP, change it here. This is local-only — QA/STG/
+# Prod reach the DB by its real DNS endpoint (e.g. RDS), so they do NOT get this patch.
+#
+# NOTE: this only fixes DNS resolution. SQL Server on the host must also be listening on
+# TCP 1433 (TCP/IP protocol enabled) with SQL auth for the `sa` login, and the firewall
+# must allow inbound 1433 — otherwise the connection still fails after resolving.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: placeholder # overridden by each patch target
+spec:
+  template:
+    spec:
+      hostAliases:
+        - ip: "192.168.65.254"
+          hostnames:
+            - "host.docker.internal"

@@ -1,0 +1,52 @@
+# STG overlay — production-like: Staging env, gateway host with TLS, 2 replicas on the
+# gateway and backends. Promote the SAME image tag that passed QA. Secrets from a real
+# store (see secrets-placeholder.yaml).
+#
+# Apply:  kubectl apply -k k8s/overlays/stg
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: finnova-stg
+
+resources:
+  - ../../base
+  - secrets-placeholder.yaml
+
+images:
+  - name: finnova-ua-service
+    newName: <registry>/finnova-ua-service
+    newTag: <gitsha>
+  - name: finnova-accounts-service
+    newName: <registry>/finnova-accounts-service
+    newTag: <gitsha>
+  - name: finnova-systemadmin-service
+    newName: <registry>/finnova-systemadmin-service
+    newTag: <gitsha>
+  - name: finnova-api-gateway
+    newName: <registry>/finnova-api-gateway
+    newTag: <gitsha>
+
+# 2 replicas across the board for resilience.
+replicas:
+  - name: finnova-ua-service
+    count: 2
+  - name: finnova-accounts-service
+    count: 2
+  - name: finnova-systemadmin-service
+    count: 2
+  - name: finnova-api-gateway
+    count: 2
+
+patches:
+  # Staging environment on each service.
+  - path: patch-env.yaml
+    target: { group: apps, version: v1, kind: Deployment, name: finnova-ua-service }
+  - path: patch-env.yaml
+    target: { group: apps, version: v1, kind: Deployment, name: finnova-accounts-service }
+  - path: patch-env.yaml
+    target: { group: apps, version: v1, kind: Deployment, name: finnova-systemadmin-service }
+  - path: patch-env.yaml
+    target: { group: apps, version: v1, kind: Deployment, name: finnova-api-gateway }
+  # Gateway host + TLS for STG.
+  - path: patch-ingress-host.yaml
+  - path: patch-gateway-cors.yaml

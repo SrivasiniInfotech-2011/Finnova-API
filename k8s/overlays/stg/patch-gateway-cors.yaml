@@ -1,0 +1,13 @@
+# STG UI origin for the gateway's CORS allow-list.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finnova-api-gateway
+spec:
+  template:
+    spec:
+      containers:
+        - name: gateway
+          env:
+            - name: AllowedOrigins
+              value: https://stg.finnova.example

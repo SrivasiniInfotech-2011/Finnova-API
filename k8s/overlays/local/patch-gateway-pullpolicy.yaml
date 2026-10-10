@@ -1,0 +1,13 @@
+# Gateway-only: use the locally built image, but do NOT switch to Development.
+#
+# WHY the gateway stays Production (unlike the backends): in Development, ASP.NET loads
+# appsettings.Development.json, which repoints the YARP cluster destinations to
+# http://localhost:5010/5020/5030 — correct when every service runs on one host, but
+# wrong inside Kubernetes, where `localhost` is the gateway pod itself (-> 502). Running
+# the gateway in Production (base default) makes it use appsettings.json, whose
+# destinations are the Service DNS names (finnova-ua-service:5010, ...). The gateway is a
+# reverse proxy with no meaningful Swagger surface, so losing its Swagger is a non-issue;
+# the three backends keep Development/Swagger.
+- op: add
+  path: /spec/template/spec/containers/0/imagePullPolicy
+  value: Never

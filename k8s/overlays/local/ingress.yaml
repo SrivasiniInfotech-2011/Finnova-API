@@ -1,0 +1,55 @@
+# Local ingress patch: gateway at gateway.finnova.local (the real entry point) PLUS direct
+# <svc>.finnova.local hosts for individual-service testing (these bypass the gateway and are a
+# local-dev convenience only — never replicated in qa/stg/prod). HTTP-only, no TLS redirect.
+#
+# Resolve the hostnames via the Windows hosts file (C:\Windows\System32\drivers\etc\hosts):
+#   127.0.0.1  gateway.finnova.local ua.finnova.local accounts.finnova.local systemadmin.finnova.local
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: finnova-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: gateway.finnova.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: finnova-api-gateway
+                port:
+                  number: 5000
+    - host: ua.finnova.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: finnova-ua-service
+                port:
+                  number: 5010
+    - host: accounts.finnova.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: finnova-accounts-service
+                port:
+                  number: 5020
+    - host: systemadmin.finnova.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: finnova-systemadmin-service
+                port:
+                  number: 5030
