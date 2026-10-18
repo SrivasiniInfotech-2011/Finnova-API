@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +16,7 @@ namespace Finnova.Tests.Integration;
 /// state into each other, and a small deterministic seed (a system-locked SYS_TXN_TYPE row and a
 /// MARITAL_STATUS row) is applied so create-then-list scenarios work.
 /// </summary>
-public class SystemAdminAppFactory : WebApplicationFactory<Program>
+public class SystemAdminAppFactory : WebApplicationFactory<Finnova.SystemAdminService.Controllers.CourtController>
 {
     private readonly string _databaseName = "SystemAdminIntegrationTests-" + Guid.NewGuid();
 
@@ -98,3 +98,4 @@ public class SystemAdminAppFactory : WebApplicationFactory<Program>
         db.SaveChanges();
     }
 }
+

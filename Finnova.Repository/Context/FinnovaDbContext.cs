@@ -44,6 +44,12 @@ public class FinnovaDbContext : DbContext
     public DbSet<Finnova.Models.Domain.Entities.TypeCode> TypeCodes => Set<Finnova.Models.Domain.Entities.TypeCode>();
     public DbSet<ModelCode> ModelCodes => Set<ModelCode>();
     public DbSet<Asset> Assets => Set<Asset>();
+    public DbSet<GLAccount> GLAccounts => Set<GLAccount>();
+    public DbSet<GLBranchApplicability> GLBranchApplicabilities => Set<GLBranchApplicability>();
+    public DbSet<GLAccountVersion> GLAccountVersions => Set<GLAccountVersion>();
+    public DbSet<GLSystemAccountMapping> GLSystemAccountMappings => Set<GLSystemAccountMapping>();
+    public DbSet<CompanyPostingState> CompanyPostingStates => Set<CompanyPostingState>();
+    public DbSet<GLAuditEntry> GLAuditEntries => Set<GLAuditEntry>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
