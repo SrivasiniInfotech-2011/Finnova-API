@@ -39,6 +39,10 @@ public static class DependencyInjection
         services.AddScoped<ITypeCodeRepository, TypeCodeRepository>();
         services.AddScoped<IModelCodeRepository, ModelCodeRepository>();
         services.AddScoped<IAssetRepository, AssetRepository>();
+        services.AddScoped<IGLAccountRepository, GLAccountRepository>();
+        services.AddScoped<IGLSystemAccountMappingRepository, GLSystemAccountMappingRepository>();
+        services.AddScoped<ICompanyPostingStateRepository, CompanyPostingStateRepository>();
+        services.AddScoped<IGLAuditRepository, GLAuditRepository>();
         return services;
     }
 }

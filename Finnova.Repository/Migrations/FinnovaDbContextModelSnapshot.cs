@@ -293,6 +293,23 @@ namespace Finnova.Repository.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.CompanyPostingState", b =>
+                {
+                    b.Property<Guid>("CompanyId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("JvPostingEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("CompanyId");
+
+                    b.ToTable("company_posting_states", (string)null);
+                });
+
             modelBuilder.Entity("Finnova.Models.Domain.Entities.Court", b =>
                 {
                     b.Property<Guid>("Id")
@@ -677,6 +694,249 @@ namespace Finnova.Repository.Migrations
                         .IsUnique();
 
                     b.ToTable("functional_group_functions", (string)null);
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.GLAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AccountNature")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("AllowManualJV")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("AuthorizedVersionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CheckerId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("CostCentreMandatory")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CurrencyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("GLCode")
+                        .IsRequired()
+                        .HasMaxLength(9)
+                        .HasColumnType("nvarchar(9)");
+
+                    b.Property<int>("GLType")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsPostable")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MakerId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("NormalBalance")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("ParentGLId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("ProfitCentreMandatory")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ReportingLine")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SubLedgerType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("TaxType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentGLId");
+
+                    b.HasIndex("CompanyId", "GLCode")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId", "Name");
+
+                    b.ToTable("gl_accounts", (string)null);
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.GLAccountVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("GLAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("MakerId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ProposedPayload")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("State")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SubmittedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GLAccountId");
+
+                    b.HasIndex("GLAccountId", "State")
+                        .IsUnique()
+                        .HasFilter("[State] = 0");
+
+                    b.ToTable("gl_account_versions", (string)null);
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.GLAuditEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ChangedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ChangedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ChangedByRole")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("GLAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("NewValues")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OldValues")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChangedAtUtc");
+
+                    b.HasIndex("GLAccountId");
+
+                    b.ToTable("gl_audit_entries", (string)null);
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.GLBranchApplicability", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("GLAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GLAccountId", "BranchId")
+                        .IsUnique();
+
+                    b.ToTable("gl_branch_applicabilities", (string)null);
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.GLSystemAccountMapping", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("GLAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("SystemGLType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "SystemGLType")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
+
+                    b.ToTable("gl_system_account_mappings", (string)null);
                 });
 
             modelBuilder.Entity("Finnova.Models.Domain.Entities.LineOfBusiness", b =>
@@ -2323,6 +2583,15 @@ namespace Finnova.Repository.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.GLBranchApplicability", b =>
+                {
+                    b.HasOne("Finnova.Models.Domain.Entities.GLAccount", null)
+                        .WithMany("BranchApplicabilities")
+                        .HasForeignKey("GLAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Finnova.Models.Domain.Entities.Location", b =>
                 {
                     b.HasOne("Finnova.Models.Domain.Entities.Location", "Parent")
@@ -2419,6 +2688,11 @@ namespace Finnova.Repository.Migrations
             modelBuilder.Entity("Finnova.Models.Domain.Entities.FunctionalGroup", b =>
                 {
                     b.Navigation("Functions");
+                });
+
+            modelBuilder.Entity("Finnova.Models.Domain.Entities.GLAccount", b =>
+                {
+                    b.Navigation("BranchApplicabilities");
                 });
 
             modelBuilder.Entity("Finnova.Models.Domain.Entities.Location", b =>
