@@ -50,6 +50,9 @@ public class FinnovaDbContext : DbContext
     public DbSet<GLSystemAccountMapping> GLSystemAccountMappings => Set<GLSystemAccountMapping>();
     public DbSet<CompanyPostingState> CompanyPostingStates => Set<CompanyPostingState>();
     public DbSet<GLAuditEntry> GLAuditEntries => Set<GLAuditEntry>();
+    public DbSet<Document> Documents => Set<Document>();
+    public DbSet<DocumentApplicabilityRule> DocumentApplicabilityRules => Set<DocumentApplicabilityRule>();
+    public DbSet<DocumentAuditEntry> DocumentAuditEntries => Set<DocumentAuditEntry>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
