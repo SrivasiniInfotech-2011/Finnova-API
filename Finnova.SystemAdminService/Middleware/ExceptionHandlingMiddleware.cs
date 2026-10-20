@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Mvc;
 using Finnova.Models.Domain.Exceptions;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Finnova.SystemAdminService.Middleware;
 
@@ -67,6 +67,9 @@ public class ExceptionHandlingMiddleware
             var isAsset = ctx.Request.Path.StartsWithSegments("/api/asset", StringComparison.OrdinalIgnoreCase);
             var validationAssetCode = isAsset ? "ERR-AST-400" : validationUserCode;
             var fallbackAssetCode = isAsset ? "ERR-AST-500" : fallbackUserCode;
+            var isDocument = ctx.Request.Path.StartsWithSegments("/api/document", StringComparison.OrdinalIgnoreCase);
+            var validationDocumentCode = isDocument ? "ERR-DOC-400" : validationAssetCode;
+            var fallbackDocumentCode = isDocument ? "ERR-DOC-500" : fallbackAssetCode;
             var (status, code, detail) = ex switch
             {
                 // ---- existing lookup branch (unchanged) ----
@@ -121,7 +124,15 @@ public class ExceptionHandlingMiddleware
                 DuplicateCodeException => (409, "ERR-AST-409", ex.Message),
                 CodeInUseException => (409, "ERR-AST-409", ex.Message),
                 AssetValidationException => (400, "ERR-AST-400", ex.Message),
-                // ---- shared: validation failures and unhandled fallback (path-scoped code) ----
+
+                               // ---- new Document Master branch (typed, no message sniffing) ----
+                DocumentSelfAuthorizationException => (409, DocumentSelfAuthorizationException.ErrorCode, ex.Message), // ERR-DOC-001
+                DocumentInUseException            => (409, DocumentInUseException.ErrorCode, ex.Message),              // ERR-DOC-002
+                DocumentDuplicateCodeException    => (409, DocumentDuplicateCodeException.ErrorCode, ex.Message),      // ERR-DOC-409
+                DocumentConflictException         => (409, "ERR-DOC-409", ex.Message),
+                DocumentNotFoundException         => (404, "ERR-DOC-404", ex.Message),
+
+               // ---- shared: validation failures and unhandled fallback (path-scoped code) ----
                 FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, validationAssetCode, v.Message),
                 _ => (StatusCodes.Status500InternalServerError, fallbackAssetCode, "Unexpected error.")
 

@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using System.Text;
 using Finnova.Repository;
 using Finnova.Service.Assets.CodeGeneration;
 using Finnova.Service.Auth;
@@ -6,8 +8,6 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-using System.Security.Claims;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,9 +54,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// SystemAdmin authorization policy â€” role claim "SystemAdmin" (R7.2/7.3)
+// SystemAdmin authorization policy — role claim "SystemAdmin" (R7.2/7.3)
+// Document Master maker/checker policies (R12.2/R12.3). Kept exclusive pending confirmation
+// (design decision #6): SystemAdmin is NOT accepted as a super-role here.
 builder.Services.AddAuthorization(options =>
-    options.AddPolicy("SystemAdmin", p => p.RequireRole("SystemAdmin")));
+{
+    options.AddPolicy("SystemAdmin", p => p.RequireRole("SystemAdmin"));
+    options.AddPolicy("DOC_MASTER_MAKER", p => p.RequireRole("DOC_MASTER_MAKER"));
+    options.AddPolicy("DOC_MASTER_CHECKER", p => p.RequireRole("DOC_MASTER_CHECKER"));
+});
 
 // Repository (EF Core + SQL Server)
 var connectionString = builder.Configuration.GetConnectionString("FinnovaConnection");
@@ -90,6 +96,12 @@ builder.Services.AddScoped<IPasswordPolicy,
     DefaultPasswordPolicy>();
 // Asset Master — pure, deterministic Asset Code generator (R3.2, R3.3).
 builder.Services.AddScoped<IAssetCodeGenerator, AssetCodeGenerator>();
+// Document Master ports. LookupValidationAdapter reads ACTIVE lookups; the usage checker is a
+// dev stub (resolved assumption A3) to be replaced by the Customer Master adapter (FINNOVA-23).
+builder.Services.AddScoped<Finnova.Service.Document.Ports.ILookupValidationPort,
+    Finnova.Service.Document.Ports.LookupValidationAdapter>();
+builder.Services.AddScoped<Finnova.Service.Document.Ports.IDocumentUsageChecker,
+    Finnova.Service.Document.Ports.StubDocumentUsageChecker>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
