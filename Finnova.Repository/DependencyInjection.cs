@@ -1,8 +1,8 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Finnova.Repository.Context;
 using Finnova.Repository.Interfaces;
 using Finnova.Repository.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Finnova.Repository;
 
@@ -39,6 +39,12 @@ public static class DependencyInjection
         services.AddScoped<ITypeCodeRepository, TypeCodeRepository>();
         services.AddScoped<IModelCodeRepository, ModelCodeRepository>();
         services.AddScoped<IAssetRepository, AssetRepository>();
+        services.AddScoped<IGLAccountRepository, GLAccountRepository>();
+        services.AddScoped<IGLSystemAccountMappingRepository, GLSystemAccountMappingRepository>();
+        services.AddScoped<ICompanyPostingStateRepository, CompanyPostingStateRepository>();
+        services.AddScoped<IGLAuditRepository, GLAuditRepository>();
+        services.AddScoped<IDocumentRepository, DocumentRepository>();
+        services.AddScoped<IDocumentAuditRepository, DocumentAuditRepository>();
         return services;
     }
 }

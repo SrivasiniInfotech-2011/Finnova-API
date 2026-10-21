@@ -53,6 +53,24 @@ public static class DevJwt
         return Write(claims, DateTime.UtcNow.AddMinutes(30));
     }
 
+    /// <summary>
+    /// A valid, unexpired token carrying one role claim per supplied role (plus a subject).
+    /// Used by endpoints whose authorization requires maker/checker roles, including dual-role
+    /// callers (e.g. a user holding both DOC_MASTER_MAKER and DOC_MASTER_CHECKER).
+    /// </summary>
+    public static string ForRoles(params string[] roles)
+    {
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
+        };
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
+        return Write(claims, DateTime.UtcNow.AddMinutes(30));
+    }
+
     /// <summary>Convenience: a valid SystemAdmin token.</summary>
     public static string SystemAdmin() => ForRole(SystemAdminRole);
 

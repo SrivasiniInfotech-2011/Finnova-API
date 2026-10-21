@@ -623,14 +623,14 @@ public async Task<bool> ExistsByGLCodeAsync(string glCode, Guid? excludeId = nul
 }
 ```
 
-`GLAccountAuditRepository.GetByGLAccountIdAsync`:
 
+```
+`GLAccountAuditRepository.GetByGLAccountIdAsync`:
 ```csharp
 return await DbSet.AsNoTracking()
     .Where(x => x.GLAccountId == glAccountId)
     .OrderByDescending(x => x.ChangedAtUtc).ThenByDescending(x => x.Id)   // R9.5
     .ToListAsync(ct);   // empty list when none match (R9.6)
-```
 
 DI registration additions (`AddFinnovaRepository`):
 
