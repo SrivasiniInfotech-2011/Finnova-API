@@ -53,6 +53,15 @@ public class FinnovaDbContext : DbContext
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<DocumentApplicabilityRule> DocumentApplicabilityRules => Set<DocumentApplicabilityRule>();
     public DbSet<DocumentAuditEntry> DocumentAuditEntries => Set<DocumentAuditEntry>();
+    public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<CustomerAddress> CustomerAddresses => Set<CustomerAddress>();
+    public DbSet<IndividualCustomerDetails> IndividualCustomerDetails => Set<IndividualCustomerDetails>();
+    public DbSet<NonIndividualCustomerDetails> NonIndividualCustomerDetails => Set<NonIndividualCustomerDetails>();
+    public DbSet<BankAccount> CustomerBankAccounts => Set<BankAccount>();
+    public DbSet<CustomerDocumentReference> CustomerDocumentReferences => Set<CustomerDocumentReference>();
+    public DbSet<CustomerTrackEntry> CustomerTrackEntries => Set<CustomerTrackEntry>();
+    public DbSet<FactoringSubLimit> CustomerFactoringSubLimits => Set<FactoringSubLimit>();
+    public DbSet<CustomerAuditEntry> CustomerAuditEntries => Set<CustomerAuditEntry>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

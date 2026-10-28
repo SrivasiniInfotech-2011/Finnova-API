@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Finnova.Models.Domain.Entities;
+using Finnova.Models.Domain.Enums;
 using Finnova.Repository.Context;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Finnova.Tests.Integration;
 
@@ -35,7 +37,8 @@ public class SystemAdminAppFactory : WebApplicationFactory<Finnova.SystemAdminSe
 
             // Re-add FinnovaDbContext on the EF Core InMemory provider.
             services.AddDbContext<FinnovaDbContext>(options =>
-                options.UseInMemoryDatabase(_databaseName));
+                options.UseInMemoryDatabase(_databaseName)
+                    .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning)));
 
             // Build the model + apply the entity HasData seed, then add test rows.
             using var scope = services.BuildServiceProvider().CreateScope();
@@ -96,6 +99,27 @@ public class SystemAdminAppFactory : WebApplicationFactory<Finnova.SystemAdminSe
         EnsureRow("Origination", "MARITAL_STATUS", "SIN", "Single", 1, active: true, locked: false);
 
         db.SaveChanges();
+
+        if (!db.NumberingSchemes.Any(x =>
+                x.DocumentType == "CUSTOMER" && x.Scope == NumberScope.Global && x.ScopeId == null))
+        {
+            db.NumberingSchemes.Add(new NumberingScheme
+            {
+                Code = "CUSTOMER-INTEGRATION",
+                Name = "Customer Integration Codes",
+                DocumentType = "CUSTOMER",
+                FormatTemplate = "CUST{SEQ:8}",
+                SeqStart = 1,
+                SeqIncrement = 1,
+                SeqPadding = 8,
+                ResetRule = NumberResetRule.Never,
+                Scope = NumberScope.Global,
+                IsActive = true,
+                CreatedAt = seedDate,
+                UpdatedAt = seedDate,
+            });
+            db.SaveChanges();
+        }
     }
 }
 

@@ -131,4 +131,14 @@ public sealed class InMemoryNationalityRepository : INationalityRepository
 
         return Task.FromResult(exists);
     }
+    public Task<Nationality?> GetActiveByCodeAsync(
+       string code, CancellationToken cancellationToken = default)
+    {
+        var normalizedCode = code.Trim();
+        var found = _store.FirstOrDefault(x =>
+            x.IsActive &&
+            string.Equals(x.Code, normalizedCode, StringComparison.OrdinalIgnoreCase));
+
+        return Task.FromResult(found is null ? null : Clone(found));
+    }
 }

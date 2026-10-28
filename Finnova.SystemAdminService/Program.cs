@@ -1,13 +1,17 @@
-using System.Security.Claims;
-using System.Text;
 using Finnova.Repository;
 using Finnova.Service.Assets.CodeGeneration;
 using Finnova.Service.Auth;
+using Finnova.Service.Customers;
+using Finnova.Service.Customers.Commands;
+using Finnova.Service.Customers.References;
+using Finnova.Service.Customers.Validation;
 using Finnova.Service.UserManagement.Abstractions;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using System.Security.Claims;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +39,16 @@ builder.Services.AddTransient(
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAssetCodeGenerator, AssetCodeGenerator>();
+builder.Services.AddScoped<ILookupReferenceResolver, LookupReferenceResolver>();
+builder.Services.AddScoped<INationalityReferenceResolver, NationalityReferenceResolver>();
+builder.Services.AddScoped<IGLPostingGroupResolver, GLPostingGroupResolver>();
+builder.Services.AddScoped<IDocumentDefinitionResolver, DocumentDefinitionResolver>();
+builder.Services.AddScoped<IIndiaAddressControl, IndiaAddressControlDeferredAdapter>();
+builder.Services.AddScoped<ICustomerMasterReferenceValidator, CustomerMasterReferenceValidator>();
+builder.Services.AddScoped<IDocumentNumberGenerator, CustomerCodeGenerator>();
+builder.Services.AddScoped<CustomerAggregateMapper>();
+builder.Services.AddScoped<ICustomerAggregateMapper>(sp => sp.GetRequiredService<CustomerAggregateMapper>());
+builder.Services.AddScoped<ICustomerProjectionMapper, CustomerProjectionMapper>();
 // JWT Bearer authentication (R7.6 â€” establishing the scheme)
 var jwt = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -67,6 +81,8 @@ builder.Services.AddAuthorization(options =>
 // Repository (EF Core + SQL Server)
 var connectionString = builder.Configuration.GetConnectionString("FinnovaConnection");
 builder.Services.AddFinnovaRepository(connectionString);
+builder.Services.AddScoped<CustomerFieldApplicabilityEvaluator>();
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateCustomerCommand).Assembly));
 
 // Health checks
 builder.Services.AddHealthChecks();

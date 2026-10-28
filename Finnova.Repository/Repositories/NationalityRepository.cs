@@ -38,4 +38,7 @@ public class NationalityRepository : RepositoryBase<Nationality>, INationalityRe
         return await DbSet.AsNoTracking().AnyAsync(
             x => x.Code == c && (excludeId == null || x.Id != excludeId), ct);   // CI via collation (R2.1)
     }
+
+    public async Task<Nationality?> GetActiveByCodeAsync(string code, CancellationToken ct = default)
+        => await DbSet.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Code == code.Trim(), ct);
 }

@@ -45,6 +45,11 @@ public static class DependencyInjection
         services.AddScoped<IGLAuditRepository, GLAuditRepository>();
         services.AddScoped<IDocumentRepository, DocumentRepository>();
         services.AddScoped<IDocumentAuditRepository, DocumentAuditRepository>();
+        services.AddScoped<ICustomerRepository, CustomerRepository>();
+        services.AddScoped<ICustomerAuditRepository, CustomerAuditRepository>();
+        services.AddScoped<ICustomerReadRepository, CustomerReadRepository>();
+        services.AddScoped<ICustomerUnitOfWork, CustomerUnitOfWork>();
+
         return services;
     }
 }

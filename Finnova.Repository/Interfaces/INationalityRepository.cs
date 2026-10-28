@@ -24,4 +24,6 @@ public interface INationalityRepository : IRepository<Nationality>
         string code,
         Guid? excludeId = null,
         CancellationToken ct = default);
+
+    Task<Nationality?> GetActiveByCodeAsync(string code, CancellationToken ct = default);
 }

@@ -76,4 +76,7 @@ public class GLAccountRepository(FinnovaDbContext finnovaDbContext)
 
     public async Task<bool> HasActiveChildrenAsync(Guid id, CancellationToken ct = default)
         => await DbSet.AsNoTracking().AnyAsync(x => x.ParentGLId == id && x.Status == GLStatus.Active, ct);
+
+    public async Task<GLAccount?> GetActiveApprovedPostableByCompanyAndCodeAsync(Guid companyId, string code, CancellationToken ct = default)
+        => await DbSet.AsNoTracking().FirstOrDefaultAsync(x => x.CompanyId == companyId && x.GLCode == code.Trim() && x.Status == GLStatus.Active && x.AuthorizedVersionNumber > 0 && x.IsPostable, ct);
 }

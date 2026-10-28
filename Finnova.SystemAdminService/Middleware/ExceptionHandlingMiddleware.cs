@@ -70,6 +70,10 @@ public class ExceptionHandlingMiddleware
             var isDocument = ctx.Request.Path.StartsWithSegments("/api/document", StringComparison.OrdinalIgnoreCase);
             var validationDocumentCode = isDocument ? "ERR-DOC-400" : validationAssetCode;
             var fallbackDocumentCode = isDocument ? "ERR-DOC-500" : fallbackAssetCode;
+            var isCustomer = ctx.Request.Path.StartsWithSegments(
+                "/api/customer-onboarding", StringComparison.OrdinalIgnoreCase);
+            var validationCustomerCode = isCustomer ? CustomerErrorCodes.Validation : validationDocumentCode;
+            var fallbackCustomerCode = isCustomer ? CustomerErrorCodes.Unexpected : fallbackDocumentCode;
             var (status, code, detail) = ex switch
             {
                 // ---- existing lookup branch (unchanged) ----
@@ -132,9 +136,41 @@ public class ExceptionHandlingMiddleware
                 DocumentConflictException         => (409, "ERR-DOC-409", ex.Message),
                 DocumentNotFoundException         => (404, "ERR-DOC-404", ex.Message),
 
+                // ---- new Customer Onboarding branch (typed, no message sniffing) ----
+                CustomerNotFoundException =>
+                    (StatusCodes.Status404NotFound, CustomerErrorCodes.NotFound, ex.Message),
+                CustomerChildRecordNotFoundException =>
+                    (StatusCodes.Status404NotFound, CustomerErrorCodes.NotFound, ex.Message),
+                CustomerCodeConflictException =>
+                    (StatusCodes.Status409Conflict, CustomerErrorCodes.Conflict, ex.Message),
+                CustomerImmutableFieldException =>
+                    (StatusCodes.Status409Conflict, CustomerErrorCodes.Immutable, ex.Message),
+                CustomerLookupReferenceNotFoundException =>
+                    (StatusCodes.Status400BadRequest, CustomerErrorCodes.LookupReference, ex.Message),
+                CustomerNationalityReferenceNotFoundException =>
+                    (StatusCodes.Status400BadRequest, CustomerErrorCodes.NationalityReference, ex.Message),
+                CustomerGLPostingGroupInvalidException =>
+                    (StatusCodes.Status400BadRequest, CustomerErrorCodes.GLReference, ex.Message),
+                CustomerDocumentDefinitionUnavailableException =>
+                    (StatusCodes.Status400BadRequest, CustomerErrorCodes.DocumentReference, ex.Message),
+                CustomerAddressControlValidationException =>
+                    (StatusCodes.Status400BadRequest, CustomerErrorCodes.AddressReference, ex.Message),
+                CustomerConditionalApplicabilityException =>
+                    (StatusCodes.Status400BadRequest, CustomerErrorCodes.Validation, ex.Message),
+                CustomerDuplicateReferenceException =>
+                    (StatusCodes.Status409Conflict, CustomerErrorCodes.DuplicateReference, ex.Message),
+                CustomerDuplicateIdentityException =>
+                    (StatusCodes.Status409Conflict, CustomerErrorCodes.Duplicate, ex.Message),
+                CustomerDuplicateBankAccountException =>
+                    (StatusCodes.Status409Conflict, CustomerErrorCodes.Duplicate, ex.Message),
+                CustomerDefaultBankAccountException =>
+                    (StatusCodes.Status409Conflict, CustomerErrorCodes.DefaultBank, ex.Message),
+                CustomerBoundaryUnavailableException =>
+                    (StatusCodes.Status503ServiceUnavailable, CustomerErrorCodes.BoundaryUnavailable, ex.Message),
+
                // ---- shared: validation failures and unhandled fallback (path-scoped code) ----
-                FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, validationAssetCode, v.Message),
-                _ => (StatusCodes.Status500InternalServerError, fallbackAssetCode, "Unexpected error.")
+                FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, validationCustomerCode, v.Message),
+                _ => (StatusCodes.Status500InternalServerError, fallbackCustomerCode, "Unexpected error.")
 
             };
 

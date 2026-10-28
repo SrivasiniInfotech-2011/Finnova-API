@@ -3,6 +3,7 @@ using Finnova.Models.Contracts.Customers;
 using Finnova.Models.Domain.Entities;
 using Finnova.Models.Domain.Enums;
 using Finnova.Models.Domain.Exceptions;
+using Finnova.Repository.Interfaces;
 using Finnova.Service.Customers.References;
 using Finnova.Service.Customers.Validation;
 

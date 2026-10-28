@@ -25,4 +25,6 @@ public interface IGLAccountRepository : IRepository<GLAccount>
 
     /// <summary>True when the GL has one or more Active child accounts (R5.6).</summary>
     Task<bool> HasActiveChildrenAsync(Guid id, CancellationToken ct = default);
+
+    Task<GLAccount?> GetActiveApprovedPostableByCompanyAndCodeAsync(Guid companyId, string code, CancellationToken ct = default);
 }
