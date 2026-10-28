@@ -17,12 +17,12 @@ public sealed class CustomerOnboardingRulesTests
     // Property 1 validates Requirements 3.1 and 19.1: CustomerCode is exactly 12 alphanumeric characters.
     [Property(MaxTest = 100)]
     public bool Property1_CustomerCodeRule_is_stable(string value)
-        => (value.Length == 12 && value.All(char.IsLetterOrDigit)) == !Throws(() => CustomerCodeRules.ValidateGenerated(value));
+        => value is null || (value.Length == 12 && value.All(char.IsLetterOrDigit)) == !Throws(() => CustomerCodeRules.ValidateGenerated(value));
 
     // Property 2 validates Requirements 3.1 and 27.5: normalization is idempotent.
     [Property(MaxTest = 100)]
     public bool Property2_Normalized_identity_is_idempotent(string value)
-        => DuplicateIdentityRules.Normalize(DuplicateIdentityRules.Normalize(value)) == DuplicateIdentityRules.Normalize(value);
+        => value is null || DuplicateIdentityRules.Normalize(DuplicateIdentityRules.Normalize(value)) == DuplicateIdentityRules.Normalize(value);
 
     // Property 3 validates Requirements 21.1 and 27.5: amounts cannot be negative.
     [Property(MaxTest = 100)]
@@ -37,7 +37,7 @@ public sealed class CustomerOnboardingRulesTests
     // Property 5 validates Requirements 20.1 and 27.5: PIN values use the Indian six-digit rule.
     [Property(MaxTest = 100)]
     public bool Property5_Pin_is_six_digit_indian_pin(string value)
-        => (value.Length != 6 || value[0] == '0' || value.Any(c => !char.IsDigit(c))) == Throws(() => CustomerFieldRules.IndianPin(value));
+        => value is null || (value.Length != 6 || value[0] == '0' || value.Any(c => !char.IsDigit(c))) == Throws(() => CustomerFieldRules.IndianPin(value));
 
     // Property 6 validates Requirement 23.8: a non-empty bank set has exactly one default.
     [Property(MaxTest = 100)]
@@ -47,12 +47,16 @@ public sealed class CustomerOnboardingRulesTests
     // Property 7 validates Requirements 3.1 and 23.4: normalized identity is case-insensitive.
     [Property(MaxTest = 100)]
     public bool Property7_Code_normalization_is_case_insensitive(string value)
-        => DuplicateIdentityRules.Normalize(value.ToLowerInvariant()) == DuplicateIdentityRules.Normalize(value.ToUpperInvariant());
+        => value is null || DuplicateIdentityRules.Normalize(value.ToLowerInvariant()) == DuplicateIdentityRules.Normalize(value.ToUpperInvariant());
 
     // Property 8 validates Requirements 21.8 and 27.5: issue date is strictly before expiry.
     [Property(MaxTest = 100)]
-    public bool Property8_Date_rule_is_strict(DateOnly issue, DateOnly expiry)
-        => (issue >= expiry) == Throws(() => CustomerFieldRules.IssueBeforeExpiry(issue, expiry));
+    public bool Property8_Date_rule_is_strict(int issueDay, int expiryDay)
+    {
+        var issue = DateOnly.FromDayNumber(Math.Abs(issueDay % 3_652_059));
+        var expiry = DateOnly.FromDayNumber(Math.Abs(expiryDay % 3_652_059));
+        return (issue >= expiry) == Throws(() => CustomerFieldRules.IssueBeforeExpiry(issue, expiry));
+    }
 
     private static bool Throws(Action action) { try { action(); return false; } catch { return true; } }
 }

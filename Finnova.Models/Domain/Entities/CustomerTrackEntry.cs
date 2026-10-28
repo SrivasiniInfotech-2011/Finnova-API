@@ -28,5 +28,14 @@ public sealed class CustomerTrackEntry
         ByLogin = byLogin;
         UpdatedAtUtc = DateTime.UtcNow;
     }
+
+    public void Release(string actorId)
+    {
+        Status = CustomerTrackStatus.Released;
+        ReleaseDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        ReleasedBy = actorId;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
     public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
 }

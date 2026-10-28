@@ -32,5 +32,12 @@ public sealed class BankAccount
         IsDefault = isDefault;
         UpdatedAtUtc = DateTime.UtcNow;
     }
+
+    public void SetDefault(bool isDefault)
+    {
+        IsDefault = isDefault;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
     public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
 }

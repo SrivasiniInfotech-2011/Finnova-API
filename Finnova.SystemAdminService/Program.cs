@@ -49,6 +49,10 @@ builder.Services.AddScoped<IDocumentNumberGenerator, CustomerCodeGenerator>();
 builder.Services.AddScoped<CustomerAggregateMapper>();
 builder.Services.AddScoped<ICustomerAggregateMapper>(sp => sp.GetRequiredService<CustomerAggregateMapper>());
 builder.Services.AddScoped<ICustomerProjectionMapper, CustomerProjectionMapper>();
+builder.Services.AddScoped<CustomerChildMapper>();
+builder.Services.AddScoped<ICustomerChildMapper>(sp => sp.GetRequiredService<CustomerChildMapper>());
+builder.Services.AddScoped<AccountContractBoundary>();
+builder.Services.AddScoped<IAccountContractBoundary>(sp => sp.GetRequiredService<AccountContractBoundary>());
 // JWT Bearer authentication (R7.6 â€” establishing the scheme)
 var jwt = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
