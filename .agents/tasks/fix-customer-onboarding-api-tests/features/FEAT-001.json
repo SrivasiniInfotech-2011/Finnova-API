@@ -1,0 +1,22 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Align Customer handler contracts with the repository interfaces and retain the two already-applied reported compile fixes.",
+  "status": "pending",
+  "steps": [
+    "Remove the duplicate repository, audit, read, unit-of-work, and transaction interfaces from Finnova.Service/Customers/CustomerPorts.cs; keep only service-owned application ports in CustomerApplicationPorts.cs.",
+    "Update CreateCustomerCommand.cs, ModifyCustomerCommand.cs, QueryCustomer.cs, and CustomerChildCommandHandler.cs to import Finnova.Repository.Interfaces so handlers consume the interfaces implemented by CustomerRepository, CustomerAuditRepository, CustomerReadRepository, and CustomerUnitOfWork.",
+    "Preserve CustomerChildCommandHandler.Handle(ClearDefaultBankAccountCommand, CancellationToken) as async Task and preserve InMemoryNationalityRepository.GetActiveByCodeAsync with active, trimmed, case-insensitive, cloned results."
+  ],
+  "acceptance_criteria": [
+    "The service handlers and repository implementations reference one Customer repository contract family.",
+    "The clear-default MediatR handler has the required Task return type.",
+    "The in-memory nationality fake implements the active-by-code contract with production-equivalent semantics."
+  ],
+  "verification": [
+    "dotnet build Finnova.Backend.slnx",
+    "dotnet test Finnova.Tests/Finnova.Tests.csproj --filter FullyQualifiedName~Nationality|FullyQualifiedName~CustomerOnboardingRules"
+  ],
+  "blocked_reason": null,
+  "findings": "Static inspection found the two reported fixes already present in the worktree. Do not revert them. The duplicate CustomerPorts contract is the remaining contract-boundary defect."
+}

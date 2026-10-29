@@ -1,0 +1,7 @@
+{
+  "task_id": "task-fix-customer-onboarding-api-tests",
+  "task_description": "Resolve CustomerOnboardingApiTests compile, DI, fixture, persistence, projection, and expectation failures with the smallest backend-only changes.",
+  "status": "pending",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

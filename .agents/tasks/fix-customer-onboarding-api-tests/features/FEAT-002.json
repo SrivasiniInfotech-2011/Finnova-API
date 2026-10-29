@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-002",
+  "type": "fix",
+  "description": "Complete and wire the production Customer create/modify/query adapters, make the in-memory host support the existing unit-of-work path, seed the Document Number Control test scheme, and correct the stale default-bank expectation.",
+  "status": "pending",
+  "steps": [
+    "Add EF-compatible Customer aggregate factory/update methods and a production CustomerAggregateMapper that maps approved request data, children, identity normalization, safe audit snapshots, and create/modify responses without persisted master display names.",
+    "Add a CustomerCodeGenerator adapter over INumberingSchemeRepository.IssueNextAsync and NumberFormatter for global CUSTOMER issuance; seed an idempotent English-only CUST{SEQ:8} scheme in SystemAdminAppFactory for the integration host.",
+    "Change ICustomerProjectionMapper and QueryCustomerHandler to asynchronous cancellation-aware projection, and add CustomerProjectionMapper that resolves current active Lookup, Nationality, and Company-scoped GL names from repositories at query time.",
+    "Register the Customer code generator, aggregate mapper, and projection mapper in Finnova.SystemAdminService/Program.cs; configure EF Core InMemory transaction warnings in SystemAdminAppFactory while leaving SQL Server transaction behavior unchanged.",
+    "Change Failed_child_validation_rolls_back_customer_and_audit in CustomerOnboardingApiTests to expect HttpStatusCode.Conflict for ERR-CUSTOMER-DEFAULT-BANK while retaining the atomic no-write assertions."
+  ],
+  "acceptance_criteria": [
+    "CustomerOnboardingApiTests reaches production Customer handlers instead of failing at DI activation.",
+    "Create returns a unique 12-character alphanumeric CustomerCode, modify preserves that code, query returns the modified customer, and two audit rows exist.",
+    "Query resolves the renamed Lookup value at read time and Customer has no GroupName persistence property.",
+    "Unknown/inactive Lookup, Nationality, GL, and mandatory Document references return their existing Customer error codes without writes.",
+    "The failed default-bank request returns 409 ERR-CUSTOMER-DEFAULT-BANK and leaves Customer and audit counts unchanged.",
+    "The unknown modify request returns 404 ERR-CUSTOMER-404 without echoing the unknown code."
+  ],
+  "verification": [
+    "dotnet test Finnova.Tests/Finnova.Tests.csproj --filter FullyQualifiedName~CustomerOnboardingApiTests",
+    "dotnet test Finnova.Tests/Finnova.Tests.csproj",
+    "dotnet build Finnova.Backend.slnx"
+  ],
+  "blocked_reason": null,
+  "findings": "The targeted class uses CustomerOnboardingAppFactory, which already replaces only the external address boundary. Do not replace production Customer mappers with test doubles. The existing middleware maps default-bank invariant failures to 409, so the test expectation is outdated."
+}

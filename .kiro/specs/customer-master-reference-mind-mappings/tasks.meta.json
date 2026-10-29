@@ -1,0 +1,797 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "0.1 Confirm the Customer FRS contract and the only unresolved seams before copying implementation code.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110754622
+      },
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110800097
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112150008
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112187415
+      },
+      {
+        "executionId": "9d5e2085-db3e-4efc-ba28-fbfeb3e96e40",
+        "chatSessionId": "sess_44b013da-5931-4e60-8b45-039e7a59cf5b",
+        "timestamp": 1793115056867
+      },
+      {
+        "executionId": "9d5e2085-db3e-4efc-ba28-fbfeb3e96e40",
+        "chatSessionId": "sess_44b013da-5931-4e60-8b45-039e7a59cf5b",
+        "timestamp": 1793115065962
+      },
+      {
+        "executionId": "bb099137-3aca-4544-97ae-83a421997b9c",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793115615967
+      },
+      {
+        "executionId": "bb099137-3aca-4544-97ae-83a421997b9c",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793115625456
+      },
+      {
+        "executionId": "bb099137-3aca-4544-97ae-83a421997b9c",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793115918868
+      }
+    ],
+    "1.1 CREATE `Finnova.Models/Domain/Entities/Customer.cs`, `CustomerAddress.cs`, `IndividualCustomerDetails.cs`, `NonIndividualCustomerDetails.cs`, `BankAccount.cs`, `CustomerDocumentReference.cs`, `CustomerTrackEntry.cs`, `CustomerCreditDetails.cs`, `FactoringSubLimit.cs`, and `CustomerAuditEntry.cs`.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110758240
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112151388
+      },
+      {
+        "executionId": "ec8df99c-ae0c-401f-a273-446436733088",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793115944785
+      },
+      {
+        "executionId": "ec8df99c-ae0c-401f-a273-446436733088",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793116101516
+      }
+    ],
+    "1.2 CREATE `Finnova.Models/Domain/Enums/CustomerLifecycleStatus.cs`, `CustomerAddressType.cs`, `CustomerTrackStatus.cs`, and `CustomerAuditAction.cs`.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110759298
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112151860
+      },
+      {
+        "executionId": "ec8df99c-ae0c-401f-a273-446436733088",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793115946294
+      },
+      {
+        "executionId": "ec8df99c-ae0c-401f-a273-446436733088",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793116102728
+      }
+    ],
+    "2.1 CREATE `Finnova.Models/Domain/Exceptions/CustomerExceptions.cs`.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110760938
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112152930
+      },
+      {
+        "executionId": "ec8df99c-ae0c-401f-a273-446436733088",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793115948118
+      },
+      {
+        "executionId": "ec8df99c-ae0c-401f-a273-446436733088",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793116103115
+      }
+    ],
+    "3.1 CREATE `Finnova.Models/Contracts/Customers/CustomerContracts.cs`.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110762506
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112154098
+      },
+      {
+        "executionId": "ec8df99c-ae0c-401f-a273-446436733088",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793115946821
+      },
+      {
+        "executionId": "ec8df99c-ae0c-401f-a273-446436733088",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793116104231
+      }
+    ],
+    "4.1 CREATE `Finnova.Repository/Configuration/CustomerConfiguration.cs`, `CustomerAddressConfiguration.cs`, `IndividualCustomerDetailsConfiguration.cs`, `NonIndividualCustomerDetailsConfiguration.cs`, `BankAccountConfiguration.cs`, `CustomerDocumentReferenceConfiguration.cs`, `CustomerTrackEntryConfiguration.cs`, `FactoringSubLimitConfiguration.cs`, and `CustomerAuditEntryConfiguration.cs`.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110763957
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112155208
+      },
+      {
+        "executionId": "ec8df99c-ae0c-401f-a273-446436733088",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793116118914
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793119150694
+      }
+    ],
+    "4.2 MODIFY `Finnova.Repository/Context/FinnovaDbContext.cs` and `Finnova.Repository/DependencyInjection.cs` at the bounded insertion points.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110765213
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112156409
+      },
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793116423496
+      },
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793116539414
+      }
+    ],
+    "4.3 Create the migration command for the user to run after Tasks 1–4 are applied.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110766838
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112157592
+      },
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793116693811
+      },
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793116901067
+      }
+    ],
+    "5.1 CREATE `Finnova.Service/Customers/References/CustomerLookupTypes.cs`, `LookupReferenceResolver.cs`, `NationalityReferenceResolver.cs`, `GLPostingGroupResolver.cs`, `DocumentDefinitionResolver.cs`, `IndiaAddressControl.cs`, and `CustomerMasterReferenceValidator.cs`.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110768252
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112158710
+      },
+      {
+        "executionId": "ec8df99c-ae0c-401f-a273-446436733088",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793116119578
+      },
+      {
+        "executionId": "ec8df99c-ae0c-401f-a273-446436733088",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793116387061
+      }
+    ],
+    "5.2 MODIFY `Finnova.Repository/DependencyInjection.cs` and the SystemAdmin service registration to register every resolver.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110769672
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112159857
+      },
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793116423957
+      },
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793116683842
+      }
+    ],
+    "6.1 CREATE `Finnova.Service/Customers/Validation/CustomerRules.cs` with the complete pure rule set.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110771097
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112161119
+      },
+      {
+        "executionId": "ec8df99c-ae0c-401f-a273-446436733088",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793116121493
+      },
+      {
+        "executionId": "ec8df99c-ae0c-401f-a273-446436733088",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793116387446
+      }
+    ],
+    "7.1 CREATE Customer repository/unit-of-work interfaces and Create/Modify/Query handlers under `Finnova.Service/Customers`.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110772341
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112162200
+      },
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793116694208
+      },
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793116901499
+      }
+    ],
+    "7.2 CREATE Bank Account, Document, Track, Credit, and Factoring commands under `Finnova.Service/Customers/Commands`.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110773740
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112163428
+      },
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793116915490
+      },
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793117278552
+      }
+    ],
+    "8.1 CREATE `Finnova.SystemAdminService/Controllers/CustomerOnboardingController.cs`.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110775150
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112164572
+      },
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793116915913
+      },
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793117279117
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117298315
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117309641
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117609281
+      }
+    ],
+    "8.2 MODIFY `Finnova.SystemAdminService/Middleware/ExceptionHandlingMiddleware.cs` by adding the Customer path family and typed branches before the validation fallback.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110776370
+      }
+    ],
+    "8.3 MODIFY `Finnova.ApiGateway/appsettings.json` with a confirmed route or bounded alias.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110777802
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112166561
+      },
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793116916479
+      },
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793117279303
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117298580
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117309902
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117609429
+      }
+    ],
+    "9.1 CREATE `Finnova.Tests/Unit/CustomerOnboardingRulesTests.cs` and `Finnova.Tests/Unit/CustomerMasterReferenceValidatorTests.cs`.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110779205
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112167835
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117617106
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117823380
+      }
+    ],
+    "9.2 CREATE `Finnova.Tests/Integration/CustomerOnboardingApiTests.cs` with WebApplicationFactory coverage.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110780596
+      }
+    ],
+    "10.1 CREATE `E:\\Finnova\\Finnova-UI\\Finnova-UI\\src\\models\\customerOnboarding.ts` and `src/services/interfaces/customerOnboarding.service.ts`.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110782048
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112171701
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117617702
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117824039
+      }
+    ],
+    "10.2 CREATE `src/services/real/customerOnboarding.service.ts`, `src/services/mock/customerOnboarding.service.ts`, and `src/services/customerOnboarding.service.ts`.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110783462
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112172985
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117617538
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117824411
+      }
+    ],
+    "11.1 CREATE `src/pages/CustomerOnboarding/CustomerOnboarding.tsx` and `src/pages/CustomerOnboarding/components/CustomerOnboardingTabs.tsx`.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110785162
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112174171
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117830267
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793118132639
+      }
+    ],
+    "11.2 CREATE `BasicAddressTab.tsx`, `IndividualDetailsTab.tsx`, `NonIndividualDetailsTab.tsx`, and `BankDetailsTab.tsx`.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110786668
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112175376
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117830664
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793118132891
+      }
+    ],
+    "11.3 CREATE `ConstitutionDocumentsTab.tsx`, `CustomerTrackTab.tsx`, `CustomerCreditDetailsTab.tsx`, and `FactoringSubLimitTab.tsx`; MODIFY `App.tsx` and `Layout.tsx`.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110788244
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112176803
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117830846
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793118133062
+      }
+    ],
+    "12.1 CREATE `src/pages/CustomerOnboarding/CustomerOnboarding.test.tsx` and `src/services/customerOnboarding.service.test.ts`.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110789664
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112177990
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793118138809
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793118435354
+      }
+    ],
+    "12.2 Validate the applied implementation using user-run commands only.": [
+      {
+        "executionId": "a862fdd9-8539-4f70-bacd-2a347a3cddd9",
+        "chatSessionId": "sess_65536612-63c1-4b81-8177-404742f0fcae",
+        "timestamp": 1793110791051
+      },
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112179274
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793118442147
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793118970221
+      }
+    ],
+    "8.2 MODIFY `Finnova.SystemAdminService/Middleware/ExceptionHandlingMiddleware.cs` at the bounded insertion points below. Keep the existing middleware, existing non-Customer path precedence, RFC 7807 response construction, and all existing switch arms. Do not add a second middleware or replace the file wholesale.": [
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112165903
+      },
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793116916166
+      },
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793117279453
+      }
+    ],
+    "9.2 CREATE `Finnova.Tests/Unit/CustomerExceptionHandlingMiddlewareTests.cs`.": [
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112169285
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117617376
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117823764
+      }
+    ],
+    "9.3 CREATE `Finnova.Tests/Integration/CustomerOnboardingApiTests.cs` with WebApplicationFactory coverage.": [
+      {
+        "executionId": "cae90ad0-d163-403c-a7ba-cad306274b2f",
+        "chatSessionId": "sess_2e7aa7d3-2112-451e-8d77-882f650412ea",
+        "timestamp": 1793112170540
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793118566132
+      },
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793118962233
+      }
+    ],
+    "1. Create Customer domain entities and lifecycle/audit enums": [
+      {
+        "executionId": "ec8df99c-ae0c-401f-a273-446436733088",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793116105447
+      }
+    ],
+    "2. Create Customer exceptions and safe error-code family": [
+      {
+        "executionId": "ec8df99c-ae0c-401f-a273-446436733088",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793116106885
+      }
+    ],
+    "3. Create Customer contracts": [
+      {
+        "executionId": "ec8df99c-ae0c-401f-a273-446436733088",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793116108168
+      }
+    ],
+    "6. Create pure helpers and validators": [
+      {
+        "executionId": "ec8df99c-ae0c-401f-a273-446436733088",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793116388533
+      }
+    ],
+    "5. Create master-reference resolver interfaces, implementations, and DI registration": [
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793116684405
+      }
+    ],
+    "7. Implement Customer Onboarding CQRS only": [
+      {
+        "executionId": "77d77917-7065-4246-9ad0-6a26dd0ac94e",
+        "chatSessionId": "sess_fb46c7b3-cee0-4e23-ab52-8c33a47a0488",
+        "timestamp": 1793117278960
+      }
+    ],
+    "10. Create frontend Customer Onboarding models and services": [
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793117824597
+      }
+    ],
+    "9. Add backend unit, property, and integration tests": [
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793118962667
+      }
+    ],
+    "12. Add frontend tests and validation instructions": [
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793118971027
+      }
+    ],
+    "4. Create EF configurations, DbSets, DI registration, and migration command": [
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793119151809
+      }
+    ],
+    "0. Scope and source contract gate": [
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793119199308
+      }
+    ],
+    "8. Create Customer Onboarding controllers, middleware branches, and gateway aliases": [
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793119199557
+      }
+    ],
+    "11. Create the Customer Onboarding page and tab components": [
+      {
+        "executionId": "bd773037-65a1-4988-9b2a-f579c95b36b9",
+        "chatSessionId": "sess_54c83d7b-098c-46f3-825c-2ec09e56e3fc",
+        "timestamp": 1793119199733
+      }
+    ],
+    "4A.1 CREATE `Finnova.Repository/Interfaces/ICustomerRepository.cs` (repository, audit, read, unit-of-work, and transaction interfaces).": [
+      {
+        "executionId": "d1850706-98ff-45b7-a0a0-27d14ce94ee3",
+        "chatSessionId": "sess_da1363e9-e543-414b-b782-b7e8043c8ede",
+        "timestamp": 1793286206696
+      },
+      {
+        "executionId": "d1850706-98ff-45b7-a0a0-27d14ce94ee3",
+        "chatSessionId": "sess_da1363e9-e543-414b-b782-b7e8043c8ede",
+        "timestamp": 1793286218775
+      },
+      {
+        "executionId": "d1850706-98ff-45b7-a0a0-27d14ce94ee3",
+        "chatSessionId": "sess_da1363e9-e543-414b-b782-b7e8043c8ede",
+        "timestamp": 1793286354948
+      }
+    ],
+    "4A.2 CREATE `Finnova.Repository/Repositories/CustomerRepository.cs` (write/aggregate repository).": [
+      {
+        "executionId": "d1850706-98ff-45b7-a0a0-27d14ce94ee3",
+        "chatSessionId": "sess_da1363e9-e543-414b-b782-b7e8043c8ede",
+        "timestamp": 1793286206954
+      },
+      {
+        "executionId": "d1850706-98ff-45b7-a0a0-27d14ce94ee3",
+        "chatSessionId": "sess_da1363e9-e543-414b-b782-b7e8043c8ede",
+        "timestamp": 1793286368013
+      },
+      {
+        "executionId": "d1850706-98ff-45b7-a0a0-27d14ce94ee3",
+        "chatSessionId": "sess_da1363e9-e543-414b-b782-b7e8043c8ede",
+        "timestamp": 1793286521294
+      }
+    ],
+    "4A.3 CREATE `Finnova.Repository/Repositories/CustomerAuditRepository.cs` and `CustomerReadRepository.cs`.": [
+      {
+        "executionId": "d1850706-98ff-45b7-a0a0-27d14ce94ee3",
+        "chatSessionId": "sess_da1363e9-e543-414b-b782-b7e8043c8ede",
+        "timestamp": 1793286207305
+      },
+      {
+        "executionId": "d1850706-98ff-45b7-a0a0-27d14ce94ee3",
+        "chatSessionId": "sess_da1363e9-e543-414b-b782-b7e8043c8ede",
+        "timestamp": 1793286536953
+      },
+      {
+        "executionId": "d1850706-98ff-45b7-a0a0-27d14ce94ee3",
+        "chatSessionId": "sess_da1363e9-e543-414b-b782-b7e8043c8ede",
+        "timestamp": 1793286719201
+      }
+    ],
+    "4A.4 CREATE `Finnova.Repository/Repositories/CustomerUnitOfWork.cs` (unit of work + EF transaction wrapper).": [
+      {
+        "executionId": "d1850706-98ff-45b7-a0a0-27d14ce94ee3",
+        "chatSessionId": "sess_da1363e9-e543-414b-b782-b7e8043c8ede",
+        "timestamp": 1793286207449
+      },
+      {
+        "executionId": "d1850706-98ff-45b7-a0a0-27d14ce94ee3",
+        "chatSessionId": "sess_da1363e9-e543-414b-b782-b7e8043c8ede",
+        "timestamp": 1793286729976
+      },
+      {
+        "executionId": "d1850706-98ff-45b7-a0a0-27d14ce94ee3",
+        "chatSessionId": "sess_da1363e9-e543-414b-b782-b7e8043c8ede",
+        "timestamp": 1793286915614
+      }
+    ],
+    "4A. Create Customer repository/unit-of-work interfaces and EF Core implementations": [
+      {
+        "executionId": "d1850706-98ff-45b7-a0a0-27d14ce94ee3",
+        "chatSessionId": "sess_da1363e9-e543-414b-b782-b7e8043c8ede",
+        "timestamp": 1793286915792
+      }
+    ]
+  }
+}
