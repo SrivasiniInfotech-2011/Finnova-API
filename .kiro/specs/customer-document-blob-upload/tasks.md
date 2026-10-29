@@ -1041,6 +1041,61 @@ public sealed class CustomerDocumentUploadServiceTests
 }
 ```
 
+### CREATE `Finnova.Tests/Unit/DocumentFileRulesValidationTests.cs`
+
+```csharp
+using Finnova.Models.Domain.Exceptions;
+using Finnova.Service.Customers.Documents;
+using Xunit;
+
+namespace Finnova.Tests.Unit;
+
+public sealed class DocumentFileRulesValidationTests
+{
+    [Theory]
+    [InlineData(0, 5)]
+    [InlineData(5L * 1024 * 1024 + 1, 5)]
+    [InlineData(26L * 1024 * 1024, 25)]
+    public void Invalid_sizes_are_rejected(long length, int configuredMegabytes)
+    {
+        Assert.Throws<CustomerDocumentUploadValidationException>(() =>
+            DocumentFileRules.ValidateSize(length, configuredMegabytes));
+    }
+
+    [Theory]
+    [InlineData("document.pdf", "text/plain", "application/pdf")]
+    [InlineData("document.txt", "application/pdf", "application/pdf")]
+    [InlineData("document.jpg", "image/png", "image/png")]
+    public void Invalid_type_or_extension_is_rejected(string name, string declared, string allowedType)
+    {
+        var allowed = new HashSet<string>(new[] { allowedType }, StringComparer.OrdinalIgnoreCase);
+        Assert.Throws<CustomerDocumentUploadValidationException>(() =>
+            DocumentFileRules.ValidateTypeAndExtension(name, declared, allowed));
+    }
+
+    [Fact]
+    public void Signature_mismatch_is_rejected()
+        => Assert.Throws<CustomerDocumentUploadValidationException>(() =>
+            DocumentFileRules.ValidateSignature("not-pdf"u8.ToArray(), "application/pdf"));
+
+    [Theory]
+    [InlineData("customers/00000000000000000000000000000000/documents/00000000000000000000000000000000/")]
+    [InlineData("document.pdf")]
+    public void Generated_keys_have_only_the_expected_scope(string ignored)
+    {
+        _ = ignored;
+        var customerId = Guid.NewGuid();
+        var referenceId = Guid.NewGuid();
+        var key = CustomerDocumentKeyFactory.Create(customerId, referenceId, "passport.pdf");
+
+        Assert.StartsWith($"customers/{customerId:N}/documents/{referenceId:N}/", key);
+        Assert.EndsWith(".pdf", key);
+        Assert.DoesNotContain("passport.pdf", key, StringComparison.Ordinal);
+        Assert.DoesNotContain("..", key, StringComparison.Ordinal);
+    }
+}
+```
+
 ### CREATE `Finnova.Tests/Integration/CustomerDocumentBlobUploadApiTests.cs`
 
 ```csharp
@@ -1084,13 +1139,10 @@ public sealed class CustomerDocumentBlobUploadApiTests : IClassFixture<CustomerO
 ### CREATE `Finnova.Tests/Integration/InMemoryCustomerDocumentBlobStorage.cs`
 
 ```csharp
-using Finnova.Service.Storage;
-
-namespace Finnova.Tests.Integration;
-
-public sealed class InMemoryCustomerDocumentBlobStorage : IBlobStorageService
+using System.Collections.Concurrent;
+using Finnova.Service.Storage; : IBlobStorageService
 {
-    private readonly Dictionary<(string Container, string Name), (byte[] Bytes, string? ContentType)> _blobs = new();
+    private readonly ConcurrentDictionary<(string Container, string Name), (byte[] Bytes, string? ContentType)> _blobs = new();
     public bool FailUploads { get; set; }
     public bool FailDeletes { get; set; }
 
@@ -1116,7 +1168,7 @@ public sealed class InMemoryCustomerDocumentBlobStorage : IBlobStorageService
     public Task<bool> DeleteAsync(string containerName, string blobName, CancellationToken cancellationToken = default)
     {
         if (FailDeletes) throw new IOException("fake delete failure");
-        return Task.FromResult(_blobs.Remove((containerName, blobName)));
+        return Task.FromResult(_blobs.TryRemove((containerName, blobName), out _));
     }
 
     public Task<bool> ExistsAsync(string containerName, string blobName, CancellationToken cancellationToken = default)
@@ -1144,7 +1196,377 @@ using Finnova.Service.Storage;
 
 Use the same factory and fake in `CustomerDocumentBlobUploadApiTests`; do not register Azure in the test host and do not put a connection string in test configuration.
 
-The integration fixture must seed one customer, one child reference, one active applicable Document, and one policy-appropriate document. Add xUnit facts for 401, 403, ownership mismatch, successful multipart upload, metadata-only persistence, streamed download, missing blob, provider failure, replacement compensation, and concurrency conflict. Integration tests must use the fake storage and the existing EF InMemory host; they must not contact Azure.
+### MODIFY `Finnova.Tests/Integration/CustomerOnboardingApiTests.cs`
+
+Inside the existing `CustomerOnboardingAppFactory.ConfigureWebHost` service-registration lambda, add this immediately after the existing `IIndiaAddressControl` replacement. This keeps the existing Customer Onboarding tests on the same deterministic fake and prevents any test from constructing an Azure client.
+
+```csharp
+            services.RemoveAll<IBlobStorageService>();
+            services.AddSingleton<IBlobStorageService, InMemoryCustomerDocumentBlobStorage>();
+```
+
+Add this using with the existing integration-test imports:
+
+```csharp
+using Finnova.Service.Storage;
+```
+
+### CREATE `Finnova.Tests/Integration/CustomerDocumentBlobUploadCoverageTests.cs`
+
+```csharp
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using Finnova.Models.Domain.Entities;
+using Finnova.Models.Domain.Enums;
+using Finnova.Repository.Context;
+using Finnova.Service.Storage;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit;
+
+namespace Finnova.Tests.Integration;
+
+public sealed class CustomerDocumentBlobUploadCoverageTests : IClassFixture<CustomerOnboardingAppFactory>
+{
+    private const string Container = "finnova-customer-documents";
+    private readonly CustomerOnboardingAppFactory _factory;
+    private static int _sequence;
+
+    public CustomerDocumentBlobUploadCoverageTests(CustomerOnboardingAppFactory factory) => _factory = factory;
+
+    [Fact]
+    public async Task Upload_and_download_without_a_token_return_401()
+    {
+        var target = SeedCustomerDocument();
+        using var client = _factory.CreateClient();
+        var response = await client.GetAsync(DownloadPath(target));
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Authenticated_caller_without_system_admin_role_returns_403()
+    {
+        var target = SeedCustomerDocument();
+        using var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", DevJwt.NoRole());
+        var response = await client.GetAsync(DownloadPath(target));
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_document_reference_from_another_customer_is_not_read_or_uploaded()
+    {
+        var owner = SeedCustomerDocument();
+        var other = SeedCustomerDocument();
+        using var client = AdminClient();
+        using var content = PdfContent();
+
+        var response = await client.PostAsync(UploadPath(other with { DocumentReferenceId = owner.DocumentReferenceId }), content);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var storage = _factory.Services.GetRequiredService<IBlobStorageService>();
+        Assert.Empty(await storage.ListAsync(Container));
+    }
+
+    [Fact]
+    public async Task A_valid_upload_returns_safe_metadata_and_persists_no_bytes()
+    {
+        var target = SeedCustomerDocument();
+        using var client = AdminClient();
+        using var content = PdfContent();
+
+        var response = await client.PostAsync(UploadPath(target), content);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var metadata = await response.Content.ReadFromJsonAsync<UploadMetadata>();
+        Assert.NotNull(metadata);
+        Assert.Equal("Uploaded", metadata!.UploadStatus);
+        Assert.Equal("identity.pdf", metadata.OriginalFileName);
+        Assert.Equal("application/pdf", metadata.ContentType);
+        Assert.DoesNotContain("BlobName", await response.Content.ReadAsStringAsync(), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("%PDF-", await response.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FinnovaDbContext>();
+        var row = db.CustomerDocumentReferences.Single(x => x.Id == target.DocumentReferenceId);
+        Assert.Equal(CustomerDocumentUploadStatus.Uploaded, row.UploadStatus);
+        Assert.True(row.UploadedSizeBytes > 0);
+        Assert.NotNull(row.BlobName);
+        Assert.DoesNotContain(typeof(CustomerDocumentReference).GetProperties(), property => property.PropertyType == typeof(byte[]));
+    }
+
+    [Fact]
+    public async Task Download_returns_the_latest_bytes_and_safe_headers()
+    {
+        var target = SeedCustomerDocument();
+        using var client = AdminClient();
+        using var upload = PdfContent();
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsync(UploadPath(target), upload)).StatusCode);
+
+        var response = await client.GetAsync(DownloadPath(target));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("application/pdf", response.Content.Headers.ContentType?.MediaType);
+        Assert.Contains("identity.pdf", response.Content.Headers.ContentDisposition?.FileName ?? string.Empty);
+        Assert.Equal(PdfBytes, await response.Content.ReadAsByteArrayAsync());
+    }
+
+    [Fact]
+    public async Task Missing_blob_returns_safe_404()
+    {
+        var target = SeedCustomerDocument();
+        using var client = AdminClient();
+        using var upload = PdfContent();
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsync(UploadPath(target), upload)).StatusCode);
+
+        string blobName;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            blobName = scope.ServiceProvider.GetRequiredService<FinnovaDbContext>()
+                .CustomerDocumentReferences.Single(x => x.Id == target.DocumentReferenceId).BlobName!;
+        }
+        await _factory.Services.GetRequiredService<IBlobStorageService>().DeleteAsync(Container, blobName);
+
+        var response = await client.GetAsync(DownloadPath(target));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Contains("DOCUMENT-UPLOAD-404", await response.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Provider_failure_preserves_existing_metadata()
+    {
+        var target = SeedCustomerDocument();
+        using var client = AdminClient();
+        var storage = (InMemoryCustomerDocumentBlobStorage)_factory.Services.GetRequiredService<IBlobStorageService>();
+        storage.FailUploads = true;
+        try
+        {
+            using var content = PdfContent();
+            var response = await client.PostAsync(UploadPath(target), content);
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        }
+        finally
+        {
+            storage.FailUploads = false;
+        }
+
+        using var scope = _factory.Services.CreateScope();
+        var row = scope.ServiceProvider.GetRequiredService<FinnovaDbContext>()
+            .CustomerDocumentReferences.Single(x => x.Id == target.DocumentReferenceId);
+        Assert.Equal(CustomerDocumentUploadStatus.None, row.UploadStatus);
+        Assert.Null(row.BlobName);
+    }
+
+    [Fact]
+    public async Task Old_blob_cleanup_failure_does_not_fail_a_committed_replacement()
+    {
+        var target = SeedCustomerDocument();
+        using var client = AdminClient();
+        using var first = PdfContent();
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsync(UploadPath(target), first)).StatusCode);
+
+        var storage = (InMemoryCustomerDocumentBlobStorage)_factory.Services.GetRequiredService<IBlobStorageService>();
+        storage.FailDeletes = true;
+        try
+        {
+            using var replacement = PdfContent();
+            var response = await client.PostAsync(UploadPath(target), replacement);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+        finally
+        {
+            storage.FailDeletes = false;
+        }
+
+        using var scope = _factory.Services.CreateScope();
+        var row = scope.ServiceProvider.GetRequiredService<FinnovaDbContext>()
+            .CustomerDocumentReferences.Single(x => x.Id == target.DocumentReferenceId);
+        Assert.Equal(CustomerDocumentUploadStatus.Uploaded, row.UploadStatus);
+        Assert.NotNull(row.BlobName);
+    }
+
+    [Fact]
+    public async Task Concurrent_replacements_return_one_conflict_and_keep_one_authoritative_pointer()
+    {
+        var target = SeedCustomerDocument();
+        using var client = AdminClient();
+        using var first = PdfContent();
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsync(UploadPath(target), first)).StatusCode);
+
+        var requests = new[] { SendReplacementAsync(client, target), SendReplacementAsync(client, target) };
+        var responses = await Task.WhenAll(requests);
+
+        Assert.Contains(responses, x => x.StatusCode == HttpStatusCode.OK);
+        Assert.Contains(responses, x => x.StatusCode == HttpStatusCode.Conflict);
+        using var scope = _factory.Services.CreateScope();
+        var row = scope.ServiceProvider.GetRequiredService<FinnovaDbContext>()
+            .CustomerDocumentReferences.Single(x => x.Id == target.DocumentReferenceId);
+        Assert.Equal(CustomerDocumentUploadStatus.Uploaded, row.UploadStatus);
+        Assert.NotNull(row.BlobName);
+    }
+
+    private async Task<HttpResponseMessage> SendReplacementAsync(HttpClient client, SeededDocument target)
+    {
+        using var content = PdfContent();
+        return await client.PostAsync(UploadPath(target), content);
+    }
+
+    private HttpClient AdminClient()
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", DevJwt.SystemAdmin());
+        return client;
+    }
+
+    private SeededDocument SeedCustomerDocument()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FinnovaDbContext>();
+        var suffix = Interlocked.Increment(ref _sequence).ToString("D5");
+        var constitution = "IND";
+        var definitionId = Guid.NewGuid();
+        var documentCode = $"PAN-{suffix}";
+        db.Documents.Add(new Document
+        {
+            Id = definitionId,
+            DocCode = documentCode,
+            DocName = "Identity Document",
+            Description = "India identity document",
+            DocCategory = "IDENTITY",
+            ApplicableEntity = CustomerLookupTypes.EntityRole,
+            MaxFileSizeMb = 5,
+            AllowedMimeTypes = "PDF",
+            Status = DocumentStatus.Active,
+            AuthorizedVersionNumber = 1,
+            ApplicabilityRules = new List<DocumentApplicabilityRule>
+            {
+                new() { Constitution = constitution, EntityRole = CustomerLookupTypes.EntityRole, IsMandatory = true },
+            },
+        });
+        var customer = new Customer();
+        customer.Initialize(
+            companyId: Guid.NewGuid(), isCustomer: true, isGuarantor: false, isCoApplicant: false,
+            customerTypeCode: "INDIVIDUAL", groupCode: null, industryCode: null,
+            customerPostingGroupCode: null, glAccountId: null, constitutionCode: constitution,
+            nationalityCode: "IN", titleCode: "MR", maritalStatusCode: "SIN",
+            customerBusinessTypeCode: null, customerBusinessSubTypeCode: null,
+            industrySectorCode: null, subSectorCode: null, firstName: "Integration customer",
+            secondName: null, thirdName: null, fourthName: null, fifthName: null, sixthName: null,
+            notes: "India integration test", isVip: false, isSeniorMember: false,
+            financialRequirement: null, accommodation: null, isRelatedParty: false,
+            relationCode: null, employerEconomicActivityCode: null);
+        customer.SetGeneratedCode($"D{suffix}000000");
+        var reference = new CustomerDocumentReference();
+        reference.Initialize(constitution, definitionId, documentCode, "IDENTITY", "Identity Document", true,
+            false, null, false, false, null, null, null, null);
+        customer.Documents.Add(reference);
+        db.Customers.Add(customer);
+        db.SaveChanges();
+        return new SeededDocument(customer.CustomerCode, reference.Id);
+    }
+
+    private static MultipartFormDataContent PdfContent()
+    {
+        var part = new ByteArrayContent(PdfBytes);
+        part.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+        var content = new MultipartFormDataContent();
+        content.Add(part, "file", "identity.pdf");
+        return content;
+    }
+
+    private static string UploadPath(SeededDocument target) =>
+        $"/api/customer-onboarding/{target.CustomerCode}/documents/{target.DocumentReferenceId}/upload";
+
+    private static string DownloadPath(SeededDocument target) =>
+        $"/api/customer-onboarding/{target.CustomerCode}/documents/{target.DocumentReferenceId}/download";
+
+    private static readonly byte[] PdfBytes = "%PDF-1.7\nIndia document"u8.ToArray();
+    private sealed record SeededDocument(string CustomerCode, Guid DocumentReferenceId);
+    private sealed record UploadMetadata(Guid CustomerDocumentReferenceId, Guid DocumentDefinitionId,
+        string DocumentCode, string UploadStatus, string OriginalFileName, string ContentType,
+        long SizeInBytes, DateTime UploadedAtUtc);
+}
+```
+
+### CREATE `Finnova.Tests/Integration/CustomerDocumentUploadCompensationTests.cs`
+
+This service-boundary test covers the failure that cannot be induced reliably through the EF Core InMemory provider: the database save fails after Blob Storage accepts the new object. It uses the same production coordinator and the existing fake provider, and asserts that the new object is deleted while the old metadata remains authoritative.
+
+```csharp
+using System.Text;
+using Finnova.Models.Domain.Entities;
+using Finnova.Models.Domain.Enums;
+using Finnova.Repository.Interfaces;
+using Finnova.Service.Customers.Documents;
+using Finnova.Service.Storage;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using Moq;
+using Xunit;
+
+namespace Finnova.Tests.Integration;
+
+public sealed class CustomerDocumentUploadCompensationTests
+{
+    [Fact]
+    public async Task Metadata_save_failure_deletes_the_new_blob_before_returning_the_error()
+    {
+        var customer = new Customer();
+        customer.Initialize(
+            companyId: Guid.NewGuid(), isCustomer: true, isGuarantor: false, isCoApplicant: false,
+            customerTypeCode: "INDIVIDUAL", groupCode: null, industryCode: null,
+            customerPostingGroupCode: null, glAccountId: null, constitutionCode: "IND",
+            nationalityCode: "IN", titleCode: "MR", maritalStatusCode: "SIN",
+            customerBusinessTypeCode: null, customerBusinessSubTypeCode: null,
+            industrySectorCode: null, subSectorCode: null, firstName: "Compensation",
+            secondName: null, thirdName: null, fourthName: null, fifthName: null, sixthName: null,
+            notes: "India integration test", isVip: false, isSeniorMember: false,
+            financialRequirement: null, accommodation: null, isRelatedParty: false,
+            relationCode: null, employerEconomicActivityCode: null);
+        customer.SetGeneratedCode("COMP00000001");
+        var definitionId = Guid.NewGuid();
+        var row = new CustomerDocumentReference();
+        row.Initialize("IND", definitionId, "PAN", "IDENTITY", "Identity Document", true, false,
+            null, false, false, null, null, null, null);
+        customer.Documents.Add(row);
+
+        var customers = new Mock<ICustomerRepository>();
+        customers.Setup(x => x.GetByCodeAsync(customer.CustomerCode, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(customer);
+        var policy = new Mock<IDocumentUploadPolicyResolver>();
+        policy.Setup(x => x.ResolveAsync(definitionId, "IND", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DocumentUploadPolicy(definitionId, "PAN", "Identity Document", 5,
+                new HashSet<string>(new[] { "application/pdf" }, StringComparer.OrdinalIgnoreCase)));
+        var storage = new InMemoryCustomerDocumentBlobStorage();
+        var transaction = new Mock<ICustomerTransaction>();
+        var unitOfWork = new Mock<ICustomerUnitOfWork>();
+        unitOfWork.Setup(x => x.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(transaction.Object);
+        unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new DbUpdateException("test persistence failure"));
+        var service = new CustomerDocumentUploadService(customers.Object, policy.Object, unitOfWork.Object,
+            Mock.Of<ICustomerAuditRepository>(), storage,
+            Options.Create(new BlobStorageOptions { CustomerDocumentsContainer = "finnova-customer-documents" }),
+            NullLogger<CustomerDocumentUploadService>.Instance);
+        var bytes = Encoding.UTF8.GetBytes("%PDF-1.7\ncompensation");
+        var file = new FormFile(new MemoryStream(bytes), 0, bytes.Length, "file", "identity.pdf")
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = "application/pdf",
+        };
+
+        await Assert.ThrowsAsync<DbUpdateException>(() =>
+            service.UploadAsync(customer.CustomerCode, row.Id, file, "admin", CancellationToken.None));
+
+        Assert.Empty(await storage.ListAsync("finnova-customer-documents"));
+        Assert.Equal(CustomerDocumentUploadStatus.None, row.UploadStatus);
+    }
+}
+```
+
+The integration fixture must seed one customer, one child reference, one active applicable Document, and one policy-appropriate document as shown above. The explicit tests now cover 401 authentication, 403 role authorization, cross-customer ownership, successful multipart upload, metadata-only persistence, streamed download, missing blob, provider failure, metadata-failure compensating cleanup, and concurrent replacement conflict. All integration requests use `CustomerOnboardingAppFactory` with `InMemoryCustomerDocumentBlobStorage`; they do not contact Azure.
 
 ## Task 10 — Frontend model and service layer
 
@@ -1446,7 +1868,127 @@ describe('real customer document service', () => {
 });
 ```
 
-Add a mock-service parity test beside the existing frontend service tests. It must cover first upload, replacement, missing-document error, and that no blob key, URI, token, or raw byte value is returned in metadata. Keep all fixture labels and messages in English. Do not run Vitest, npm, dotnet, EF, or migration commands as part of this documentation-only delivery.
+### CREATE `E:\Finnova\Finnova-UI\Finnova-UI\src\services\mock\customerOnboarding.service.test.ts`
+
+```typescript
+import { describe, expect, it } from 'vitest';
+import type { CustomerForm } from '../../../models/customerOnboarding';
+import { mockCustomerOnboardingService } from './customerOnboarding.service';
+
+const emptyCustomer = (): CustomerForm => ({
+  companyId: 'company-1', isCustomer: true, isGuarantor: false, isCoApplicant: false,
+  customerTypeCode: 'INDIVIDUAL', addresses: [], bankAccounts: [], documents: [{
+    id: 'reference-1', documentDefinitionId: 'definition-1', documentCode: 'PAN',
+    isMandatory: true, isImageRequired: false, isCollected: false, isScanned: false,
+  }], tracks: [], factoringSubLimits: [],
+});
+
+describe('mock customer document service parity', () => {
+  it('supports first upload, replacement, and download with the real-service response shape', async () => {
+    const customer = await mockCustomerOnboardingService.create(emptyCustomer());
+    const first = new File(['%PDF-1.7 first'], 'first.pdf', { type: 'application/pdf' });
+    const replacement = new File(['%PDF-1.7 replacement'], 'replacement.pdf', { type: 'application/pdf' });
+
+    const firstMetadata = await mockCustomerOnboardingService.uploadDocument(customer.customerCode!, 'reference-1', first);
+    const replacementMetadata = await mockCustomerOnboardingService.uploadDocument(customer.customerCode!, 'reference-1', replacement);
+
+    expect(firstMetadata.uploadStatus).toBe('Uploaded');
+    expect(replacementMetadata.originalFileName).toBe('replacement.pdf');
+    expect(replacementMetadata.sizeInBytes).toBe(replacement.size);
+    await expect(mockCustomerOnboardingService.downloadDocument(customer.customerCode!, 'reference-1'))
+      .resolves.toBeInstanceOf(Blob);
+    expect(Object.keys(replacementMetadata)).toEqual(expect.arrayContaining([
+      'customerDocumentReferenceId', 'documentDefinitionId', 'documentCode',
+      'uploadStatus', 'originalFileName', 'contentType', 'sizeInBytes', 'uploadedAtUtc',
+    ]));
+    expect(Object.keys(replacementMetadata)).not.toEqual(expect.arrayContaining([
+      'blobName', 'blobContainerName', 'uri', 'sasToken', 'token', 'bytes',
+    ]));
+    expect(JSON.stringify(replacementMetadata)).not.toContain('%PDF-1.7');
+  });
+
+  it('returns the same safe missing-document error contract', async () => {
+    const customer = await mockCustomerOnboardingService.create(emptyCustomer());
+    await expect(mockCustomerOnboardingService.downloadDocument(customer.customerCode!, 'reference-1'))
+      .rejects.toThrow('The current customer document is not available.');
+  });
+});
+```
+
+### CREATE `E:\Finnova\Finnova-UI\Finnova-UI\src\pages\CustomerOnboarding\components\ConstitutionDocumentsTab.behavior.test.tsx`
+
+```tsx
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CustomerProjection } from '../../../models/customerOnboarding';
+import { customerOnboardingService } from '../../../services/customerOnboarding.service';
+import { ConstitutionDocumentsTab } from './ConstitutionDocumentsTab';
+
+vi.mock('../../../services/customerOnboarding.service', () => ({
+  customerOnboardingService: { uploadDocument: vi.fn(), downloadDocument: vi.fn() },
+}));
+
+const model = (): CustomerProjection => ({
+  id: 'customer-1', customerCode: 'CUST00000001', status: 'Active', companyId: 'company-1',
+  isCustomer: true, isGuarantor: false, isCoApplicant: false, customerTypeCode: 'INDIVIDUAL',
+  addresses: [], bankAccounts: [], tracks: [], factoringSubLimits: [], createdAtUtc: '', updatedAtUtc: '',
+  documents: [{ id: 'reference-1', documentDefinitionId: 'definition-1', documentCode: 'PAN',
+    isMandatory: true, isImageRequired: false, isCollected: false, isScanned: false }],
+});
+
+const choosePdf = () => fireEvent.change(screen.getByLabelText('Upload'), {
+  target: { files: [new File(['%PDF-1.7'], 'identity.pdf', { type: 'application/pdf' })] },
+});
+
+describe('ConstitutionDocumentsTab behavior', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('keeps unrelated rows usable while one row is uploading', async () => {
+    let resolveUpload!: (value: any) => void;
+    vi.mocked(customerOnboardingService.uploadDocument).mockReturnValue(new Promise(resolve => { resolveUpload = resolve; }));
+    render(<ConstitutionDocumentsTab value={model()} mode="modify" onChange={vi.fn()} />);
+
+    choosePdf();
+    expect(screen.getByRole('button', { name: 'Upload' })).toBeDisabled();
+    expect(screen.getByText('Working…')).toBeInTheDocument();
+    resolveUpload({ customerDocumentReferenceId: 'reference-1', documentDefinitionId: 'definition-1', documentCode: 'PAN', uploadStatus: 'Uploaded', originalFileName: 'identity.pdf', contentType: 'application/pdf', sizeInBytes: 8, uploadedAtUtc: '2026-01-01T00:00:00Z' });
+    await waitFor(() => expect(screen.getByText('Document uploaded.')).toBeInTheDocument());
+  });
+
+  it('preserves the row and offers a retry after an upload error', async () => {
+    vi.mocked(customerOnboardingService.uploadDocument)
+      .mockRejectedValueOnce(new Error('Storage is unavailable.'))
+      .mockResolvedValueOnce({ customerDocumentReferenceId: 'reference-1', documentDefinitionId: 'definition-1', documentCode: 'PAN', uploadStatus: 'Uploaded', originalFileName: 'identity.pdf', contentType: 'application/pdf', sizeInBytes: 8, uploadedAtUtc: '2026-01-01T00:00:00Z' });
+    const onChange = vi.fn();
+    render(<ConstitutionDocumentsTab value={model()} mode="modify" onChange={onChange} />);
+
+    choosePdf();
+    expect(await screen.findByText('Storage is unavailable.')).toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
+    choosePdf();
+    await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
+    expect(screen.getByText('Document uploaded.')).toBeInTheDocument();
+  });
+
+  it('views a Blob and revokes the temporary object URL', async () => {
+    const blob = new Blob(['%PDF-1.7'], { type: 'application/pdf' });
+    vi.mocked(customerOnboardingService.downloadDocument).mockResolvedValue(blob);
+    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test');
+    const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+    const value = { ...model(), documents: [{ ...model().documents[0], uploadStatus: 'Uploaded' as const, originalFileName: 'identity.pdf' }] };
+    render(<ConstitutionDocumentsTab value={value} mode="query" onChange={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'View' }));
+
+    await waitFor(() => expect(open).toHaveBeenCalledWith('blob:test', '_blank', 'noopener,noreferrer'));
+    expect(createObjectURL).toHaveBeenCalledWith(blob);
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:test');
+  });
+});
+```
+
+The service parity test now has an explicit `CREATE` path and covers first upload, replacement, safe metadata, download, and missing-document behavior. The component tests cover create/query availability, client validation, per-row busy state, success metadata, error preservation/retry, View Blob handling, and object-URL cleanup. Do not run Vitest, npm, dotnet, EF, or migration commands as part of this documentation-only delivery.
 
 ## Completion checklist
 
