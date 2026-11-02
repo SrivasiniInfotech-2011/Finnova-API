@@ -283,6 +283,15 @@ Key rules that hold in every non-local environment:
 - **Secrets come from a real store**, not inline `stringData`. See the AWS section for
   the Secrets Manager / SSM pattern; the same idea applies to any environment (sealed
   secrets, external-secrets operator, CSI driver).
+- **Identity-verification protected storage is disabled by default.** The SystemAdmin
+  deployment reads the optional Kubernetes Secret `finnova-identity-verification`, key
+  `blobStorageConnectionString`, as
+  `ConnectionStrings__IdentityVerificationBlobStorage`. Enable storage only after the
+  secret and protected container have been provisioned by setting
+  `IdentityVerification__BlobStorage__Enabled=true` in deployment configuration. Never
+  commit the connection string, SAS token, account key, or provider credentials. Keep
+  provider-specific credential names in the approved secret manager integration after
+  the provider contract is confirmed.
 - **Immutable image tags.** Replace `:local` + `imagePullPolicy: Never` with a registry
   image at a fixed tag (git SHA or semver) and `imagePullPolicy: IfNotPresent`. Promote
   the *same* built image from QA -> STG -> Prod; never rebuild per environment.

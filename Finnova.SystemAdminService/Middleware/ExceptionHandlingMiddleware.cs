@@ -70,10 +70,13 @@ public class ExceptionHandlingMiddleware
             var isDocument = ctx.Request.Path.StartsWithSegments("/api/document", StringComparison.OrdinalIgnoreCase);
             var validationDocumentCode = isDocument ? "ERR-DOC-400" : validationAssetCode;
             var fallbackDocumentCode = isDocument ? "ERR-DOC-500" : fallbackAssetCode;
+            var isIdentityVerification = ctx.Request.Path.StartsWithSegments("/api/identity-verification", StringComparison.OrdinalIgnoreCase);
             var isCustomer = ctx.Request.Path.StartsWithSegments(
                 "/api/customer-onboarding", StringComparison.OrdinalIgnoreCase);
             var validationCustomerCode = isCustomer ? CustomerErrorCodes.Validation : validationDocumentCode;
             var fallbackCustomerCode = isCustomer ? CustomerErrorCodes.Unexpected : fallbackDocumentCode;
+            var validationIdentityCode = isIdentityVerification ? "ERR-IVF-400" : validationCustomerCode;
+            var fallbackIdentityCode = isIdentityVerification ? "ERR-IVF-500" : fallbackCustomerCode;
             var (status, code, detail) = ex switch
             {
                 // ---- existing lookup branch (unchanged) ----
@@ -136,6 +139,18 @@ public class ExceptionHandlingMiddleware
                 DocumentConflictException         => (409, "ERR-DOC-409", ex.Message),
                 DocumentNotFoundException         => (404, "ERR-DOC-404", ex.Message),
 
+                // ---- new IdentityVerification branch (typed, no message sniffing) ----
+                IdentityVerificationDocumentSizeException identity => (StatusCodes.Status413PayloadTooLarge, identity.ErrorCode, identity.Message),
+                IdentityVerificationDocumentFormatException identity => (StatusCodes.Status415UnsupportedMediaType, identity.ErrorCode, identity.Message),
+                IdentityVerificationImmutableException identity => (StatusCodes.Status409Conflict, identity.ErrorCode, identity.Message),
+                IdentityVerificationRecordNotFoundException identity => (StatusCodes.Status404NotFound, identity.ErrorCode, identity.Message),
+                IdentityVerificationConfigurationException identity => (StatusCodes.Status503ServiceUnavailable, identity.ErrorCode, identity.Message),
+                IdentityVerificationProviderUnavailableException identity => (StatusCodes.Status503ServiceUnavailable, identity.ErrorCode, identity.Message),
+                IdentityVerificationPersistenceException identity => (StatusCodes.Status500InternalServerError, identity.ErrorCode, identity.Message),
+                IdentityVerificationValidationException identity => (StatusCodes.Status400BadRequest, identity.ErrorCode, identity.Message),
+                IdentityVerificationAuthorizationException identity => (StatusCodes.Status403Forbidden, identity.ErrorCode, identity.Message),
+                IdentityVerificationException identity => (StatusCodes.Status500InternalServerError, identity.ErrorCode, "Identity verification failed."),
+
                 // ---- new Customer Onboarding branch (typed, no message sniffing) ----
                 CustomerNotFoundException =>
                     (StatusCodes.Status404NotFound, CustomerErrorCodes.NotFound, ex.Message),
@@ -169,14 +184,16 @@ public class ExceptionHandlingMiddleware
                     (StatusCodes.Status503ServiceUnavailable, CustomerErrorCodes.BoundaryUnavailable, ex.Message),
 
                // ---- shared: validation failures and unhandled fallback (path-scoped code) ----
-                FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, validationCustomerCode, v.Message),
-                _ => (StatusCodes.Status500InternalServerError, fallbackCustomerCode, "Unexpected error.")
+                FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, validationIdentityCode, v.Message),
+                _ => (StatusCodes.Status500InternalServerError, fallbackIdentityCode, "Unexpected error.")
 
             };
 
             var problem = new ProblemDetails { Status = status, Title = code, Detail = detail };
             problem.Extensions["code"] = code;
+            problem.Extensions["correlationId"] = ctx.TraceIdentifier;
             ctx.Response.StatusCode = status;
+            ctx.Response.Headers["X-Correlation-Id"] = ctx.TraceIdentifier;
             await ctx.Response.WriteAsJsonAsync(problem);
         }
     }

@@ -178,6 +178,14 @@ spec:
             - name: ConnectionStrings__FinnovaConnection
               valueFrom:
                 secretKeyRef: { name: finnova-db, key: systemadminConnectionString }
+            # Optional identity-verification storage secret. Keep BlobStorage:Enabled false
+            # until this key is provisioned by the deployment secret manager.
+            - name: ConnectionStrings__IdentityVerificationBlobStorage
+              valueFrom:
+                secretKeyRef:
+                  name: finnova-identity-verification
+                  key: blobStorageConnectionString
+                  optional: true
             - name: Jwt__SigningKey
               valueFrom:
                 secretKeyRef: { name: finnova-jwt, key: signingKey }

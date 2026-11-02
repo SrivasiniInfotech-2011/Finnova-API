@@ -1,0 +1,1877 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 CREATE `Finnova.Models/Domain/Enums/IdentityVerificationEnums.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551726676
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551822913
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551879910
+      }
+    ],
+    "1.2 CREATE `Finnova.Models/Domain/Entities/VerificationSession.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551729085
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551854124
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551954472
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638523326
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638532347
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638646988
+      }
+    ],
+    "1.3 CREATE `Finnova.Models/Domain/Entities/SourceSummary.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551730710
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551934424
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638424949
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638432995
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638515602
+      }
+    ],
+    "1.4 CREATE `Finnova.Models/Domain/Entities/ProtectedDocumentReference.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551731499
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551936031
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638425489
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638433495
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638515968
+      }
+    ],
+    "1.5 CREATE `Finnova.Models/Domain/Entities/ValidationRecord.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551732264
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551936642
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638425957
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638433831
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638516301
+      }
+    ],
+    "1.6 CREATE `Finnova.Models/Domain/Entities/IdentityVerificationInvariants.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551733197
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552018041
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552067681
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638426392
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638434330
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638516596
+      }
+    ],
+    "2.1 CREATE `Finnova.Models/Domain/Exceptions/IdentityVerificationExceptions.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551734084
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552080764
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552104548
+      }
+    ],
+    "3.1 CREATE `Finnova.Models/Contracts/IdentityVerification/IdentityVerificationContracts.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551735021
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552082659
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552152270
+      }
+    ],
+    "3.2 CREATE `Finnova.Service/IdentityVerification/External/IdentityVerificationOptions.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551735843
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552083980
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552264539
+      }
+    ],
+    "3.3 MODIFY `Finnova.Models/Contracts/IdentityVerification/IdentityVerificationContracts.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551736846
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552085452
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552263815
+      }
+    ],
+    "4.1 CREATE `Finnova.Repository/Configuration/VerificationSessionConfiguration.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551737568
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552770878
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793553080619
+      }
+    ],
+    "4.2 CREATE `Finnova.Repository/Configuration/ValidationRecordConfiguration.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551738515
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552771863
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556347216
+      }
+    ],
+    "4.3 CREATE `Finnova.Repository/Configuration/ProtectedDocumentReferenceConfiguration.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551739461
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793553067719
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638523654
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638531772
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638647717
+      }
+    ],
+    "4.4 MODIFY `Finnova.Repository/Context/FinnovaDbContext.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551740222
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552768544
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793553078175
+      }
+    ],
+    "4.5 CREATE `Finnova.Repository/Migrations/IdentityVerificationMigrationInstruction.md`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551741034
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554615723
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554639194
+      }
+    ],
+    "5.1 CREATE `Finnova.Repository/Interfaces/IIdentityVerificationRepository.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551741881
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793553072842
+      }
+    ],
+    "5.2 CREATE `Finnova.Service/IdentityVerification/Storage/IProtectedDocumentStore.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551742710
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552766786
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556348291
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638524254
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638532911
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638648360
+      }
+    ],
+    "5.3 CREATE `Finnova.Repository/Repositories/IdentityVerificationRepository.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551743506
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554065358
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556349062
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638524656
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638533381
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638648734
+      }
+    ],
+    "5.4 MODIFY `Finnova.Repository/DependencyInjection.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551744405
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554206296
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554434609
+      }
+    ],
+    "5.5 CREATE `Finnova.Service/IdentityVerification/Storage/ProtectedDocumentStoreRegistration.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551745272
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554214972
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554431020
+      }
+    ],
+    "5.6 MODIFY `Finnova.Repository/Repositories/IdentityVerificationRepository.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551746255
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554616500
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554703877
+      }
+    ],
+    "6.1 CREATE `Finnova.Service/IdentityVerification/IdentityVerificationRules.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551747130
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552086184
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556393002
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556398161
+      },
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556593710
+      }
+    ],
+    "6.2 CREATE `Finnova.Service/IdentityVerification/Validation/DocumentInputValidator.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551748024
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793553107399
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793553351151
+      }
+    ],
+    "6.3 CREATE `Finnova.Service/IdentityVerification/Correlation/RequestContext.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551749187
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552270224
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552756880
+      }
+    ],
+    "7.1 CREATE `Finnova.Service/IdentityVerification/Adapters/IdentityVerificationAdapters.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551750270
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552270793
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552755240
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638666956
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638675135
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639058003
+      }
+    ],
+    "7.2 CREATE `Finnova.Service/IdentityVerification/External/ProviderDtoPlaceholders.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551751302
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552271398
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552753444
+      }
+    ],
+    "7.3 CREATE `Finnova.Service/IdentityVerification/External/ConfigurableComparisonHttpClient.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551752326
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554424326
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554558492
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639068920
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639077506
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639350449
+      }
+    ],
+    "7.4 CREATE `Finnova.Service/IdentityVerification/External/ProviderCallExecutor.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551753224
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793553101787
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793553351553
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639511362
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639517628
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639602338
+      }
+    ],
+    "7.5 CREATE `Finnova.Service/IdentityVerification/External/ConfiguredIdentifierAdapter.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551754047
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793553100252
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793553351842
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639069317
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639077843
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639504515
+      }
+    ],
+    "8.1 CREATE `Finnova.Service/IdentityVerification/Commands/VerifyPanName/VerifyPanNameCommand.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551754924
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554221714
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554575463
+      }
+    ],
+    "8.2 CREATE `Finnova.Service/IdentityVerification/Commands/VerifyAadharAddress/VerifyAadharAddressCommand.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551755753
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793553371338
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554066123
+      }
+    ],
+    "8.3 CREATE `Finnova.Service/IdentityVerification/Commands/IdentityVerificationCommandValidators.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551756615
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793553370101
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556457765
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556463436
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556540743
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638664758
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638674353
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639057358
+      }
+    ],
+    "8.4 CREATE `Finnova.Service/IdentityVerification/IdentityVerificationMapper.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551757373
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554582766
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554602469
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638665425
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638675645
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639058471
+      }
+    ],
+    "8.5 CREATE `Finnova.Service/IdentityVerification/Commands/ComparisonCommandHandlers.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551758278
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793555281328
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556350665
+      }
+    ],
+    "8.6 CREATE `Finnova.Service/IdentityVerification/Workflow/VerificationWorkflowCoordinator.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551759132
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793555282238
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556349889
+      }
+    ],
+    "8.7 CREATE `Finnova.Service/IdentityVerification/Commands/ValidateIdentifiers/ValidateIdentifierCommands.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551760229
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554617302
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554672517
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638665930
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638676251
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639059376
+      }
+    ],
+    "8.8 CREATE `Finnova.Service/IdentityVerification/Commands/ManualOverrides/ManualOverrideCommands.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551761563
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793555282776
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556352286
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638666535
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638676690
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639058984
+      }
+    ],
+    "8.9 CREATE `Finnova.Service/IdentityVerification/Queries/VerificationHistoryQueries.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551762849
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554618264
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554672902
+      }
+    ],
+    "9.1 CREATE `Finnova.SystemAdminService/Controllers/IdentityVerificationController.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551763708
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554618920
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554699751
+      }
+    ],
+    "9.2 CREATE `Finnova.SystemAdminService/Controllers/IdentityVerificationHistoryController.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551764973
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554709727
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793555034602
+      }
+    ],
+    "9.3 MODIFY `Finnova.SystemAdminService/Middleware/ExceptionHandlingMiddleware.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551766140
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793555046285
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556351521
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639067493
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639075894
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639348958
+      }
+    ],
+    "9.4 MODIFY `Finnova.SystemAdminService/Program.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551766942
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793555009634
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793555063062
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639068049
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639076322
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639349494
+      }
+    ],
+    "9.5 MODIFY `Finnova.ApiGateway/appsettings.json`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551767583
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793555055095
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556353525
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639068523
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639076958
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639350032
+      }
+    ],
+    "9.6 MODIFY `Finnova.SystemAdminService/appsettings.json` and/or deployment configuration": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551768523
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793555046987
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556355617
+      }
+    ],
+    "9.7 CREATE `Finnova.SystemAdminService/Controllers/IdentityVerificationManualController.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551769331
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793555282508
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556358433
+      }
+    ],
+    "9.8 CREATE `Finnova.Service/IdentityVerification/Queries/ProtectedDocumentQuery.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551770304
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793555281964
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556354925
+      }
+    ],
+    "9.9 MODIFY `Finnova.SystemAdminService/Controllers/IdentityVerificationManualController.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551771174
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793555736844
+      }
+    ],
+    "9.10 MODIFY `Finnova.Service/IdentityVerification/Queries/ProtectedDocumentQuery.cs` and `Finnova.SystemAdminService/Controllers/IdentityVerificationHistoryController.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551772074
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793555735192
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556357358
+      }
+    ],
+    "9.11 MODIFY `Finnova.Service/Finnova.Service.csproj`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551772622
+      },
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556700084
+      },
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556833693
+      }
+    ],
+    "9.12 MODIFY `Finnova.Service/IdentityVerification/External/IdentityVerificationOptions.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551773284
+      },
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556700798
+      },
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556834367
+      }
+    ],
+    "9.13 MODIFY `Finnova.Models/Contracts/IdentityVerification/IdentityVerificationContracts.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551774313
+      },
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556701431
+      },
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556835400
+      }
+    ],
+    "9.14 CREATE `Finnova.Service/IdentityVerification/Storage/AzureBlobProtectedDocumentStore.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551775938
+      },
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556847599
+      },
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556898973
+      }
+    ],
+    "9.15 MODIFY `Finnova.Service/IdentityVerification/Storage/ProtectedDocumentStoreRegistration.cs` and `Finnova.SystemAdminService/Program.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551776894
+      },
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556848258
+      },
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556898587
+      }
+    ],
+    "9.16 CREATE `Finnova.Service/IdentityVerification/Storage/ProtectedDocumentLifecycle.cs` and MODIFY the comparison handlers": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551777629
+      },
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556904985
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793636492658
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793636649163
+      }
+    ],
+    "9.17 MODIFY `Finnova.SystemAdminService/Controllers/IdentityVerificationController.cs` and `IdentityVerificationManualController.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551778471
+      },
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556905303
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793636655405
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793636738289
+      }
+    ],
+    "9.18 MODIFY `Finnova.Service/IdentityVerification/Queries/ProtectedDocumentQuery.cs` and `Finnova.SystemAdminService/Controllers/IdentityVerificationHistoryController.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551779412
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793636746733
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793636853874
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793636864549
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793636891301
+      }
+    ],
+    "9.19 CREATE `Finnova.Service/IdentityVerification/Adapters/ProviderDocumentAccess.cs`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551780256
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793636747535
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793636824230
+      }
+    ],
+    "9.20 MODIFY `Finnova.SystemAdminService/appsettings.json` and deployment secret configuration": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551781109
+      },
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556702473
+      },
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556836235
+      }
+    ],
+    "10.4 MODIFY `Finnova.Tests/Finnova.Tests.csproj`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551781925
+      },
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793555732854
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556356472
+      }
+    ],
+    "11.1 CREATE `d:\\Projects\\Finnova\\Finnova-UI\\src\\models\\identityVerification.model.ts`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551782739
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552272048
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552756089
+      }
+    ],
+    "11.2 MODIFY `d:\\Projects\\Finnova\\Finnova-UI\\src\\models\\index.ts`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551783397
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552769908
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552806341
+      }
+    ],
+    "11.3 CREATE `d:\\Projects\\Finnova\\Finnova-UI\\src\\services\\interfaces\\identityVerification.interface.ts`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551784286
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552272703
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552754550
+      }
+    ],
+    "11.4 MODIFY `d:\\Projects\\Finnova\\Finnova-UI\\src\\services\\interfaces\\index.ts`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551785399
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793553063739
+      }
+    ],
+    "11.5 CREATE `d:\\Projects\\Finnova\\Finnova-UI\\src\\services\\real\\identityVerification.real.ts`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551786345
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793553367914
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556359108
+      }
+    ],
+    "11.6 CREATE `d:\\Projects\\Finnova\\Finnova-UI\\src\\services\\mock\\identityVerification.mock.ts`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551787175
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793553367333
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556360692
+      }
+    ],
+    "11.7 CREATE `d:\\Projects\\Finnova\\Finnova-UI\\src\\services\\identityVerification.service.ts`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551788057
+      },
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793553371082
+      },
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556359856
+      }
+    ],
+    "11.8 MODIFY `d:\\Projects\\Finnova\\Finnova-UI\\src\\services\\index.ts`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551788846
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637304672
+      }
+    ],
+    "11.9 MODIFY `d:\\Projects\\Finnova\\Finnova-UI\\src\\services\\real\\identityVerification.real.ts`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551789566
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637310952
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637557006
+      }
+    ],
+    "11.10 MODIFY `d:\\Projects\\Finnova\\Finnova-UI\\src\\services\\real\\identityVerification.real.ts`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551790269
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637307439
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637557732
+      }
+    ],
+    "12.1 CREATE `d:\\Projects\\Finnova\\Finnova-UI\\src\\pages\\IdentityVerification.tsx`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551791008
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637566818
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637749611
+      }
+    ],
+    "12.2 CREATE `d:\\Projects\\Finnova\\Finnova-UI\\src\\components\\identityVerification\\VerificationResultCard.tsx`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551792023
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637567400
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637748772
+      }
+    ],
+    "12.3 CREATE `d:\\Projects\\Finnova\\Finnova-UI\\src\\components\\identityVerification\\ManualOverrideDialog.tsx`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551792893
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637568004
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637750249
+      }
+    ],
+    "12.4 CREATE `d:\\Projects\\Finnova\\Finnova-UI\\src\\components\\identityVerification\\VerificationHistoryFilters.tsx`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551793837
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637568863
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637751401
+      }
+    ],
+    "12.5 MODIFY `d:\\Projects\\Finnova\\Finnova-UI\\src\\pages\\IdentityVerification.tsx`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551794835
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637758820
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638034851
+      }
+    ],
+    "12.6 MODIFY `d:\\Projects\\Finnova\\Finnova-UI\\src\\App.tsx`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551795760
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637569345
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637752247
+      }
+    ],
+    "12.7 MODIFY `d:\\Projects\\Finnova\\Finnova-UI\\src\\components\\Layout.tsx`": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551796760
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637569748
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638035084
+      }
+    ],
+    "14. Checkpoint - backend domain and persistence": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551797775
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638172485
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639648793
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639654931
+      },
+      {
+        "executionId": "969b0396-4bbb-4642-8fb9-bd2af2575b38",
+        "chatSessionId": "sess_ae1929b2-57a2-44c4-8037-aada74823f0d",
+        "timestamp": 1793639799415
+      },
+      {
+        "executionId": "79cf6b95-c6f5-4600-a014-8a075747a04b",
+        "chatSessionId": "sess_d157c54a-ca6d-4c81-9233-9c45125949d1",
+        "timestamp": 1793639854200
+      }
+    ],
+    "15. Checkpoint - backend API and workflow wiring": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551798646
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638173054
+      },
+      {
+        "executionId": "79cf6b95-c6f5-4600-a014-8a075747a04b",
+        "chatSessionId": "sess_d157c54a-ca6d-4c81-9233-9c45125949d1",
+        "timestamp": 1793639888409
+      }
+    ],
+    "16. Checkpoint - frontend and tests": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793551800226
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638173354
+      },
+      {
+        "executionId": "79cf6b95-c6f5-4600-a014-8a075747a04b",
+        "chatSessionId": "sess_d157c54a-ca6d-4c81-9233-9c45125949d1",
+        "timestamp": 1793639894267
+      }
+    ],
+    "1. Add backend domain enums and immutable entities": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552069412
+      }
+    ],
+    "2. Add safe backend exceptions": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552106653
+      }
+    ],
+    "3. Add backend request/response contracts": [
+      {
+        "executionId": "57184f42-8778-4505-86a3-49b70b00f44c",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793552265014
+      }
+    ],
+    "7. Add provider-neutral adapters, configurable DTO boundary, HTTP clients, and resilience": [
+      {
+        "executionId": "d5542ef3-f2c4-40e9-8e22-46cbb5684ba7",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793554559275
+      }
+    ],
+    "4. Add EF configurations, DbSets, and migration instruction": [
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556361521
+      }
+    ],
+    "10. Add backend automated tests": [
+      {
+        "executionId": "4743d7e7-7fe0-4eec-8a2a-075e7251a708",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556362318
+      }
+    ],
+    "6. Add pure validation, masking, document, and correlation helpers": [
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556595264
+      }
+    ],
+    "9. Wire controllers, middleware, host, and gateway": [
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556637972
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793636893270
+      }
+    ],
+    "8. Add CQRS commands, handlers, validators, workflow coordinator, and mappers": [
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556680321
+      }
+    ],
+    "5. Add append-only repository and protected-document storage": [
+      {
+        "executionId": "446eb455-87c2-4b48-afdd-20d8f04ec18a",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793556681268
+      }
+    ],
+    "10.2 CREATE `Finnova.Tests/Unit/IdentityVerificationExamples.cs`": [
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793636907982
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637261610
+      }
+    ],
+    "10.1 CREATE `Finnova.Tests/Unit/IdentityVerificationProperties.cs`": [
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793636908802
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637269226
+      }
+    ],
+    "10.3 CREATE `Finnova.Tests/Integration/IdentityVerificationApiTests.cs`": [
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793636909409
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637266447
+      }
+    ],
+    "10.5 CREATE `Finnova.Tests/Unit/ProtectedDocumentStoreTests.cs`": [
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793636910376
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637274681
+      }
+    ],
+    "10.6 CREATE `Finnova.Tests/Integration/ProtectedDocumentTransactionTests.cs`": [
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793636911013
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793637276990
+      }
+    ],
+    "13.1 CREATE `d:\\Projects\\Finnova\\Finnova-UI\\src\\services\\identityVerification.service.test.ts`": [
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638044641
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638053016
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638059050
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638162735
+      }
+    ],
+    "13.2 CREATE `d:\\Projects\\Finnova\\Finnova-UI\\src\\pages\\IdentityVerification.test.tsx`": [
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638044995
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638163094
+      }
+    ],
+    "13.3 MODIFY `d:\\Projects\\Finnova\\Finnova-UI\\src\\components\\Layout.tsx`": [
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638045366
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638163620
+      },
+      {
+        "executionId": "79cf6b95-c6f5-4600-a014-8a075747a04b",
+        "chatSessionId": "sess_d157c54a-ca6d-4c81-9233-9c45125949d1",
+        "timestamp": 1793639879713
+      },
+      {
+        "executionId": "24ea9667-83a6-4c55-8700-3a6e5c211e65",
+        "chatSessionId": "sess_b471501d-2576-475c-8d12-9e15f56edfa9",
+        "timestamp": 1793640009804
+      }
+    ],
+    "13. Add frontend Vitest and React Testing Library tests": [
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638164052
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638164201
+      },
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793638164338
+      }
+    ],
+    "11. Add frontend models and service implementations": [
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639621616
+      }
+    ],
+    "12. Add frontend page, dialogs, result cards, history filters, route, and navigation": [
+      {
+        "executionId": "634b3476-3a0d-4319-acfa-46930a733885",
+        "chatSessionId": "sess_fae23876-3a3b-460e-80b7-5eadc14b181d",
+        "timestamp": 1793639628216
+      }
+    ],
+    "13.3 CREATE `d:\\Projects\\Finnova\\Finnova-UI\\src\\components\\Layout.test.tsx`": [
+      {
+        "executionId": "24ea9667-83a6-4c55-8700-3a6e5c211e65",
+        "chatSessionId": "sess_b471501d-2576-475c-8d12-9e15f56edfa9",
+        "timestamp": 1793640167039
+      }
+    ]
+  }
+}

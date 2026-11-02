@@ -1,3 +1,5 @@
+using Finnova.Models.Domain.Enums;
+using Finnova.Models.Domain.Exceptions;
 using Finnova.Repository;
 using Finnova.Service.Assets.CodeGeneration;
 using Finnova.Service.Auth;
@@ -5,9 +7,18 @@ using Finnova.Service.Customers;
 using Finnova.Service.Customers.Commands;
 using Finnova.Service.Customers.References;
 using Finnova.Service.Customers.Validation;
+using Finnova.Service.IdentityVerification;
+using Finnova.Service.IdentityVerification.Adapters;
+using Finnova.Service.IdentityVerification.Correlation;
+using Finnova.Service.IdentityVerification.External;
+using Finnova.Service.IdentityVerification.Storage;
+using Finnova.Service.IdentityVerification.Validation;
+using Finnova.Service.IdentityVerification.Workflow;
 using Finnova.Service.UserManagement.Abstractions;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Security.Claims;
@@ -85,8 +96,86 @@ builder.Services.AddAuthorization(options =>
 // Repository (EF Core + SQL Server)
 var connectionString = builder.Configuration.GetConnectionString("FinnovaConnection");
 builder.Services.AddFinnovaRepository(connectionString);
+builder.Services.AddHttpContextAccessor();
+builder.Services.Configure<IdentityVerificationOptions>(builder.Configuration.GetSection(IdentityVerificationOptions.SectionName));
+builder.Services.AddHttpClient<ConfigurableComparisonHttpClient>();
+builder.Services.AddScoped<IRequestContextAccessor, RequestContextAccessor>();
+builder.Services.AddScoped<IProviderCallExecutor, ProviderCallExecutor>();
+builder.Services.AddScoped<IVerificationWorkflowCoordinator, VerificationWorkflowCoordinator>();
+builder.Services.AddScoped<DocumentInputValidator>();
+builder.Services.AddScoped<ProtectedDocumentLifecycle>();
+builder.Services.AddIdentityVerificationStorage(builder.Configuration);
+builder.Services.AddScoped<IIdentityVerificationDocumentQuery, Finnova.Service.IdentityVerification.Queries.ProtectedDocumentQuery>();
+
+// Register only enabled provider adapters. Provider endpoints and credentials remain deployment configuration;
+// an enabled operation with missing endpoint configuration returns an unavailable result and never succeeds.
+var identityVerificationSection = builder.Configuration.GetSection(IdentityVerificationOptions.SectionName);
+if (identityVerificationSection.GetValue<bool>("PanIdentifierValidation:Enabled"))
+{
+    builder.Services.AddScoped<IIdentifierValidationAdapter>(sp =>
+    {
+        var options = sp.GetRequiredService<IOptions<IdentityVerificationOptions>>().Value;
+        return CreateIdentifierAdapter(VerificationOperationType.PanIdentifierValidation, options.PanIdentifierValidation, options.Retry);
+    });
+}
+
+if (identityVerificationSection.GetValue<bool>("AadhaarIdentifierValidation:Enabled"))
+{
+    builder.Services.AddScoped<IIdentifierValidationAdapter>(sp =>
+    {
+        var options = sp.GetRequiredService<IOptions<IdentityVerificationOptions>>().Value;
+        return CreateIdentifierAdapter(VerificationOperationType.AadhaarIdentifierValidation, options.AadhaarIdentifierValidation, options.Retry);
+    });
+}
+
+if (identityVerificationSection.GetValue<bool>("PanNameVerification:Enabled"))
+{
+    builder.Services.AddScoped<IComparisonAdapter>(sp =>
+    {
+        var options = sp.GetRequiredService<IOptions<IdentityVerificationOptions>>().Value;
+        return CreateComparisonAdapter(VerificationOperationType.PanNameVerification, options.PanNameVerification, options.Retry, sp);
+    });
+}
+
+if (identityVerificationSection.GetValue<bool>("AadhaarAddressVerification:Enabled"))
+{
+    builder.Services.AddScoped<IComparisonAdapter>(sp =>
+    {
+        var options = sp.GetRequiredService<IOptions<IdentityVerificationOptions>>().Value;
+        return CreateComparisonAdapter(VerificationOperationType.AadhaarAddressVerification, options.AadhaarAddressVerification, options.Retry, sp);
+    });
+}
+
+builder.Services.AddScoped<IComparisonAdapterResolver, ConfiguredComparisonAdapterResolver>();
+
 builder.Services.AddScoped<CustomerFieldApplicabilityEvaluator>();
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateCustomerCommand).Assembly));
+
+static ConfiguredIdentifierAdapter CreateIdentifierAdapter(
+    VerificationOperationType operation,
+    ProviderOperationOptions provider,
+    RetryOptions retry)
+    => new(
+        operation,
+        provider.BaseAddress,
+        provider.Path,
+        provider.HttpMethod,
+        provider.RequestMode,
+        provider.IdentifierFieldName,
+        Math.Max(1, retry.TimeoutSeconds),
+        Math.Max(1, retry.MaxAttempts),
+        Math.Max(0, retry.BaseDelayMilliseconds));
+
+static ConfigurableComparisonHttpClient CreateComparisonAdapter(
+    VerificationOperationType operation,
+    ComparisonProviderOptions provider,
+    RetryOptions retry,
+    IServiceProvider services)
+    => new(
+        services.GetRequiredService<IHttpClientFactory>().CreateClient(),
+        operation,
+        provider,
+        retry,
+        services.GetRequiredService<ILogger<ConfigurableComparisonHttpClient>>());
 
 // Health checks
 builder.Services.AddHealthChecks();
@@ -144,3 +233,39 @@ app.Run();
 // WebApplicationFactory<Program> in Finnova.Tests cannot reference it. Declaring a public
 // partial Program here exposes the generated entry-point type to the test assembly.
 public partial class Program { }
+
+
+internal sealed class ConfiguredComparisonAdapterResolver(
+    IEnumerable<IComparisonAdapter> adapters,
+    IOptions<IdentityVerificationOptions> options) : IComparisonAdapterResolver
+{
+    public IComparisonAdapter Resolve(VerificationOperationType operation, string adapterName)
+    {
+        var provider = operation switch
+        {
+            VerificationOperationType.PanNameVerification => options.Value.PanNameVerification,
+            VerificationOperationType.AadhaarAddressVerification => options.Value.AadhaarAddressVerification,
+            _ => throw new IdentityVerificationConfigurationException()
+        };
+
+        if (!provider.Enabled ||
+            string.IsNullOrWhiteSpace(provider.AdapterName) ||
+            string.IsNullOrWhiteSpace(provider.BaseAddress) ||
+            string.IsNullOrWhiteSpace(provider.Path))
+        {
+            throw new IdentityVerificationConfigurationException();
+        }
+
+        var requestedName = adapterName?.Trim();
+        var configuredProfile = provider.InputMapping.MappingProfile?.Trim();
+        if (!string.IsNullOrWhiteSpace(requestedName) &&
+            !string.Equals(requestedName, provider.AdapterName, StringComparison.Ordinal) &&
+            !string.Equals(requestedName, configuredProfile, StringComparison.Ordinal))
+        {
+            throw new IdentityVerificationConfigurationException();
+        }
+
+        return adapters.SingleOrDefault(adapter => adapter.SupportedOperation == operation)
+            ?? throw new IdentityVerificationConfigurationException();
+    }
+}

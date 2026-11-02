@@ -62,6 +62,9 @@ public class FinnovaDbContext : DbContext
     public DbSet<CustomerTrackEntry> CustomerTrackEntries => Set<CustomerTrackEntry>();
     public DbSet<FactoringSubLimit> CustomerFactoringSubLimits => Set<FactoringSubLimit>();
     public DbSet<CustomerAuditEntry> CustomerAuditEntries => Set<CustomerAuditEntry>();
+    public DbSet<VerificationSession> VerificationSessions => Set<VerificationSession>();
+    public DbSet<ValidationRecord> ValidationRecords => Set<ValidationRecord>();
+    public DbSet<ProtectedDocumentReference> ProtectedDocumentReferences => Set<ProtectedDocumentReference>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
