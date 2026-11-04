@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <RunConfiguration>
+    <EnvironmentVariables>
+      <FINNOVA_TEST_JWT_KEY>finnova-test-only-jwt-key-not-a-secret-32chars</FINNOVA_TEST_JWT_KEY>
+    </EnvironmentVariables>
+  </RunConfiguration>
+</RunSettings>
