@@ -4,6 +4,23 @@ namespace Finnova.Service.IdentityVerification.Storage;
 
 public sealed class ProtectedDocumentLifecycle(IProtectedDocumentStore store)
 {
+    public Task UploadAndExecuteAsync(
+        Stream content,
+        string contentType,
+        long sizeBytes,
+        Func<ProtectedDocumentReference, Task> action,
+        CancellationToken ct = default) =>
+        UploadAndExecuteAsync<object?>(
+            content,
+            contentType,
+            sizeBytes,
+            async reference =>
+            {
+                await action(reference);
+                return null;
+            },
+            ct);
+
     public async Task<TResult> UploadAndExecuteAsync<TResult>(
         Stream content,
         string contentType,

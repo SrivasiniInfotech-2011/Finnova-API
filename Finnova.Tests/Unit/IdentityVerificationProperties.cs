@@ -1,6 +1,7 @@
 using System.Reflection;
 using FsCheck;
 using FsCheck.Xunit;
+using Finnova.Models.Contracts.IdentityVerification;
 using Finnova.Models.Domain.Entities;
 using Finnova.Models.Domain.Enums;
 using Finnova.Models.Domain.Exceptions;
@@ -10,8 +11,8 @@ using Finnova.Service.IdentityVerification.External;
 using Finnova.Service.IdentityVerification.Validation;
 using Microsoft.Extensions.Options;
 using Xunit;
-using AdapterOperationType = Finnova.Service.IdentityVerification.Adapters.VerificationOperationType;
-using AdapterComparisonOutcome = Finnova.Service.IdentityVerification.Adapters.ComparisonOutcome;
+using AdapterOperationType = Finnova.Models.Domain.Enums.VerificationOperationType;
+using AdapterComparisonOutcome = Finnova.Models.Domain.Enums.ComparisonOutcome;
 
 namespace Finnova.Tests.Unit;
 
@@ -34,7 +35,10 @@ public sealed class IdentityVerificationProperties
     [Property(MaxTest = 100)] public Property InvalidRecordShapeIsRejected(NonEmptyString _)
     {
         var invalid = new ValidationRecord { OperationType = VerificationOperationType.PanIdentifierValidation, ComparisonOutcome = ComparisonOutcome.Match };
-        return Prop.Throws<InvalidOperationException, bool>(() => { IdentityVerificationInvariants.EnsureResultDomain(invalid); return true; });
+        var threw = false;
+        try { IdentityVerificationInvariants.EnsureResultDomain(invalid); }
+        catch (InvalidOperationException) { threw = true; }
+        return threw.ToProperty();
     }
 
     // Feature: pan-aadhar-validation, Property 2: Rejected input makes no provider call.
@@ -61,16 +65,16 @@ public sealed class IdentityVerificationProperties
     [Property(MaxTest = 100)]
     public Property ValidIdentifiersPreserveOperationIndependence(int seed)
     {
-        var panStatus = seed % 2 == 0 ? IdentifierValidationStatus.Success : IdentifierValidationStatus.Failure;
-        var aadhaarStatus = seed % 3 == 0 ? IdentifierValidationStatus.Unavailable : IdentifierValidationStatus.Success;
+        var panStatus = seed % 2 == 0 ? ValidationStatus.Success : ValidationStatus.Failure;
+        var aadhaarStatus = seed % 3 == 0 ? ValidationStatus.Unavailable : ValidationStatus.Success;
         var pan = new RecordingIdentifierAdapter(
             AdapterOperationType.PanIdentifierValidation,
-            panStatus == IdentifierValidationStatus.Success
+            panStatus == ValidationStatus.Success
                 ? new IdentifierAdapterResult.Success()
                 : new IdentifierAdapterResult.Failure("PAN_INVALID", "PAN validation failed."));
         var aadhaar = new RecordingIdentifierAdapter(
             AdapterOperationType.AadhaarIdentifierValidation,
-            aadhaarStatus == IdentifierValidationStatus.Success
+            aadhaarStatus == ValidationStatus.Success
                 ? new IdentifierAdapterResult.Success()
                 : new IdentifierAdapterResult.Unavailable("PROVIDER_UNAVAILABLE", "Provider unavailable."));
 
@@ -91,7 +95,7 @@ public sealed class IdentityVerificationProperties
 
         // The PAN result is deliberately independent from the Aadhaar result. The generated
         // seed varies the expected provider outcome without sharing mutable result state.
-        var panIndependent = pan.Calls == 1 && panResult.Status == IdentifierValidationStatus.Success;
+        var panIndependent = pan.Calls == 1 && panResult.Status == panStatus;
         var aadhaarIndependent = aadhaar.Calls == 1 && aadhaarResult.Status == aadhaarStatus;
         return (panIndependent && aadhaarIndependent && panResult != aadhaarResult).ToProperty();
     }
@@ -122,7 +126,7 @@ public sealed class IdentityVerificationProperties
             nameof(ProviderNeutralComparisonInput.ExtractedValues),
             nameof(ProviderNeutralComparisonInput.CorrelationId),
             nameof(ProviderNeutralComparisonInput.MappingProfile),
-            nameof(ProviderNeutralComparisonInput.CancellationToken)
+            nameof(ProviderNeutralComparisonInput.ActorReference)
         };
         var publicFields = typeof(ProviderNeutralComparisonInput).GetProperties(BindingFlags.Instance | BindingFlags.Public)
             .Select(property => property.Name)
@@ -131,7 +135,7 @@ public sealed class IdentityVerificationProperties
         var onlyNeutralFields = publicFields.SetEquals(expectedFields)
             && !publicFields.Any(name => name.Contains("Provider", StringComparison.OrdinalIgnoreCase)
                 || name.Contains("Secret", StringComparison.OrdinalIgnoreCase)
-                || name.Contains("Token", StringComparison.OrdinalIgnoreCase) && name != nameof(ProviderNeutralComparisonInput.CancellationToken));
+                || name.Contains("Token", StringComparison.OrdinalIgnoreCase));
         var valuesRemainNeutral = input.ExtractedValues is not null
             && input.ExtractedValues.Keys.SequenceEqual(new[] { "documentName" })
             && input.MappingProfile == mapping.Get;
@@ -148,7 +152,7 @@ public sealed class IdentityVerificationProperties
         var comparisonNoMatch = new ComparisonAdapterResult.NoUsableMatch("PROVIDER_UNAVAILABLE", "Provider unavailable.");
 
         var safeRetry = transient.Attempts == maxAttempts && !transient.Succeeded;
-        var safeIdentifierClassification = identifierUnavailable.Status == IdentifierValidationStatus.Unavailable;
+        var safeIdentifierClassification = identifierUnavailable.Status == ValidationStatus.Unavailable;
         var safeComparisonClassification = comparisonNoMatch.Outcome == AdapterComparisonOutcome.NoUsableMatch;
         return (safeRetry && safeIdentifierClassification && safeComparisonClassification).ToProperty();
     }
@@ -274,7 +278,7 @@ public sealed class IdentityVerificationProperties
     [Property(MaxTest = 100)]
     public Property ManualDeclinePreservesIndeterminateResult(NonEmptyString _)
     {
-        var source = new ManualReviewState(ComparisonOutcome.NoUsableMatch, hasManualSuccess: false);
+        var source = new ManualReviewState(ComparisonOutcome.NoUsableMatch, HasSuccessfulManualResult: false);
         var declined = source.Decline();
         return (declined.Outcome == ComparisonOutcome.NoUsableMatch
             && !declined.HasSuccessfulManualResult

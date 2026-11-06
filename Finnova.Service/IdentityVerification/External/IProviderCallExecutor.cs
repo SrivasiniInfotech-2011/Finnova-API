@@ -1,3 +1,5 @@
+using Finnova.Models.Domain.Enums;
+using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
 
 namespace Finnova.Service.IdentityVerification.External;

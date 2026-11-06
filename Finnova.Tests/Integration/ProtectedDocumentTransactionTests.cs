@@ -89,7 +89,7 @@ public sealed class ProtectedDocumentTransactionTests
             .UseInMemoryDatabase($"protected-document-records-{Guid.NewGuid():N}")
             .Options;
         await using var db = new FinnovaDbContext(options);
-        var repository = new IdentityVerificationRepository(db, new TrackingStore());
+        var repository = new IdentityVerificationRepository(db);
         var sourceId = Guid.NewGuid();
 
         var automated = new ValidationRecord

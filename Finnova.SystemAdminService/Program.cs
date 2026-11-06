@@ -11,6 +11,7 @@ using Finnova.Service.IdentityVerification;
 using Finnova.Service.IdentityVerification.Adapters;
 using Finnova.Service.IdentityVerification.Correlation;
 using Finnova.Service.IdentityVerification.External;
+using Finnova.Service.IdentityVerification.Queries;
 using Finnova.Service.IdentityVerification.Storage;
 using Finnova.Service.IdentityVerification.Validation;
 using Finnova.Service.IdentityVerification.Workflow;

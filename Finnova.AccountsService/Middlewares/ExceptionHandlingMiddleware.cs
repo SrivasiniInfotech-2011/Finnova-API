@@ -42,6 +42,12 @@ public class ExceptionHandlingMiddleware
                 GLRetiredCodeException => (StatusCodes.Status409Conflict, "ERR-GL-409", ex.Message),
                 GLDuplicateNameException => (StatusCodes.Status409Conflict, "ERR-GL-409", ex.Message),
                 GLConflictException => (StatusCodes.Status409Conflict, "ERR-GL-409", ex.Message),
+                ApplicationProcessingException a => (a.ErrorCode switch
+                {
+                    "ERR-APP-404" => StatusCodes.Status404NotFound,
+                    "ERR-APP-503" => StatusCodes.Status503ServiceUnavailable,
+                    _ => StatusCodes.Status409Conflict
+                }, a.ErrorCode, a.Message),
 
                 // ---- shared: validation failures and unhandled fallback ----
                 FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, validationCode, v.Message),
@@ -50,6 +56,8 @@ public class ExceptionHandlingMiddleware
 
             var problem = new ProblemDetails { Status = status, Title = code, Detail = detail };
             problem.Extensions["code"] = code;
+            problem.Extensions["message"] = detail;
+            problem.Extensions["correlationId"] = ctx.TraceIdentifier;
             ctx.Response.StatusCode = status;
             await ctx.Response.WriteAsJsonAsync(problem);
         }

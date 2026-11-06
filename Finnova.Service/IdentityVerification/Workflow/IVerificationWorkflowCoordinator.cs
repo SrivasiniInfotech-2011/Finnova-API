@@ -4,7 +4,7 @@ using Finnova.Service.IdentityVerification.Commands.VerifyPanName;
 
 namespace Finnova.Service.IdentityVerification.Workflow;
 
-public interface IVerificationWorkflowCoordinator
+public interface ILegacyVerificationWorkflowCoordinator
 {
     Task<VerificationWorkflowResponse> RunPanAndNameWorkflowAsync(PanAndNameWorkflowRequest request, CancellationToken ct);
     Task<VerificationWorkflowResponse> RunAadhaarAndAddressWorkflowAsync(AadhaarAndAddressWorkflowRequest request, CancellationToken ct);

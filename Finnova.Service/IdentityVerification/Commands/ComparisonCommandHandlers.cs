@@ -4,6 +4,8 @@ using Finnova.Models.Domain.Enums;
 using Finnova.Models.Domain.Exceptions;
 using Finnova.Repository.Interfaces;
 using Finnova.Service.IdentityVerification.Adapters;
+using Finnova.Service.IdentityVerification.Commands.VerifyAadharAddress;
+using Finnova.Service.IdentityVerification.Commands.VerifyPanName;
 using Finnova.Service.IdentityVerification.Correlation;
 using Finnova.Service.IdentityVerification.External;
 using Finnova.Service.IdentityVerification.Storage;
@@ -39,7 +41,6 @@ public sealed class VerifyPanNameCommandHandler(
                 ?? throw new IdentityVerificationRecordNotFoundException())
         {
             result = await executor.ExecuteAsync(
-                VerificationOperationType.PanNameVerification,
                 t => adapter.VerifyAsync(
                     new ProviderNeutralComparisonInput(
                         VerificationOperationType.PanNameVerification,
@@ -50,6 +51,8 @@ public sealed class VerifyPanNameCommandHandler(
                         c.CorrelationId,
                         request.Request.Source.MappingProfile ?? ""),
                     t),
+                VerificationOperationType.PanNameVerification,
+                c.CorrelationId,
                 ct);
         }
 
@@ -60,7 +63,7 @@ public sealed class VerifyPanNameCommandHandler(
             DocumentContentType = reference?.ContentType,
             DocumentSizeBytes = reference?.SizeBytes,
             ProtectedDocumentReferenceId = reference?.Id,
-            ExtractionCompleted = request.Request.Source.ExtractedValues?.Count > 0 ?? false,
+            ExtractionCompleted = request.Request.Source.ExtractedValues is { Count: > 0 },
             SourceType = reference is null ? VerificationSourceType.ExtractedValues : VerificationSourceType.DocumentAndExtractedValues
         };
 
@@ -106,7 +109,6 @@ public sealed class VerifyAadharAddressCommandHandler(
                 ?? throw new IdentityVerificationRecordNotFoundException())
         {
             result = await executor.ExecuteAsync(
-                VerificationOperationType.AadhaarAddressVerification,
                 t => adapter.VerifyAsync(
                     new ProviderNeutralComparisonInput(
                         VerificationOperationType.AadhaarAddressVerification,
@@ -117,6 +119,8 @@ public sealed class VerifyAadharAddressCommandHandler(
                         c.CorrelationId,
                         request.Request.Source.MappingProfile ?? ""),
                     t),
+                VerificationOperationType.AadhaarAddressVerification,
+                c.CorrelationId,
                 ct);
         }
 
@@ -127,7 +131,7 @@ public sealed class VerifyAadharAddressCommandHandler(
             DocumentContentType = reference?.ContentType,
             DocumentSizeBytes = reference?.SizeBytes,
             ProtectedDocumentReferenceId = reference?.Id,
-            ExtractionCompleted = request.Request.Source.ExtractedValues?.Count > 0 ?? false,
+            ExtractionCompleted = request.Request.Source.ExtractedValues is { Count: > 0 },
             SourceType = reference is null ? VerificationSourceType.ExtractedValues : VerificationSourceType.DocumentAndExtractedValues
         };
 

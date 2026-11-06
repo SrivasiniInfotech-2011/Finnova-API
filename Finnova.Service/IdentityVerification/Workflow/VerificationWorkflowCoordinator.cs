@@ -2,10 +2,12 @@ using System.Text.Json;
 using Finnova.Models.Contracts.IdentityVerification;
 using Finnova.Models.Domain.Entities;
 using Finnova.Models.Domain.Enums;
+using Finnova.Models.Domain.Exceptions;
 using Finnova.Repository.Interfaces;
 using Finnova.Service.IdentityVerification.Adapters;
 using Finnova.Service.IdentityVerification.Correlation;
 using Finnova.Service.IdentityVerification.External;
+using Finnova.Service.IdentityVerification.Storage;
 
 namespace Finnova.Service.IdentityVerification.Workflow;
 
@@ -100,7 +102,7 @@ public sealed class VerificationWorkflowCoordinator(
         {
             failures.Add(new(op, "ERR-IVF-503", ex.Message));
         }
-        catch (IdentityVerificationValidationException ex)
+        catch (IdentityVerificationValidationException)
         {
             failures.Add(new(op, "ERR-IVF-400", "The identifier input is invalid."));
         }
@@ -128,7 +130,7 @@ public sealed class VerificationWorkflowCoordinator(
 
             var reference = source.ProtectedDocumentReferenceId is null 
                 ? null 
-                : await repository.GetRecordAsync(source.ProtectedDocumentReferenceId.Value, ct) ?? 
+                : await repository.GetProtectedDocumentReferenceAsync(source.ProtectedDocumentReferenceId.Value, ct) ?? 
                   throw new IdentityVerificationValidationException(["ProtectedDocumentReferenceId"]);
 
             await using var stream = reference is null ? null : await store.OpenReadAsync(reference.StorageKey, ct);
@@ -151,7 +153,7 @@ public sealed class VerificationWorkflowCoordinator(
         {
             failures.Add(new(op, "ERR-IVF-503", ex.Message));
         }
-        catch (IdentityVerificationValidationException ex)
+        catch (IdentityVerificationValidationException)
         {
             failures.Add(new(op, "ERR-IVF-400", "The comparison input is invalid."));
         }

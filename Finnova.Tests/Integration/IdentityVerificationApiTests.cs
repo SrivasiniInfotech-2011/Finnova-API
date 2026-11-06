@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Xunit;
-using AdapterOperationType = Finnova.Service.IdentityVerification.Adapters.VerificationOperationType;
+using AdapterOperationType = Finnova.Models.Domain.Enums.VerificationOperationType;
 using ModelOperationType = Finnova.Models.Domain.Enums.VerificationOperationType;
 
 namespace Finnova.Tests.Integration;
@@ -45,11 +45,11 @@ public sealed class IdentityVerificationApiTests : IClassFixture<IdentityVerific
     [
         () => new(HttpMethod.Post, "/api/identity-verification/verify-pan-name")
         {
-            Content = JsonContent.Create(new { submittedValue = "Anita Sharma" })
+            Content = new MultipartFormDataContent()
         },
         () => new(HttpMethod.Post, "/api/identity-verification/verify-aadhar-address")
         {
-            Content = JsonContent.Create(new { submittedValue = "Mumbai, Maharashtra" })
+            Content = new MultipartFormDataContent()
         },
         () => new(HttpMethod.Post, "/api/identity-verification/workflows/full")
         {
@@ -172,7 +172,8 @@ public sealed class IdentityVerificationApiTests : IClassFixture<IdentityVerific
         Assert.True(body.TryGetProperty("panIdentifierResult", out _));
         Assert.True(body.TryGetProperty("panNameResult", out _));
         Assert.True(body.TryGetProperty("aadhaarIdentifierResult", out _));
-        Assert.False(body.TryGetProperty("aadhaarAddressResult", out _));
+        Assert.True(body.TryGetProperty("aadhaarAddressResult", out var aadhaarAddressResult));
+        Assert.Equal(JsonValueKind.Null, aadhaarAddressResult.ValueKind);
     }
 
     [Fact]
@@ -417,7 +418,7 @@ internal sealed class DeterministicComparisonResolver : IComparisonAdapterResolv
     private readonly IComparisonAdapter pan = new DeterministicComparisonAdapter(AdapterOperationType.PanNameVerification, match: true);
     private readonly IComparisonAdapter address = new DeterministicComparisonAdapter(AdapterOperationType.AadhaarAddressVerification, match: false);
 
-    public IComparisonAdapter Resolve(AdapterOperationType operation, ProviderConfiguration configuration)
+    public IComparisonAdapter Resolve(AdapterOperationType operation, string configuration)
         => operation == AdapterOperationType.PanNameVerification ? pan : address;
 }
 

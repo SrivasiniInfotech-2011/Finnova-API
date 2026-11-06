@@ -1,4 +1,4 @@
-﻿using Finnova.Repository;
+using Finnova.Repository;
 using Finnova.Service.Accounts.Commands.CreateAccount;
 using Finnova.Service.Assets.CodeGeneration;
 using Finnova.Service.Auth;
@@ -71,6 +71,7 @@ builder.Services.AddAuthorization(options =>
         ctx.User.IsInRole("GLChecker") ||
         ctx.User.IsInRole("SystemAdmin") ||
         ctx.User.IsInRole("GLViewer")));
+    options.AddPolicy("ApplicationProcessor", p => p.RequireRole("ApplicationProcessor"));
 });
 
 // Repository (EF Core + SQL Server)
@@ -111,6 +112,9 @@ builder.Services.AddScoped<Finnova.Service.GL.Ports.ICompanyQueryPort, Finnova.S
 builder.Services.AddScoped<Finnova.Service.GL.Ports.IAccountingCalendarPort, Finnova.Service.GL.Ports.StubAccountingCalendarPort>();
 builder.Services.AddScoped<Finnova.Service.GL.Ports.IBranchQueryPort, Finnova.Service.GL.Ports.StubBranchQueryPort>();
 builder.Services.AddScoped<Finnova.Service.GL.Ports.ICurrencyQueryPort, Finnova.Service.GL.Ports.StubCurrencyQueryPort>();
+builder.Services.AddScoped<Finnova.Service.Applications.Financial.AmortizationCalculator>();
+builder.Services.AddScoped<Finnova.Service.Applications.Ports.IApplicationReferenceValidator, Finnova.Service.Applications.References.ApplicationReferenceValidator>();
+builder.Services.AddSingleton<Finnova.Repository.Interfaces.IApplicationNumberGenerator, Finnova.Service.Applications.ApplicationNumberGenerator>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

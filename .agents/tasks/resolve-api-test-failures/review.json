@@ -1,0 +1,1 @@
+{"verdict":"CHANGES_REQUESTED","findings":["confirmed: Finnova.Tests/Unit/IdentityVerificationProperties.cs weakens InvalidRecordShapeIsRejected by catching InvalidOperationException, which accepts derived exception types; restore an exact-type assertion."],"reviewDoc":"d:/Projects/Finnova/Finnova-API/.agents/tasks/resolve-api-test-failures/review.md"}

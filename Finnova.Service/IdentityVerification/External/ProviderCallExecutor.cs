@@ -2,6 +2,7 @@ using System.Net;
 using Finnova.Models.Domain.Enums;
 using Finnova.Models.Domain.Exceptions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
 
 namespace Finnova.Service.IdentityVerification.External;

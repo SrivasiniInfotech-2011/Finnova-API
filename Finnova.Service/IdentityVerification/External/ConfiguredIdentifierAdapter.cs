@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Json;
 using Finnova.Models.Domain.Enums;
 using Finnova.Service.IdentityVerification.Adapters;

@@ -50,7 +50,14 @@ public static class DependencyInjection
         services.AddScoped<ICustomerReadRepository, CustomerReadRepository>();
         services.AddScoped<ICustomerUnitOfWork, CustomerUnitOfWork>();
         services.AddScoped<IIdentityVerificationRepository, IdentityVerificationRepository>();
-
+        services.AddScoped<IApplicationRepository, ApplicationRepository>();
+        services.AddScoped<IApplicationScheduleRepository, ApplicationScheduleRepository>();
+        services.AddScoped<IApplicationStatusAuditRepository, ApplicationStatusAuditRepository>();
+        services.AddScoped<IApplicationUnitOfWork, ApplicationUnitOfWork>();
+        services.AddScoped<ILineOfBusinessReferencePort, LineOfBusinessReferenceAdapter>();
+        services.AddScoped<ICustomerReferencePort, CustomerReferenceAdapter>();
+        services.AddScoped<IBranchReferencePort, BranchReferenceAdapter>();
+        services.AddScoped<ILookupReferencePort, LookupReferenceAdapter>();
         return services;
     }
 }

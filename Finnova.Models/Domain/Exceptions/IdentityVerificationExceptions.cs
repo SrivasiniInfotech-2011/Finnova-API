@@ -9,6 +9,13 @@ public abstract class IdentityVerificationException : Exception
 public sealed class IdentityVerificationValidationException : IdentityVerificationException
 {
     public IdentityVerificationValidationException() : base("The identity verification request is invalid.") { }
+
+    public IdentityVerificationValidationException(IReadOnlyCollection<string> errors) : this()
+    {
+        Errors = errors;
+    }
+
+    public IReadOnlyCollection<string> Errors { get; } = Array.Empty<string>();
     public override string ErrorCode => "ERR-IVF-400";
 }
 
@@ -26,9 +33,13 @@ public sealed class IdentityVerificationProviderUnavailableException : IdentityV
 
 public sealed class IdentityVerificationPersistenceException : IdentityVerificationException
 {
-    public IdentityVerificationPersistenceException(Exception inner) : base("The verification result could not be recorded.") { }
+    public IdentityVerificationPersistenceException(Exception inner) : base("The verification result could not be recorded.")
+    {
+        Inner = inner;
+    }
+
     public override string ErrorCode => "ERR-IVF-500";
-    public Exception Inner { get; } = inner;
+    public Exception Inner { get; }
 }
 
 public sealed class IdentityVerificationDocumentSizeException : IdentityVerificationException

@@ -65,6 +65,10 @@ public class FinnovaDbContext : DbContext
     public DbSet<VerificationSession> VerificationSessions => Set<VerificationSession>();
     public DbSet<ValidationRecord> ValidationRecords => Set<ValidationRecord>();
     public DbSet<ProtectedDocumentReference> ProtectedDocumentReferences => Set<ProtectedDocumentReference>();
+    public DbSet<Application> Applications => Set<Application>();
+    public DbSet<ApplicationSchedule> ApplicationSchedules => Set<ApplicationSchedule>();
+    public DbSet<ApplicationInstallment> ApplicationInstallments => Set<ApplicationInstallment>();
+    public DbSet<ApplicationStatusAuditEntry> ApplicationStatusAuditEntries => Set<ApplicationStatusAuditEntry>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

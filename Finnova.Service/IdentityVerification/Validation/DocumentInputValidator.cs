@@ -9,7 +9,7 @@ public sealed class DocumentInputValidator
     public void Validate(string fileName, string contentType, long sizeBytes, ReadOnlySpan<byte> header)
     {
         if (sizeBytes > _options.MaxDocumentBytes) throw new IdentityVerificationDocumentSizeException();
-        if (!_options.AcceptedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase) || !IdentityVerificationRules.HasAllowedExtension(fileName) || !HasSignature(contentType, header)) throw new IdentityVerificationDocumentFormatException();
+        if (!_options.AcceptedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase) || !IdentityVerificationRules.HasAllowedExtension(fileName, new[] { contentType }) || !HasSignature(contentType, header)) throw new IdentityVerificationDocumentFormatException();
     }
     private static bool HasSignature(string type, ReadOnlySpan<byte> h) => type switch
     {
