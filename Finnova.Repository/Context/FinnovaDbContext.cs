@@ -69,6 +69,7 @@ public class FinnovaDbContext : DbContext
     public DbSet<ApplicationSchedule> ApplicationSchedules => Set<ApplicationSchedule>();
     public DbSet<ApplicationInstallment> ApplicationInstallments => Set<ApplicationInstallment>();
     public DbSet<ApplicationStatusAuditEntry> ApplicationStatusAuditEntries => Set<ApplicationStatusAuditEntry>();
+    public DbSet<JvPostingInbox> JvPostingInboxes => Set<JvPostingInbox>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

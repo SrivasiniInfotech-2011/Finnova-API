@@ -65,6 +65,8 @@ builder.Services.AddScoped<CustomerChildMapper>();
 builder.Services.AddScoped<ICustomerChildMapper>(sp => sp.GetRequiredService<CustomerChildMapper>());
 builder.Services.AddScoped<AccountContractBoundary>();
 builder.Services.AddScoped<IAccountContractBoundary>(sp => sp.GetRequiredService<AccountContractBoundary>());
+// JVE submission only. The Python worker owns processing and canonical posting.
+builder.Services.AddScoped<Finnova.Service.JVPosting.JvPostingSubmissionService>();
 // JWT Bearer authentication (R7.6 â€” establishing the scheme)
 var jwt = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -92,6 +94,8 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("SystemAdmin", p => p.RequireRole("SystemAdmin"));
     options.AddPolicy("DOC_MASTER_MAKER", p => p.RequireRole("DOC_MASTER_MAKER"));
     options.AddPolicy("DOC_MASTER_CHECKER", p => p.RequireRole("DOC_MASTER_CHECKER"));
+    options.AddPolicy("JveOperationsRead", policy => policy.RequireClaim("permission", "jve.operations.read"));
+    options.AddPolicy("JveOperationsRecovery", policy => policy.RequireClaim("permission", "jve.operations.recovery"));
 });
 
 // Repository (EF Core + SQL Server)
@@ -107,7 +111,7 @@ builder.Services.AddScoped<DocumentInputValidator>();
 builder.Services.AddScoped<ProtectedDocumentLifecycle>();
 builder.Services.AddIdentityVerificationStorage(builder.Configuration);
 builder.Services.AddScoped<IIdentityVerificationDocumentQuery, Finnova.Service.IdentityVerification.Queries.ProtectedDocumentQuery>();
-
+builder.Services.AddScoped<Finnova.Service.JVPosting.JvPostingOperationsService>();
 // Register only enabled provider adapters. Provider endpoints and credentials remain deployment configuration;
 // an enabled operation with missing endpoint configuration returns an unavailable result and never succeeds.
 var identityVerificationSection = builder.Configuration.GetSection(IdentityVerificationOptions.SectionName);
