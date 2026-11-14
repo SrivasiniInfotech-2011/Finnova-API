@@ -43,6 +43,7 @@ public sealed class InMemoryNumberingSchemeRepository : INumberingSchemeReposito
         SeqPadding = x.SeqPadding,
         ResetRule = x.ResetRule,
         Scope = x.Scope,
+        LineOfBusinessId = x.LineOfBusinessId,
         ScopeId = x.ScopeId,
         CurrentValue = x.CurrentValue,
         PeriodKey = x.PeriodKey,
@@ -124,14 +125,37 @@ public sealed class InMemoryNumberingSchemeRepository : INumberingSchemeReposito
     }
 
     public Task<bool> ExistsByScopeAsync(
-        string documentType, NumberScope scope, Guid? scopeId, Guid? excludeId = null, CancellationToken ct = default)
+        string documentType, NumberScope scope, Guid? scopeId, Guid? excludeId = null,
+        CancellationToken ct = default, Guid? lineOfBusinessId = null)
     {
         var dt = documentType.Trim();
         var exists = _store.Any(x =>
             string.Equals(x.DocumentType, dt, StringComparison.OrdinalIgnoreCase) &&
-            x.Scope == scope && x.ScopeId == scopeId &&
+            x.Scope == scope && x.ScopeId == scopeId && x.LineOfBusinessId == lineOfBusinessId &&
             (excludeId == null || x.Id != excludeId));
         return Task.FromResult(exists);
+    }
+
+    public Task<List<NumberingScheme>> GetActiveByDocumentTypeAsync(string documentType, CancellationToken ct = default)
+        => Task.FromResult(_store
+            .Where(x => x.IsActive && string.Equals(x.DocumentType, documentType.Trim(), StringComparison.OrdinalIgnoreCase))
+            .Select(Clone).ToList());
+
+    public Task<(NumberingScheme Scheme, long SequenceValue)?> IssueNextByIdAsync(Guid schemeId, DateTime utcNow, CancellationToken ct = default)
+    {
+        var scheme = _store.FirstOrDefault(x => x.Id == schemeId);
+        if (scheme is null) return Task.FromResult<(NumberingScheme, long)?>(null);
+        if (!scheme.IsActive) throw new NumberingSchemeInactiveException(scheme.Code);
+        var period = PeriodKey.For(scheme.ResetRule, utcNow);
+        long next = scheme.PeriodKey == period && scheme.CurrentValue >= scheme.SeqStart
+            ? scheme.CurrentValue + scheme.SeqIncrement
+            : scheme.SeqStart;
+        if (next > NumberFormatter.MaxValueForPadding(scheme.SeqPadding))
+            throw new NumberSequenceExhaustedException(scheme.Code);
+        scheme.CurrentValue = next;
+        scheme.PeriodKey = period;
+        scheme.UpdatedAt = utcNow;
+        return Task.FromResult<(NumberingScheme, long)?>((Clone(scheme), next));
     }
 
     public Task<(NumberingScheme Scheme, long SequenceValue)?> IssueNextAsync(
@@ -139,7 +163,7 @@ public sealed class InMemoryNumberingSchemeRepository : INumberingSchemeReposito
     {
         var scheme = _store.FirstOrDefault(x =>
             string.Equals(x.DocumentType, documentType.Trim(), StringComparison.OrdinalIgnoreCase) &&
-            x.Scope == scope && x.ScopeId == scopeId);
+            x.Scope == scope && x.ScopeId == scopeId && x.LineOfBusinessId == null);
         if (scheme is null) return Task.FromResult<(NumberingScheme, long)?>(null);
         if (!scheme.IsActive) throw new NumberingSchemeInactiveException(scheme.Code);
 

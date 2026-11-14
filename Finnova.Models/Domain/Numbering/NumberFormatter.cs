@@ -47,6 +47,8 @@ public static partial class NumberFormatter
                 case "YY":
                 case "MM":
                 case "DD":
+                case "LOB":
+                case "BRANCH":
                     break;
                 case "SEQ":
                     seqTokenCount++;
@@ -85,7 +87,8 @@ public static partial class NumberFormatter
     /// </summary>
     public static string Format(
         string template, long sequenceValue, int defaultPadding,
-        string? prefix, string? suffix, DateTime utcNow)
+        string? prefix, string? suffix, DateTime utcNow,
+        string? lobCode = null, string? branchCode = null)
     {
         return TokenRegex().Replace(template, m =>
         {
@@ -94,6 +97,8 @@ public static partial class NumberFormatter
             {
                 "PREFIX" => prefix ?? string.Empty,
                 "SUFFIX" => suffix ?? string.Empty,
+                "LOB" => lobCode ?? string.Empty,
+                "BRANCH" => branchCode ?? string.Empty,
                 "YYYY" => utcNow.ToString("yyyy", Inv),
                 "YY" => utcNow.ToString("yy", Inv),
                 "MM" => utcNow.ToString("MM", Inv),
@@ -123,4 +128,22 @@ public static partial class NumberFormatter
 
     private static int ParseWidth(string text, int fallback) =>
         int.TryParse(text, NumberStyles.None, Inv, out var w) ? w : fallback;
+
+    /// <summary>Rejects {LOB} without a LOB on the scope and {BRANCH} without Branch scope (R16.6).</summary>
+    public static IReadOnlyList<string> ValidateScopeTokens(string template, bool hasLineOfBusiness, bool scopeIsBranch)
+    {
+        var errors = new List<string>();
+        var tokens = TokenRegex().Matches(template ?? string.Empty).Select(m => m.Groups[1].Value).ToList();
+        if (tokens.Contains("LOB") && !hasLineOfBusiness)
+            errors.Add("Token '{LOB}' requires a Line of Business on the scheme scope.");
+        if (tokens.Contains("BRANCH") && !scopeIsBranch)
+            errors.Add("Token '{BRANCH}' requires Branch scope.");
+        return errors;
+    }
+
+    /// <summary>Length of the longest number the template can render (max sequence, max LOB and Branch token lengths).</summary>
+    public static int MaxRenderedLength(string template, int defaultPadding, string? prefix, string? suffix)
+        => Format(template, MaxValueForPadding(Math.Min(defaultPadding, MaxSeqWidth)), defaultPadding, prefix, suffix,
+                  new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                  new string('X', LobTokenFormatter.MaxLength), new string('X', 20)).Length;
 }

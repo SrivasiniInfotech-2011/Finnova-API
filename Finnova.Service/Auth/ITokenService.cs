@@ -4,9 +4,6 @@ namespace Finnova.Service.Auth;
 
 public interface ITokenService
 {
-    /// <summary>
-    /// Generates a signed JWT access token for the given user account.
-    /// Returns the token string and its lifetime in seconds.
-    /// </summary>
-    (string Token, int ExpiresInSeconds) GenerateToken(UserAccount user);
+    /// <summary>Same as <see cref="GenerateToken(UserAccount)"/> but also emits one role claim per assigned catalog role.</summary>
+    (string Token, int ExpiresInSeconds) GenerateToken(UserAccount user, IReadOnlyCollection<string> extraRoles);
 }

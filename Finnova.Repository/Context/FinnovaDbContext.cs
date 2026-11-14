@@ -70,6 +70,15 @@ public class FinnovaDbContext : DbContext
     public DbSet<ApplicationInstallment> ApplicationInstallments => Set<ApplicationInstallment>();
     public DbSet<ApplicationStatusAuditEntry> ApplicationStatusAuditEntries => Set<ApplicationStatusAuditEntry>();
     public DbSet<JvPostingInbox> JvPostingInboxes => Set<JvPostingInbox>();
+    public DbSet<LoanAccount> LoanAccounts => Set<LoanAccount>();
+    public DbSet<AccountCreationRequest> AccountCreationRequests => Set<AccountCreationRequest>();
+    public DbSet<AccountKycJob> AccountKycJobs => Set<AccountKycJob>();
+    public DbSet<AccountKycHistoryEntry> AccountKycHistoryEntries => Set<AccountKycHistoryEntry>();
+    public DbSet<AccountKycResolutionRequest> AccountKycResolutionRequests => Set<AccountKycResolutionRequest>();
+    public DbSet<AccountAuditEntry> AccountAuditEntries => Set<AccountAuditEntry>();
+    public DbSet<AppRole> AppRoles => Set<AppRole>();
+    public DbSet<UserAccountRole> UserAccountRoles => Set<UserAccountRole>();
+    public DbSet<ServiceCredential> ServiceCredentials => Set<ServiceCredential>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

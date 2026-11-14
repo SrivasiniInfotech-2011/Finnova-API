@@ -1,4 +1,3 @@
-using System.Data;
 using Finnova.Models.Domain.Entities;
 using Finnova.Models.Domain.Enums;
 using Finnova.Models.Domain.Exceptions;
@@ -6,6 +5,8 @@ using Finnova.Models.Domain.Numbering;
 using Finnova.Repository.Context;
 using Finnova.Repository.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
+using System.Linq.Expressions;
 
 namespace Finnova.Repository.Repositories;
 
@@ -41,22 +42,38 @@ public class NumberingSchemeRepository(FinnovaDbContext finnovaDbContext)
     }
 
     public async Task<bool> ExistsByScopeAsync(
-        string documentType, NumberScope scope, Guid? scopeId, Guid? excludeId = null, CancellationToken ct = default)
+       string documentType, NumberScope scope, Guid? scopeId, Guid? excludeId = null,
+       CancellationToken ct = default, Guid? lineOfBusinessId = null)
     {
         var dt = documentType.Trim();
         return await DbSet.AsNoTracking().AnyAsync(
             x => x.DocumentType == dt && x.Scope == scope && x.ScopeId == scopeId
+                 && x.LineOfBusinessId == lineOfBusinessId
                  && (excludeId == null || x.Id != excludeId), ct);
     }
 
-    public async Task<(NumberingScheme Scheme, long SequenceValue)?> IssueNextAsync(
+    public Task<List<NumberingScheme>> GetActiveByDocumentTypeAsync(string documentType, CancellationToken ct = default)
+    {
+        var dt = documentType.Trim();
+        return DbSet.AsNoTracking().Where(x => x.DocumentType == dt && x.IsActive).ToListAsync(ct);
+    }
+
+    public Task<(NumberingScheme Scheme, long SequenceValue)?> IssueNextAsync(
         string documentType, NumberScope scope, Guid? scopeId, DateTime utcNow, CancellationToken ct = default)
+        => IssueAsync(x => x.DocumentType == documentType && x.Scope == scope && x.ScopeId == scopeId
+                           && x.LineOfBusinessId == null, utcNow, ct);
+
+    public Task<(NumberingScheme Scheme, long SequenceValue)?> IssueNextByIdAsync(
+        Guid schemeId, DateTime utcNow, CancellationToken ct = default)
+        => IssueAsync(x => x.Id == schemeId, utcNow, ct);
+
+    private async Task<(NumberingScheme Scheme, long SequenceValue)?> IssueAsync(
+        Expression<Func<NumberingScheme, bool>> predicate, DateTime utcNow, CancellationToken ct)
     {
         async Task<(NumberingScheme, long)?> Body()
         {
             // TRACKED load (not AsNoTracking) so the sequence update is persisted.
-            var scheme = await DbSet.FirstOrDefaultAsync(
-                x => x.DocumentType == documentType && x.Scope == scope && x.ScopeId == scopeId, ct);
+            var scheme = await DbSet.FirstOrDefaultAsync(predicate, ct);
             if (scheme is null) return null;                                        // R5.6 -> 404 in handler
             if (!scheme.IsActive) throw new NumberingSchemeInactiveException(scheme.Code); // R5.7
 
@@ -75,10 +92,6 @@ public class NumberingSchemeRepository(FinnovaDbContext finnovaDbContext)
             return (scheme, next);
         }
 
-        // Relational providers get a Serializable transaction (with the provider execution strategy
-        // handling transient serialization retries) so concurrent issuance for the same scheme is
-        // serialized and never yields duplicate/gap sequence values. The InMemory provider (tests)
-        // does not support transactions, so it takes the direct path.
         if (Context.Database.IsRelational())
         {
             var strategy = Context.Database.CreateExecutionStrategy();

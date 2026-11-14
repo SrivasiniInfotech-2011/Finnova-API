@@ -19,4 +19,5 @@ public record CreateNumberingSchemeRequest(
     NumberResetRule ResetRule,
     NumberScope? Scope,
     Guid? ScopeId,
-    bool? IsActive);
+    bool? IsActive,
+    Guid? LineOfBusinessId = null);

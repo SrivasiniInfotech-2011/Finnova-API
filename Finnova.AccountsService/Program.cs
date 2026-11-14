@@ -2,6 +2,8 @@ using Finnova.Repository;
 using Finnova.Service.Accounts.Commands.CreateAccount;
 using Finnova.Service.Assets.CodeGeneration;
 using Finnova.Service.Auth;
+using Finnova.Service.Customers;
+using Finnova.Service.GL.Ports;
 using Finnova.Service.Storage;
 using Finnova.Service.UserManagement.Abstractions;
 using FluentValidation;
@@ -39,6 +41,9 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSett
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordPolicy, DefaultPasswordPolicy>();
 builder.Services.AddScoped<IAssetCodeGenerator, AssetCodeGenerator>();
+// Customer master service graph — the shared Finnova.Service MediatR scan registers the
+// Customer handlers here too, so their dependencies must be in the container.
+builder.Services.AddCustomerServices();
 
 // JWT Bearer authentication (R11.1/R11.5 â€” establishing the scheme before authorization)
 var jwt = builder.Configuration.GetSection("Jwt");
@@ -115,6 +120,9 @@ builder.Services.AddScoped<Finnova.Service.GL.Ports.ICurrencyQueryPort, Finnova.
 builder.Services.AddScoped<Finnova.Service.Applications.Financial.AmortizationCalculator>();
 builder.Services.AddScoped<Finnova.Service.Applications.Ports.IApplicationReferenceValidator, Finnova.Service.Applications.References.ApplicationReferenceValidator>();
 builder.Services.AddSingleton<Finnova.Repository.Interfaces.IApplicationNumberGenerator, Finnova.Service.Applications.ApplicationNumberGenerator>();
+builder.Services.AddGLPorts();
+builder.Services.AddScoped<Finnova.Service.Document.Ports.ILookupValidationPort, Finnova.Service.Document.Ports.LookupValidationAdapter>();
+builder.Services.AddScoped<Finnova.Service.Document.Ports.IDocumentUsageChecker, Finnova.Service.Document.Ports.StubDocumentUsageChecker>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

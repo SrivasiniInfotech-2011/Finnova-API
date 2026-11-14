@@ -58,6 +58,14 @@ public static class DependencyInjection
         services.AddScoped<ICustomerReferencePort, CustomerReferenceAdapter>();
         services.AddScoped<IBranchReferencePort, BranchReferenceAdapter>();
         services.AddScoped<ILookupReferencePort, LookupReferenceAdapter>();
+        services.AddScoped<ILoanAccountRepository, LoanAccountRepository>();
+        services.AddScoped<IAccountCreationRequestRepository, AccountCreationRequestRepository>();
+        services.AddScoped<IAccountKycJobRepository, AccountKycJobRepository>();
+        services.AddScoped<IAccountKycHistoryRepository, AccountKycHistoryRepository>();
+        services.AddScoped<IAccountKycResolutionRepository, AccountKycResolutionRepository>();
+        services.AddScoped<IAccountAuditRepository, AccountAuditRepository>();
+        services.AddScoped<IAppRoleRepository, AppRoleRepository>();
+        services.AddScoped<INumberingReferenceRepository, NumberingReferenceRepository>();
         return services;
     }
 }

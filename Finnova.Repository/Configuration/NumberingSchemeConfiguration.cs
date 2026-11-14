@@ -24,9 +24,9 @@ public class NumberingSchemeConfiguration : IEntityTypeConfiguration<NumberingSc
         // Code uniqueness (R2.1/2.2). Default CI collation backs the case-insensitive rule; codes
         // are trimmed by the handler so stored values are canonical.
         builder.HasIndex(x => x.Code).IsUnique();
-        // At most one scheme per (DocumentType, Scope, ScopeId) (R2.3/2.4). ScopeId null (Global)
-        // participates in the composite key.
-        builder.HasIndex(x => new { x.DocumentType, x.Scope, x.ScopeId }).IsUnique();
+        // Extended with the optional LOB dimension (application-account-creation R16.9). SQL Server
+        // treats NULLs as equal in unique indexes, so existing non-LOB uniqueness is preserved.
+        builder.HasIndex(x => new { x.DocumentType, x.Scope, x.ScopeId, x.LineOfBusinessId }).IsUnique();
         // Query/order by Name (R4.7).
         builder.HasIndex(x => x.Name);
     }

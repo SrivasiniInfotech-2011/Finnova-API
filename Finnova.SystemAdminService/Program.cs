@@ -7,6 +7,7 @@ using Finnova.Service.Customers;
 using Finnova.Service.Customers.Commands;
 using Finnova.Service.Customers.References;
 using Finnova.Service.Customers.Validation;
+using Finnova.Service.GL.Ports;
 using Finnova.Service.IdentityVerification;
 using Finnova.Service.IdentityVerification.Adapters;
 using Finnova.Service.IdentityVerification.Correlation;
@@ -51,6 +52,9 @@ builder.Services.AddTransient(
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAssetCodeGenerator, AssetCodeGenerator>();
+// Customer master service graph (reference resolvers, validators, mappers, adapters) required
+// by the Customer MediatR handlers scanned from the shared Finnova.Service assembly.
+builder.Services.AddCustomerServices();
 builder.Services.AddScoped<ILookupReferenceResolver, LookupReferenceResolver>();
 builder.Services.AddScoped<INationalityReferenceResolver, NationalityReferenceResolver>();
 builder.Services.AddScoped<IGLPostingGroupResolver, GLPostingGroupResolver>();
@@ -216,6 +220,9 @@ builder.Services.AddScoped<Finnova.Service.Document.Ports.ILookupValidationPort,
     Finnova.Service.Document.Ports.LookupValidationAdapter>();
 builder.Services.AddScoped<Finnova.Service.Document.Ports.IDocumentUsageChecker,
     Finnova.Service.Document.Ports.StubDocumentUsageChecker>();
+// GL dependency ports — dev stubs. The shared Finnova.Service MediatR scan registers the GL
+// handlers here too, so their ports must be in the container.
+builder.Services.AddGLPorts();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

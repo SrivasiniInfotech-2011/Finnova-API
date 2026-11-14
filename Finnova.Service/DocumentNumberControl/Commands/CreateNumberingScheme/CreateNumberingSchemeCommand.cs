@@ -22,4 +22,5 @@ public record CreateNumberingSchemeCommand(
     NumberScope? Scope,
     Guid? ScopeId,
     bool? IsActive,
-    string ActingAdmin) : IRequest<NumberingSchemeResponse>;
+    string ActingAdmin,
+    Guid? LineOfBusinessId = null) : IRequest<NumberingSchemeResponse>;

@@ -47,10 +47,21 @@ public class CreateNumberingSchemeCommandHandler
         if (templateErrors.Count > 0)
             throw new NumberingSchemeValidationException(string.Join(" ", templateErrors));
 
+        // LOB/BRANCH token and scope consistency (R16.5, R16.6) and the LoanAccount length ceiling (design D1).
+        var tokenErrors = NumberFormatter.ValidateScopeTokens(
+            request.FormatTemplate, request.LineOfBusinessId is not null, scope == NumberScope.Branch);
+        if (tokenErrors.Count > 0)
+            throw new NumberingSchemeValidationException(string.Join(" ", tokenErrors));
+        if (string.Equals(documentType, "LoanAccount", StringComparison.OrdinalIgnoreCase)
+            && NumberFormatter.MaxRenderedLength(request.FormatTemplate, request.SeqPadding ?? 1, request.Prefix, request.Suffix) > 100)
+            throw new NumberingSchemeValidationException("The longest possible LoanAccount number exceeds 100 characters.");
+
         // Uniqueness (R2.2, R2.4).
         if (await _repository.ExistsByCodeAsync(code, null, cancellationToken))
             throw new NumberingSchemeDuplicateCodeException();
         if (await _repository.ExistsByScopeAsync(documentType, scope, request.ScopeId, null, cancellationToken))
+            throw new NumberingSchemeScopeConflictException();
+        if (await _repository.ExistsByScopeAsync(documentType, scope, request.ScopeId, null, cancellationToken, request.LineOfBusinessId))
             throw new NumberingSchemeScopeConflictException();
 
         var entity = new NumberingScheme
@@ -70,6 +81,7 @@ public class CreateNumberingSchemeCommandHandler
             IsActive = request.IsActive ?? true,       // R1.2
             CurrentValue = 0,
             PeriodKey = string.Empty,
+            LineOfBusinessId = request.LineOfBusinessId,
         };
 
         await _repository.AddAsync(entity, cancellationToken);

@@ -52,7 +52,7 @@ public class DocumentNumberControlController : ControllerBase
         var result = await _mediator.Send(new CreateNumberingSchemeCommand(
             r.Code, r.Name, r.DocumentType, r.FormatTemplate, r.Prefix, r.Suffix,
             r.SeqStart, r.SeqIncrement, r.SeqPadding, r.ResetRule, r.Scope, r.ScopeId, r.IsActive,
-            GetActingAdmin()));
+            GetActingAdmin(), r.LineOfBusinessId));
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 

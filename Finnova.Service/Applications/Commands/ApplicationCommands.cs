@@ -89,11 +89,11 @@ public sealed class PreviewApplicationScheduleQueryHandler : IRequestHandler<Pre
 
 public sealed class ProcessApplicationCommandHandler : IRequestHandler<ProcessApplicationCommand, ProcessApplicationResponse>
 {
-    private readonly IApplicationRepository _apps; private readonly IApplicationScheduleRepository _schedules; private readonly IApplicationStatusAuditRepository _audit;
     private readonly IApplicationUnitOfWork _uow; private readonly IApplicationReferenceValidator _references; private readonly AmortizationCalculator _calculator;
+    private readonly IAccountCreationRequestRepository _requests;
     public ProcessApplicationCommandHandler(IApplicationRepository apps, IApplicationScheduleRepository schedules, IApplicationStatusAuditRepository audit,
-        IApplicationUnitOfWork uow, IApplicationReferenceValidator references, AmortizationCalculator calculator)
-        => (_apps, _schedules, _audit, _uow, _references, _calculator) = (apps, schedules, audit, uow, references, calculator);
+        IApplicationUnitOfWork uow, IApplicationReferenceValidator references, AmortizationCalculator calculator, IAccountCreationRequestRepository requests)
+        => (_apps, _schedules, _audit, _uow, _references, _calculator, _requests) = (apps, schedules, audit, uow, references, calculator, requests);
     public async Task<ProcessApplicationResponse> Handle(ProcessApplicationCommand r, CancellationToken ct)
     {
         await using var transaction = await _uow.BeginTransactionAsync(ct);
@@ -130,6 +130,17 @@ public sealed class ProcessApplicationCommandHandler : IRequestHandler<ProcessAp
         };
         await _schedules.AddAsync(schedule, ct); var previous = a.Status; a.Status = ApplicationStatus.Processed; a.UpdatedAtUtc = DateTime.UtcNow;
         await _audit.AddAsync(new ApplicationStatusAuditEntry { ApplicationId = a.Id, FromStatus = previous, ToStatus = a.Status, ChangedBy = r.ActingUser }, ct);
+        // Transactional outbox: the Account Creation Request commits (or rolls back) with the Processed status (R1.1, R1.3).
+        // The unique index on ApplicationId rejects a second request for the same Application (R1.4).
+        await _requests.AddAsync(new AccountCreationRequest
+        {
+            ApplicationId = a.Id,
+            ApplicationNumber = a.ApplicationNumber,
+            CorrelationId = Guid.NewGuid().ToString("N"),
+            InitiatedByUserId = Guid.TryParse(r.ActingUser, out var initiator) ? initiator : null,
+            Status = AccountRequestStatus.Pending,
+            AttemptCount = 0
+        }, ct);
         await _uow.SaveChangesAsync(ct); await ((dynamic)transaction).CommitAsync(ct);
         return new ProcessApplicationResponse(a.ToResponse(), schedule.ToResponse());
     }

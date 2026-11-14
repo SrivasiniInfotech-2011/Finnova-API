@@ -27,7 +27,7 @@ public class NumberingScheme
 
     public NumberScope Scope { get; set; } = NumberScope.Global;
     public Guid? ScopeId { get; set; }                         // required for Company/Branch, null for Global (R1.10/1.11)
-
+    public Guid? LineOfBusinessId { get; set; }
     // Live sequence state, advanced only by issuance / reset (R5). CurrentValue 0 => none issued yet.
     public long CurrentValue { get; set; }
     public string PeriodKey { get; set; } = string.Empty;

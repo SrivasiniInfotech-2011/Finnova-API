@@ -43,7 +43,13 @@ public class UpdateNumberingSchemeCommandHandler
         var templateErrors = NumberFormatter.Validate(newTemplate);
         if (templateErrors.Count > 0)
             throw new NumberingSchemeValidationException(string.Join(" ", templateErrors));
-
+        var tokenErrors = NumberFormatter.ValidateScopeTokens(
+          newTemplate, entity.LineOfBusinessId is not null, entity.Scope == NumberScope.Branch);
+        if (tokenErrors.Count > 0)
+            throw new NumberingSchemeValidationException(string.Join(" ", tokenErrors));
+        if (string.Equals(entity.DocumentType, "LoanAccount", StringComparison.OrdinalIgnoreCase)
+            && NumberFormatter.MaxRenderedLength(newTemplate, request.SeqPadding, request.Prefix, request.Suffix) > 100)
+            throw new NumberingSchemeValidationException("The longest possible LoanAccount number exceeds 100 characters.");
         // No-op detection: all editable fields equal current (R3.6).
         var unchanged =
             entity.Name == newName &&

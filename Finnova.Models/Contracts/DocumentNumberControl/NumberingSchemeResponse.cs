@@ -21,4 +21,5 @@ public record NumberingSchemeResponse(
     string PeriodKey,
     bool IsActive,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    Guid? LineOfBusinessId = null);

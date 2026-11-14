@@ -6,4 +6,6 @@ public record IssuedNumberResponse(
     string DocumentType,
     string Number,
     long SequenceValue,
-    DateTime IssuedAtUtc);
+    DateTime IssuedAtUtc,
+    string? SchemeCode = null,
+    string? ScopeLevel = null);

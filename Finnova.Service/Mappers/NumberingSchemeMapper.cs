@@ -24,7 +24,8 @@ public static class NumberingSchemeMapper
         x.PeriodKey,
         x.IsActive,
         x.CreatedAt,
-        x.UpdatedAt);
+        x.UpdatedAt,
+        x.LineOfBusinessId);
 
     public static List<NumberingSchemeResponse> ToResponseList(this IEnumerable<NumberingScheme> items)
         => items.Select(i => i.ToResponse()).ToList();
