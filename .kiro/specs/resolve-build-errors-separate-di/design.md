@@ -230,3 +230,28 @@ The chosen approach changes only registrations and call sites. It avoids touchin
 6. Modify `Finnova.SystemAdminService/Program.cs` in the same way, removing both old MediatR scan blocks and retaining SystemAdmin-specific policies, middleware, customer evaluator behavior through the shared extension, and document middleware behavior.
 7. Create `Finnova.Tests/Unit/DependencyInjectionRegistrationTests.cs` to assert the service and repository descriptors are present with the intended lifetimes without resolving a live database.
 8. Perform a static diff review confirming only the four spec files are produced by this workflow, no frontend file changes are requested, no routes/contracts/migrations changed, and the copy-paste commands at the end of `tasks.md` are ready for the user to run later.
+
+## Implementation update (supersedes the "one shared extension" decision above)
+
+The first implementation registered the full service family in every host. Startup validation in Development then failed, because the shared MediatR scan picked up handlers whose dependencies a host does not provide (Identity Verification in Accounts and UA; Application Processing in SystemAdmin and UA). The design was changed to a core extension plus opt-in modules.
+
+- `Finnova.Service.DependencyInjection.AddFinnovaServices(IConfiguration, FinnovaServiceModules modules = None)` registers the core only: MediatR scan, FluentValidation validators and `ValidationBehavior`, `JwtSettings`, `ITokenService`, `IPasswordPolicy`, `IAssetCodeGenerator`, `AddCustomerServices`, `AddGLPorts`, and the Document ports.
+- `FinnovaServiceModules` is a `[Flags]` enum: `ApplicationProcessing` and `IdentityVerification`. The MediatR `TypeEvaluator` skips the `Finnova.Service.Applications` and `Finnova.Service.IdentityVerification` namespaces unless the module is enabled, so a host never registers a handler it cannot construct.
+- `AddApplicationProcessingServices()` (in `DependencyInjection.cs`) registers `AmortizationCalculator`, `IApplicationReferenceValidator` and `IApplicationNumberGenerator`.
+- `AddIdentityVerificationServices(IConfiguration)` (in `IdentityVerification/IdentityVerificationRegistration.cs`) registers the options, HTTP client, request context, provider executor, workflow coordinator, document validator and lifecycle, protected storage, document query, the enabled provider adapters, and `ConfiguredComparisonAdapterResolver`. The adapter wiring and resolver moved out of `Finnova.SystemAdminService/Program.cs`.
+- `AddFinnovaRepository(string? connectionString)` now throws `InvalidOperationException` when the value is null or blank, which removes the `CS8604` warning at the call sites.
+- `Finnova.Service.csproj` references `FluentValidation.DependencyInjectionExtensions` for `AddValidatorsFromAssembly`.
+
+Host call sites:
+
+| Host | Call |
+| --- | --- |
+| `Finnova.UAService` | `AddFinnovaRepository(cs)`, `AddFinnovaServices(config)` |
+| `Finnova.AccountsService` | `AddFinnovaRepository(cs)`, `AddFinnovaServices(config, FinnovaServiceModules.ApplicationProcessing)` |
+| `Finnova.SystemAdminService` | `AddFinnovaRepository(cs)`, `AddFinnovaServices(config, FinnovaServiceModules.IdentityVerification)` |
+
+Blob storage (`AddBlobStorage`) stays host-registered. SystemAdmin does not register it today and the change keeps that behavior. JV posting, internal service-auth and KYC registrations also stay in `Finnova.SystemAdminService`.
+
+Adding a new feature area to `Finnova.Service`: if its handlers have dependencies not every host provides, give it a namespace-scoped module flag and registration method rather than adding its dependencies to the core.
+
+Verification recorded for this update: the solution built with 0 errors, all three hosts started with `ASPNETCORE_ENVIRONMENT=Development` (container validation on), and `Finnova.Tests` passed 618 of 618.

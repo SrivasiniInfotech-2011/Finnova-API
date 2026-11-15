@@ -89,6 +89,7 @@ public sealed class PreviewApplicationScheduleQueryHandler : IRequestHandler<Pre
 
 public sealed class ProcessApplicationCommandHandler : IRequestHandler<ProcessApplicationCommand, ProcessApplicationResponse>
 {
+    private readonly IApplicationRepository _apps; private readonly IApplicationScheduleRepository _schedules; private readonly IApplicationStatusAuditRepository _audit;
     private readonly IApplicationUnitOfWork _uow; private readonly IApplicationReferenceValidator _references; private readonly AmortizationCalculator _calculator;
     private readonly IAccountCreationRequestRepository _requests;
     public ProcessApplicationCommandHandler(IApplicationRepository apps, IApplicationScheduleRepository schedules, IApplicationStatusAuditRepository audit,

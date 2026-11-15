@@ -17,6 +17,9 @@ public class TokenService : ITokenService
     }
 
     public (string Token, int ExpiresInSeconds) GenerateToken(UserAccount user)
+        => GenerateToken(user, Array.Empty<string>());
+
+    public (string Token, int ExpiresInSeconds) GenerateToken(UserAccount user, IReadOnlyCollection<string> extraRoles)
     {
         var claims = new List<Claim>
         {
@@ -38,6 +41,17 @@ public class TokenService : ITokenService
         if (user.Role == Finnova.Models.Domain.Enums.UserRole.Admin)
         {
             claims.Add(new Claim(ClaimTypes.Role, "SystemAdmin"));
+        }
+
+        // Catalog roles assigned to the user (e.g. KycApprover); skip blanks and duplicates.
+        foreach (var role in (extraRoles ?? Array.Empty<string>())
+                     .Where(r => !string.IsNullOrWhiteSpace(r))
+                     .Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (!claims.Any(c => c.Type == ClaimTypes.Role && string.Equals(c.Value, role, StringComparison.OrdinalIgnoreCase)))
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
         }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Secret));

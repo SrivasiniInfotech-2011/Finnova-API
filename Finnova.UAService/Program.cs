@@ -1,4 +1,5 @@
 using Finnova.Repository;
+using Finnova.Service;
 using Finnova.Service.Assets.CodeGeneration;
 using Finnova.Service.Auth;
 using Finnova.Service.Auth.Commands.Login;
@@ -17,28 +18,6 @@ var builder = WebApplication.CreateBuilder(args);
 // Controllers
 builder.Services.AddControllers();
 
-// MediatR - register handlers from the Service layer
-var serviceAssembly = typeof(LoginCommand).Assembly;
-builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(serviceAssembly));
-
-// FluentValidation
-builder.Services.AddValidatorsFromAssembly(serviceAssembly);
-
-// JWT auth — settings + token service
-builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
-builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IAssetCodeGenerator, AssetCodeGenerator>();
-// Customer master service graph — the shared Finnova.Service MediatR scan registers the
-// Customer handlers here too, so their dependencies must be in the container.
-builder.Services.AddCustomerServices();
-// GL dependency ports — dev stubs. The shared assembly scan also registers the GL handlers.
-builder.Services.AddGLPorts();
-// Document Master ports — the shared assembly scan also registers the Document handlers.
-builder.Services.AddScoped<Finnova.Service.Document.Ports.ILookupValidationPort,
-    Finnova.Service.Document.Ports.LookupValidationAdapter>();
-builder.Services.AddScoped<Finnova.Service.Document.Ports.IDocumentUsageChecker,
-    Finnova.Service.Document.Ports.StubDocumentUsageChecker>();
 // JWT Bearer authentication — mirrors the SystemAdmin host so authorized endpoints (e.g. the
 // per-screen permissions endpoint) can validate the token this host issues.
 var jwt = builder.Configuration.GetSection("Jwt");
@@ -64,6 +43,9 @@ builder.Services.AddAuthorization();
 var connectionString = builder.Configuration.GetConnectionString("FinnovaConnection");
 builder.Services.AddFinnovaRepository(connectionString);
 
+// Service layer: core only. Identity Verification and Application Processing are not served by this host.
+builder.Services.AddFinnovaServices(builder.Configuration);
+
 // Blob storage (Azure / AWS) — provider selected via BlobStorage:Provider
 builder.Services.AddBlobStorage(builder.Configuration);
 
@@ -73,8 +55,6 @@ builder.Services.AddHealthChecks();
 // OpenAPI + Swagger
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
-builder.Services.AddScoped<IPasswordPolicy,
-    DefaultPasswordPolicy>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

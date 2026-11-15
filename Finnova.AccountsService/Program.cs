@@ -1,4 +1,5 @@
 using Finnova.Repository;
+using Finnova.Service;
 using Finnova.Service.Accounts.Commands.CreateAccount;
 using Finnova.Service.Assets.CodeGeneration;
 using Finnova.Service.Auth;
@@ -12,7 +13,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Security.Claims;
 using System.Text;
-
+using Finnova.Service.LoanAccounts;
 var builder = WebApplication.CreateBuilder(args);
 
 // Controllers. Serialize/bind enums by their string names (e.g. "Active", "Control") so the
@@ -22,28 +23,8 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(
             new System.Text.Json.Serialization.JsonStringEnumConverter()));
 
-// MediatR - register handlers from the Service layer
-var serviceAssembly = typeof(CreateAccountCommand).Assembly;
-builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(serviceAssembly));
 
-// FluentValidation
-builder.Services.AddValidatorsFromAssembly(serviceAssembly);
-
-// MediatR validation pipeline â€” runs FluentValidation before each handler (R2.6 ordering)
-builder.Services.AddTransient(
-    typeof(MediatR.IPipelineBehavior<,>),
-    typeof(Finnova.Service.Behaviors.ValidationBehavior<,>));
-
-// Auth token service â€” required because the shared Finnova.Service assembly (scanned by
-// MediatR above) contains LoginCommandHandler, which depends on ITokenService.
-builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
-builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IPasswordPolicy, DefaultPasswordPolicy>();
-builder.Services.AddScoped<IAssetCodeGenerator, AssetCodeGenerator>();
-// Customer master service graph — the shared Finnova.Service MediatR scan registers the
-// Customer handlers here too, so their dependencies must be in the container.
-builder.Services.AddCustomerServices();
+builder.Services.Configure<AccountCreationKycOptions>(builder.Configuration.GetSection(AccountCreationKycOptions.SectionName));
 
 // JWT Bearer authentication (R11.1/R11.5 â€” establishing the scheme before authorization)
 var jwt = builder.Configuration.GetSection("Jwt");
@@ -77,11 +58,21 @@ builder.Services.AddAuthorization(options =>
         ctx.User.IsInRole("SystemAdmin") ||
         ctx.User.IsInRole("GLViewer")));
     options.AddPolicy("ApplicationProcessor", p => p.RequireRole("ApplicationProcessor"));
+
+    // Loan Accounts (application-account-creation). SystemAdmin is listed explicitly only for operations.
+    options.AddPolicy("AccountsRead", p => p.RequireAssertion(ctx =>
+        ctx.User.IsInRole("AccountsViewer") || ctx.User.IsInRole("ApplicationProcessor")));
+    options.AddPolicy("KycApprover", p => p.RequireRole("KycApprover"));
+    options.AddPolicy("AccountsOps", p => p.RequireAssertion(ctx =>
+        ctx.User.IsInRole("AccountsOperator") || ctx.User.IsInRole("SystemAdmin")));
 });
 
 // Repository (EF Core + SQL Server)
 var connectionString = builder.Configuration.GetConnectionString("FinnovaConnection");
-builder.Services.AddFinnovaRepository(connectionString!);
+builder.Services.AddFinnovaRepository(connectionString);
+
+// Service layer: core + Application Processing (this host serves the Application Processing handlers).
+builder.Services.AddFinnovaServices(builder.Configuration, FinnovaServiceModules.ApplicationProcessing);
 
 // Blob storage (Azure / AWS) â€” provider selected via BlobStorage:Provider
 builder.Services.AddBlobStorage(builder.Configuration);
@@ -109,20 +100,6 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
-// GL dependency ports â€” dev stubs (design A2). Replace with real adapters before production.
-builder.Services.AddScoped<Finnova.Service.GL.Ports.IGLBalanceQueryPort, Finnova.Service.GL.Ports.StubGLBalanceQueryPort>();
-builder.Services.AddScoped<Finnova.Service.GL.Ports.IVoucherReferenceQueryPort, Finnova.Service.GL.Ports.StubVoucherReferenceQueryPort>();
-builder.Services.AddScoped<Finnova.Service.GL.Ports.IGLReferenceCheckPort, Finnova.Service.GL.Ports.StubGLReferenceCheckPort>();
-builder.Services.AddScoped<Finnova.Service.GL.Ports.ICompanyQueryPort, Finnova.Service.GL.Ports.StubCompanyQueryPort>();
-builder.Services.AddScoped<Finnova.Service.GL.Ports.IAccountingCalendarPort, Finnova.Service.GL.Ports.StubAccountingCalendarPort>();
-builder.Services.AddScoped<Finnova.Service.GL.Ports.IBranchQueryPort, Finnova.Service.GL.Ports.StubBranchQueryPort>();
-builder.Services.AddScoped<Finnova.Service.GL.Ports.ICurrencyQueryPort, Finnova.Service.GL.Ports.StubCurrencyQueryPort>();
-builder.Services.AddScoped<Finnova.Service.Applications.Financial.AmortizationCalculator>();
-builder.Services.AddScoped<Finnova.Service.Applications.Ports.IApplicationReferenceValidator, Finnova.Service.Applications.References.ApplicationReferenceValidator>();
-builder.Services.AddSingleton<Finnova.Repository.Interfaces.IApplicationNumberGenerator, Finnova.Service.Applications.ApplicationNumberGenerator>();
-builder.Services.AddGLPorts();
-builder.Services.AddScoped<Finnova.Service.Document.Ports.ILookupValidationPort, Finnova.Service.Document.Ports.LookupValidationAdapter>();
-builder.Services.AddScoped<Finnova.Service.Document.Ports.IDocumentUsageChecker, Finnova.Service.Document.Ports.StubDocumentUsageChecker>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -145,5 +122,6 @@ app.Run();
 // WebApplicationFactory<Program> in Finnova.Tests cannot reference it. Declaring a public
 // partial Program here exposes the generated entry-point type to the test assembly.
 public partial class Program { }
+
 
 

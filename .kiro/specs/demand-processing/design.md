@@ -2,375 +2,341 @@
 
 ## Overview
 
-Demand Processing is an operational finance workflow that produces a period-specific MIS of account dues and arrears. **One Demand Run is the operational unit for two ordered stages: Period Billing first, then Demand Generation/Spooling.** Demand Generation is never an independent entry path and cannot start from an incomplete Billing stage.
+Demand Processing is an operational finance workflow that produces a period-specific MIS of account dues and arrears. A **Demand Run** is the immutable operational unit for two ordered internal stages:
 
-The Period Billing stage is an application/background-worker boundary. It may initially run inside `Finnova.AccountsService`; a separately deployed Billing service is not required. Automizer or the approved scheduler triggers the overall Demand Run. The worker resolves finalized schedule data, applies approved account-level financial allocations, creates and posts billing journals, and publishes one immutable Billing Snapshot. Only after that publication gate succeeds does Demand Generation create account rows, branch batches, and a Demand Snapshot for output and spooling.
+1. **Period Billing** reads the available finalized Amortization Schedule and approved account-level financial events, produces Billing Period Results, invokes the Accounting/GL capability through a narrow Journal Port, and publishes a Billing Snapshot when configured checks pass.
+2. **Demand Generation** consumes the published Billing Snapshot, creates account-level Demand Rows, groups them into branch-wise Demand Batches, reconciles the results, and publishes the Demand Snapshot used by output and spooling views.
 
-This design covers both platform sides:
+Demand Generation cannot bypass Period Billing. Demand Spooling only changes the minimal persisted spool state of an eligible completed batch. It does not calculate demand or perform downstream delivery in this release.
 
-- **Backend:** `e:\Finnova\Finnova-API`, solution `Finnova.Backend.slnx`.
-- **Frontend:** `E:\Finnova\Finnova-UI\Finnova-UI`, React 18, TypeScript, Vite, Material UI, shared axios, React hooks/Context, Vitest, and React Testing Library.
+The initial backend host and worker boundary is `Finnova.AccountsService`. No separate Billing host is required. The backend scope is `e:\Finnova\Finnova-API` and the frontend scope is `E:\Finnova\Finnova-UI\Finnova-UI`.
 
-The implementation target is the existing repository structure. This document creates no source files, migration, or test changes.
+The design uses the confirmed platform rules:
 
-### 1.1 FRS and requirements baseline
+- Run IDs are immutable GUIDs. Controlled reruns use linked immutable Run Revisions.
+- Frequency, Billing completion/snapshot settings, charge policy, Journal Port adapter/settings, roles/policies, retention, polling, pagination, and PDF settings are appSettings-driven. Frequency defaults to `Monthly`.
+- Month/Year uses the `Asia/Kolkata` business timezone. Technical, lifecycle, audit, and PDF generated-at timestamps use UTC.
+- Amounts are INR `decimal(19,2)` and use `MidpointRounding.AwayFromZero`.
+- An omitted Branch resolves to all authorized Active Branches for the selected LOB. Deactivated Branches are excluded from new generation but retained history remains readable within caller scope.
+- All Active accounts are considered. Zero-demand accounts remain as rows. An in-scope Branch with no eligible accounts produces a non-failure `NoDemand` batch.
+- Branch failures are isolated, separately inspectable and retryable, successful Branch Batches remain intact, and the overall Run becomes `PartiallyFailed` when at least one Branch succeeds and another fails.
+- The detailed Processing Cut-off source and any new schedule finalization watermark/source-version integration are deferred. A Run must retain one internally consistent snapshot or source reference, but no new external watermark is a prerequisite.
+- The default charge policy is explicit and has an adapter seam for an approved authoritative Billing/charge source.
+- Accounting/GL owns journal creation, posting, idempotency, and reconciliation. AccountsService/Demand Processing stores journal references and configured check results only.
+- Authorized server-side PDF export is in scope for Demand Generation Output and Demand Spooling/batch views. Browser print and spool transport are deferred.
+- Minimum immutable audit records are required. Detailed audit taxonomy, content, retention, and purge rules remain configurable or deferred.
 
-The following behavior is treated as explicit and is preserved throughout the design:
-
-- Demand Processing contains two ordered internal stages: **Period Billing**, followed by **Demand Generation/Spooling**.
-- The Demand Run is the single operational unit for scope, period, stage statuses, diagnostics, audit history, snapshots, retries, and final output.
-- Automizer or the approved scheduler triggers the overall run. A manual start or recovery path, if approved, uses the same workflow and controls.
-- Period Billing reads the finalized Amortization Schedule for the selected period. It sets Scheduled Installment to scheduled principal plus scheduled interest/EMI, does not recompute EMI, and never mutates the schedule.
-- Period Billing applies approved receipts, waivers, reversals, adjustments, and other account-level events exactly once under an approved allocation policy.
-- Current Due is the unpaid selected-period Scheduled Installment after allocation. Arrears is previous-period unpaid value. ODI and Other Charges remain separate components.
-- Billing journals must be generated and posted, and all Billing checks must succeed, before a Billing Snapshot or Demand Snapshot is published.
-- Demand Generation includes only eligible Active accounts at the approved cut-off, excludes Closed, Cancelled, and Pre-Closed accounts, calculates `Total Demand = Current Due + Arrears + ODI + Other Charges`, and creates branch-wise batches.
-- Demand output and spooling consume persisted Billing-derived values. They do not calculate EMI, edit billing values, recalculate rows, or bypass Billing.
-- Retried requests are idempotent by the normalized LOB/branch/frequency/Month-Year logical scope plus the approved idempotency key. The same logical period must not create duplicate Billing Period Results, allocations, billing journals, Demand Rows, or successful logical spool deliveries.
-- Authentication, authorization, branch/LOB scope, auditability, deterministic behavior, INR precision, English-only text, and no RTL behavior are required.
-
-### 1.2 Proposed decisions and assumptions
-
-The requirements mark the following decisions as assumptions pending confirmation. The design uses explicit interfaces and configuration so those decisions can change without changing the stage ordering or publication gates.
-
-| Decision | Proposed design | Requirement assumption |
-| --- | --- | --- |
-| Host placement | Run the initial Billing worker and Demand application boundary in `Finnova.AccountsService`. A separate Billing deployment is optional future extraction, not a prerequisite. | A1, A24 |
-| Trigger | Automizer or the approved scheduler starts the overall Demand Run. The service owns stage progression. | A12, A25 |
-| Run identity | Generate an immutable GUID Run identifier and a revision number for approved reruns. | A2, A13 |
-| Idempotency | Canonical key includes normalized LOB, branch scope, frequency, Month-Year, source versions, and approved idempotency key. Durable uniqueness resolves concurrent retries. | A13, A14, A29 |
-| Business period | API carries `periodYear` and `periodMonth`; derive the period in `Asia/Kolkata` unless another approved timezone replaces it. Persist technical timestamps in UTC. | A3 |
-| Frequency | Validate an exact value supported by the Billing contract. Demand Processing cannot invent a new frequency. | A4 |
-| Scope | LOB is required. An omitted Branch means all authorized branches only if the confirmed policy permits omission; otherwise validation rejects it. | A5 |
-| Schedule | The source-owned finalized Amortization Schedule is authoritative. Demand owns only schedule identity/version references. | A26 |
-| Allocation | Use an approved allocation policy/version and durable event references. Each approved event is applied once and allocation evidence is retained. | A7, A27 |
-| Charges | Persist ODI and Other Charges separately. The proposed `Total Charges` is `ODI + Other Charges`, calculated once. | A6, A28 |
-| Journal boundary | Billing owns or invokes the approved journal generation/posting contract. Demand records journal references and blocks snapshot publication until required checks succeed. | A29 |
-| Partial failure | Default to branch isolation for Demand Generation, but Billing failure affecting required results blocks the Billing Snapshot and therefore blocks all Demand Generation for that Run. | A16 |
-| Zero demand | Retain eligible zero-demand rows by default with an explicit indicator, unless the approved policy requires omission. | A17 |
-| Money | INR `decimal(19,2)` with the approved non-negative rounding policy, proposed as `MidpointRounding.AwayFromZero`. | A18 |
-| Retention | Preserve Billing and Demand execution/results/audit history under the approved financial-record retention policy. | A19, A30 |
-| Authorization | Separate policies for run/rerun, output/history, spooling, and optional audit read. Enforce LOB/Branch scope in handlers and queries. | A20 |
-| Frontend | Show both stage statuses and persisted Billing-derived values. No EMI calculator or free-form Billing edit is exposed. | A22 |
-| Testing | Use FsCheck.Xunit for pure schedule/allocation/idempotency logic, xUnit and WebApplicationFactory for boundaries, and Vitest/RTL for UI. | A23 |
-
-If an assumption changes, contracts, persistence, tests, and the implementation task list must be updated before implementation. It must not be silently converted into new business behavior.
-
-### 1.3 Goals
+### 1.1 Goals
 
 - Execute Period Billing and Demand Generation in one ordered, auditable Demand Run.
-- Produce Scheduled Installment directly from finalized schedule principal plus scheduled interest/EMI.
-- Apply account-level financial events exactly once and retain allocation evidence.
-- Prevent Demand Snapshot publication, Demand Rows, and spooling before successful Billing and journal checks.
-- Produce reproducible Billing Period Results and Demand output from immutable source/version references.
-- Prevent duplicate Billing results, allocations, journals, Demand Rows, batches, and logical spool deliveries on retry.
-- Preserve source ownership boundaries while retaining the references required for financial reconciliation.
-- Give Operations clear stage-specific statuses, diagnostics, and recovery information in English.
-- Reuse existing backend, gateway, persistence, authentication, and frontend patterns.
+- Use the selected finalized schedule value as the Scheduled Installment without recomputing EMI or mutating the schedule.
+- Apply approved receipts, waivers, reversals, adjustments, suspense treatment, and other account-level events exactly once under the approved allocation policy.
+- Keep Current Due, Arrears, ODI, Other Charges, Total Charges, and Total Demand distinct and traceable.
+- Prevent Billing Snapshot, Demand Snapshot, Demand Rows, and spool readiness before the configured Billing and journal publication gates succeed.
+- Preserve zero-demand rows, NoDemand branch outcomes, deactivated-Branch history, and branch-isolated failures.
+- Prevent duplicate logical Billing results, allocations, journal requests, Demand Rows, Demand Batches, and spool state transitions on equivalent retries.
+- Provide authorized, scope-filtered server-side PDF exports from persisted values without recalculation.
+- Reuse existing .NET, EF Core, CQRS, JWT, middleware, YARP, React, MUI, shared axios, and testing conventions.
 
-### 1.4 Non-goals
+### 1.2 Non-goals and deferred boundaries
 
 - Creating or editing LOB, Branch, Customer, Account, Amortization Schedule, receipt, waiver, reversal, adjustment, charge master, or accounting master records.
 - Recomputing EMI or deriving a replacement installment from account inputs.
 - Mutating a finalized Amortization Schedule.
-- Allowing a Demand Generation or Spooling endpoint to bypass Period Billing.
-- Introducing a separately deployed Billing service as a required component of the first implementation.
-- Replacing Automizer or defining formulas that the approved Billing/allocation policy owns.
-- Recalculating a Billing Period Result or Demand Row when viewing, exporting, or spooling.
-- Adding Redux/RxJS, an ad-hoc axios client, bilingual fields, translation scaffolding, non-English data, or RTL behavior.
+- Exposing an independent Demand Generation or Billing endpoint that bypasses the overall Run.
+- Deploying a separate Billing host in the initial release.
+- Making a new schedule watermark, finalization version, or source-version integration a prerequisite.
+- Making Demand Processing the owner of Accounting/GL journals or the ledger.
+- Adding downstream spool delivery semantics; this release retains only minimal ReadyToSpool/Spooled/NotReady state.
+- Adding browser print as a separate capability.
+- Introducing Redux, RxJS, an ad-hoc axios client, bilingual fields, translation scaffolding, non-English data, or RTL behavior.
 
 ## Architecture
 
-The existing repository supports this design directly:
+### 2.1 Reused versus new components
 
-- `Finnova.AccountsService/Program.cs` already registers controllers, MediatR, FluentValidation, JWT Bearer authentication, authorization, repository services, exception middleware, and the public `Program` test shim.
-- `Finnova.Repository.Context.FinnovaDbContext` is the shared EF Core context and uses `ApplyConfigurationsFromAssembly`; new Demand-owned entities and configurations follow this pattern.
-- Existing service slices use feature folders under `Finnova.Service`, repository contracts under `Finnova.Repository.Interfaces`, and contracts/entities under `Finnova.Models`.
-- The Accounts host is the proposed initial host for both the Billing worker boundary and Demand Processing application layer. No new host is necessary for the first release.
-- The YARP gateway needs aliases under the existing UI-composed prefix and forwards to `accounts-cluster`.
-- The UI has shared axios, feature service interfaces, real/mock/toggle modules, MUI grids, React hooks, and Vitest/RTL patterns to reuse.
+#### Reused components
 
-### 2.1 Logical architecture
+| Concern | Existing component/convention | Design use |
+| --- | --- | --- |
+| Host and worker | `Finnova.AccountsService` | Controller, authentication, authorization, middleware, CQRS registration, and the initial Period Billing/Demand worker boundary. |
+| CQRS | Existing MediatR registration | Commands and queries for Run lifecycle, Billing, Demand Generation, reads, reruns, and minimal spool-state changes. |
+| Validation | Existing FluentValidation pipeline | Validate normalized scope, period, Frequency, idempotency, rerun, and export requests before financial reads. |
+| Persistence | Existing `FinnovaDbContext`, EF Core configurations, repositories | Persist Demand-owned runs, stages, results, snapshots, batches, failures, minimum audit entries, and leases. |
+| Authentication | Existing JWT Bearer pipeline | Authenticate before authorization, scope checks, source reads, or processable mutation. |
+| Authorization | Existing policy/claim conventions | Read configured policy names and admin override settings from appSettings; enforce LOB/Branch scope in handlers and queries. |
+| Errors | Existing `ExceptionHandlingMiddleware` | Map stable Demand/Billing/export error codes to safe ProblemDetails responses. |
+| Gateway | Existing YARP `Finnova.ApiGateway` | Forward UI-composed Demand routes to `accounts-cluster` with Authorization. |
+| UI HTTP | `src/services/api.ts` in Finnova-UI | Shared JWT propagation and centralized 401/403/409/timeout/error-toast behavior. |
+| UI service boundary | Interface, mock, real, toggle, and barrel patterns | Add Demand Processing service modules without another HTTP client. |
+| UI rendering | MUI controls, DataGrid, dialogs, alerts, cards | Build Run, Output, and Spooling/batch views. |
+| UI state | React hooks and existing Context | Manage form, filters, polling, loading, and last-good-data state. |
+| Tests | xUnit, FsCheck.Xunit, WebApplicationFactory, Vitest, RTL | Test pure financial rules, HTTP/security boundaries, persistence, exports, and screen behavior. |
+
+#### New components
+
+- Demand Run, Run Revision, Billing Stage Run, Billing Period Result, Billing Allocation Evidence, Billing Snapshot, Demand Snapshot, Demand Row, Demand Batch, Demand failure, lease, and minimum audit entities.
+- Stage, Run, Batch, failure-class, source, and spool-status enums.
+- Typed exceptions and stable error codes for validation, BillingIncomplete, BillingScopeMismatch, schedule diagnostics, allocation conflicts, journal checks, idempotency, concurrency, data quality, reconciliation, PDF export, and spool readiness.
+- Narrow ports for finalized schedules, account/customer/master projections, allocation events, charge values, and Accounting/GL journals.
+- A configurable `IChargePolicyAdapter` seam that can use the default charge formulas or an approved authoritative Billing/charge source.
+- A narrow `IJournalPort` seam that invokes the Accounting/GL capability and returns journal references/check results.
+- Pure helpers for normalization, schedule installment, allocation, charges, eligibility, totals, fingerprinting, batching, reconciliation, and publication gates.
+- A server-side `IDemandPdfExportService`/adapter contract. The design does not select or add a PDF library because the repository has no established PDF dependency; the implementation task must choose an approved existing library or a separately approved adapter implementation.
+- Minimal spool state transition handling. There is no downstream delivery interface or delivery metadata; the handler changes only persisted batch status and minimum audit.
+
+### 2.2 Logical architecture
 
 ```mermaid
 flowchart LR
     AUTO["Automizer / approved scheduler"] -->|"authenticated trigger + scope + idempotency"| GW["Finnova.ApiGateway"]
     UI["Finnova-UI\nRun / Output / Spooling"] -->|"shared axios + JWT"| GW
     GW -->|"accounts-cluster :5020"| HOST["Finnova.AccountsService"]
-    HOST --> AUTH["JWT AuthN + Demand policies"]
+    HOST --> AUTH["JWT authentication + configured policies"]
     AUTH --> CTRL["DemandProcessingController"]
     CTRL --> CQRS["MediatR commands and queries"]
-    CQRS --> APP["Demand Processing application boundary"]
-    APP --> RUN["Overall Demand Run orchestrator"]
-    RUN --> BILL["Stage 1: Period Billing\nworker/application boundary"]
-    BILL --> SCHEDULE["Source-owned finalized\nAmortization Schedule"]
-    BILL --> EVENTS["Source-owned receipts, waivers,\nreversals, adjustments"]
-    BILL --> JOURNAL["Approved journal contract"]
+    CQRS --> RUN["Demand Run orchestrator"]
+    RUN --> BILL["Stage 1: Period Billing\nAccountsService worker boundary"]
+    BILL --> SCHEDULE["Available finalized\nAmortization Schedule"]
+    BILL --> EVENTS["Receipts, waivers, reversals,\nadjustments and suspense sources"]
+    BILL --> CHARGE["Default charge policy\nor configured charge adapter"]
+    BILL --> JOURNAL["Accounting/GL via narrow Journal Port"]
     BILL --> BSNAP["Immutable Billing Snapshot"]
     BSNAP --> GEN["Stage 2: Demand Generation"]
-    GEN --> DSNAP["Demand Snapshot publication"]
+    GEN --> DSNAP["Immutable Demand Snapshot"]
     DSNAP --> BATCH["Branch Demand Batches"]
-    BATCH --> SPOOL["Demand Spooling"]
-    APP --> DB[("Demand-owned EF tables")]
-    APP --> AUDIT["Billing + Demand audit/outbox"]
+    BATCH --> SPOOL["Minimal ReadyToSpool / Spooled state"]
+    RUN --> DB[("Demand-owned EF tables")]
+    RUN --> AUDIT["Minimum immutable audit records"]
 ```
 
-The source systems remain authoritative for schedules, accounts, customers, receipts, waivers, reversals, adjustments, charges, and master data. Demand Processing reads narrow, versioned projections and stores execution/result records that it owns.
+Source systems remain authoritative for schedules, accounts, customers, LOBs, Branches, receipts, waivers, reversals, adjustments, charges, and the accounting ledger. Demand Processing stores execution records, retained source references, Billing-derived values, snapshots, output, minimal spool state, and minimum audit evidence that it owns.
 
-### 2.2 One Demand Run and its ordered stages
+### 2.3 Ordered Run lifecycle
 
-A Demand Run has one normalized logical scope: LOB, Branch scope, Frequency, Month-Year, Processing Cut-off, and approved idempotency key. Its lifecycle is:
+1. Authenticate and authorize Automizer or an approved user.
+2. Normalize LOB, optional Branch, Frequency, and Month/Year. Resolve an omitted Branch to all authorized Active Branches for the LOB. Reject a deactivated Branch for new generation.
+3. Compute the normalized logical scope and idempotency fingerprint. Create or resolve the authoritative Run and Run Revision without reading financial amounts when validation fails.
+4. Create or resolve the internal Billing Stage Run and dispatch the Period Billing worker within AccountsService.
+5. Period Billing reads one internally consistent source snapshot/reference, selects eligible Active accounts, reads available finalized schedule entries, applies approved events exactly once, captures charges, invokes the Journal Port, and evaluates configured Billing checks.
+6. Publish one immutable Billing Snapshot only when the configured completion/snapshot contract and required journal checks pass. The Run retains available cut-off/source references; a new external watermark is not required.
+7. Enqueue or dispatch Demand Generation only after the Billing Snapshot is published. Demand Generation copies persisted Billing-derived values, creates rows and branch batches, reconciles them, and publishes a Demand Snapshot.
+8. Output queries read persisted Demand Snapshot data. Spooling changes only a persisted batch status after the readiness guard passes.
 
-1. Authenticate and authorize Automizer or an approved user before processable state is created.
-2. Normalize scope and period, resolve authorized branches, and compute the logical idempotency fingerprint.
-3. Create or resolve the authoritative Demand Run and Billing Stage Run. Equivalent concurrent requests resolve to the same record.
-4. Queue or dispatch the Period Billing worker within the approved AccountsService worker boundary.
-5. Period Billing resolves the finalized Amortization Schedule, selects eligible Active accounts at the approved cut-off, applies approved allocations exactly once, calculates Billing Period Results, generates/posts journals, and performs all Billing checks.
-6. Publish one immutable Billing Snapshot only after every required Billing and journal check succeeds. On incomplete or failed Billing, retain diagnostics and keep the Demand Run non-processable.
-7. Demand Generation reads only that Billing Snapshot, creates Demand Rows and branch-wise Demand Batches, reconciles them, and publishes one Demand Snapshot.
-8. Demand Output reads persisted Demand Snapshot data. Demand Spooling reads completed persisted batches and never recalculates them.
+Equivalent concurrent requests resolve to one authoritative logical Run or existing completed result. A controlled rerun creates a linked revision and preserves prior output. A failed Branch Batch does not invalidate successful Branch Batches; the overall Run becomes `PartiallyFailed` when the branch outcomes are mixed.
 
-There is no public command for “generate demand now” that skips the Billing stage. Internal worker handlers may resume a stage only after verifying the durable state and its predecessor's publication gate.
+### 2.4 Worker and lifecycle boundary
 
-### 2.3 Worker, queue, and lifecycle boundary
+The initial implementation uses the existing AccountsService worker boundary. It may use the repository's established durable queue or a persisted work record plus hosted dispatcher, but the selected mechanism must remain inside AccountsService and must persist work state before returning the accepted response.
 
-The first implementation may use an existing durable queue or a persisted work record plus an `IHostedService`/background dispatcher inside `Finnova.AccountsService`. The boundary is application-level even when the worker runs in the same process:
+A work item contains Run ID, revision, stage, normalized logical scope, idempotency key, and correlation ID. It does not contain a bearer token, connection string, or unnecessary customer fields. A database-backed lease and rowversion protect stage ownership across restarts. A lost lease or process restart leaves the Run non-completed and eligible only for the configured recovery/rerun path.
 
-- `StartDemandRun` creates the durable Run and stage records, returns quickly with `202`, and enqueues a stage work item.
-- The work item contains Run ID, stage, revision, logical scope key, approved idempotency key, correlation ID, and no bearer token or raw sensitive payload.
-- A worker claims work with a database-backed lease and rowversion. It renews the lease while processing and stops publication if renewal fails.
-- Period Billing and Demand Generation are separate work phases. Demand Generation work is enqueued only after Billing Snapshot publication.
-- A process restart leaves durable `Accepted`, `BillingPending`, `BillingRunning`, `BillingFailed`, `BillingSucceeded`, `DemandGenerating`, or recovery state. Startup recovery may requeue eligible work; it must not mark incomplete work successful.
-- A future separately deployed Billing service can implement the same Billing ports, but extraction is optional and does not change the public Demand Run contract.
+Demand Generation work is created only after the Billing Snapshot publication transaction commits. The worker resolves successful existing stage/results before applying an allocation or invoking the Journal Port again. No worker behavior may create a second logical result for a redelivery or equivalent trigger.
 
-Retries are idempotent by the normalized LOB/branch/frequency/Month-Year scope plus the approved idempotency key and source-version fingerprint. The worker must resolve existing successful stage/results before applying a second allocation or journal operation.
+### 2.5 Boundary rules
 
-### 2.4 Boundary rules
-
-- **Controller:** HTTP binding, authentication/authorization attributes, correlation extraction, status codes, and MediatR dispatch only. It does not query EF or calculate money.
-- **Run orchestrator:** Owns stage ordering, durable state transitions, idempotency, leases, recovery, and publication gates. It never recomputes source financial values.
-- **Period Billing application service:** Coordinates schedule, account, allocation, charge, and journal ports. It produces Billing Period Results and the Billing Snapshot. It does not own source schedules or event masters.
-- **Demand Generation application service:** Consumes one immutable Billing Snapshot, applies eligibility/output/batching rules, and publishes Demand Snapshot data. It cannot execute without a successful Billing Snapshot reference.
-- **Pure domain helpers:** Calculate scheduled installment from schedule components, apply allocation policy, calculate unpaid Current Due/Arrears, calculate charges, normalize money, determine eligibility, group rows, and reconcile aggregates. They have no database, HTTP, logging, or clock dependency.
-- **Repositories:** Persist Demand-owned execution, results, snapshots, audit, and outbox records. They do not own source lifecycle.
-- **Source ports:** Return narrow immutable projections and references for schedule, account/customer/master, receipt/event, charge, and journal data.
-- **Frontend:** Owns form/filter/loading/polling state and displays persisted values. It does not calculate EMI, alter Billing fields, or use a client-side value as an authoritative total.
-
-## Components and Interfaces
-
-### 3.1 Reused components
-
-| Concern | Existing component/convention | Design use |
-| --- | --- | --- |
-| Host and worker | `Finnova.AccountsService` | Controller, auth, middleware, DI, and initial hosted worker boundary. |
-| CQRS | MediatR registration | Add Run, Billing, Demand Generation, read, and spool handlers. |
-| Validation | FluentValidation and validation behavior | Validate scope, period, frequency, idempotency, and commands before financial reads. |
-| Persistence | `FinnovaDbContext`, EF configurations, repository DI | Add Demand-owned stage/result/snapshot/audit tables and constraints. |
-| Authentication | Existing JWT Bearer pipeline | Authenticate before authorization or any processable mutation. |
-| Authorization | Existing policy/role claims | Add explicit Demand policies and source-aware scope checks. |
-| Errors | `ExceptionHandlingMiddleware` | Add Billing-specific stable codes and safe ProblemDetails mapping. |
-| Gateway | YARP aliases | Forward UI-composed Demand routes to AccountsService. |
-| UI HTTP | `src/services/api.ts` | JWT propagation and central 401/403/409/timeout handling. |
-| UI service pattern | Interfaces, mock, real, toggle, barrels | Add Demand Processing service modules. |
-| UI rendering | MUI DataGrid/Card/Alert/Dialog/Select | Build stage/status, output, and spooling screens. |
-| UI state | React hooks and existing Context | No Redux, RxJS, or new global store. |
-| Tests | xUnit, FsCheck.Xunit, WebApplicationFactory, Vitest, RTL | Test pure financial logic and all integration boundaries. |
-
-### 3.2 New backend components
-
-- Demand Run aggregate, stage enums, Billing Stage Run, Demand stage state, revision, scope, failure, audit, and outbox entities.
-- Billing Period Result, allocation evidence/event reference, Billing Snapshot, Demand Row, Demand Batch, and Demand Snapshot entities.
-- Typed exceptions and error codes for BillingIncomplete, BillingScopeMismatch, BillingScheduleIncomplete, BillingAllocationConflict, BillingJournalIncomplete, BillingSnapshotUnavailable, IdempotencyConflict, concurrency, data quality, reconciliation, dependency, and spooling outcomes.
-- Narrow source ports for finalized schedules, account/customer/master data, receipt/waiver/reversal/adjustment events, charge values, and journal generation/posting/checks.
-- Pure schedule, allocation, unpaid-balance, charge, eligibility, batching, reconciliation, fingerprint, and publication-gate helpers.
-- Repositories, EF configurations, DbSets, indexes, transaction/unit-of-work coordination, leases, and migration.
-- CQRS commands/queries, validators, mappers, controller, middleware mappings, DI, worker dispatcher, and recovery coordinator.
-
-### 3.3 New frontend components
-
-- Demand model and API types including Billing and Demand stage statuses, Billing Period Result summaries, snapshots, failures, and schedule references.
-- `IDemandProcessingService`, mock implementation with English-only fixtures, real shared-axios implementation, toggle module, and barrels.
-- Demand Run page/components with two-stage status and BillingIncomplete/failed states.
-- Demand Generation Output page/components that display persisted Billing-derived amounts.
-- Demand Spooling page/components with batch readiness and attempt history.
-- Vitest/RTL coverage for service selection, screens, permissions, states, and retry behavior.
+- **Controller:** Binds HTTP requests, uses configured authorization, extracts correlation data, maps status codes, and dispatches MediatR. It does not query EF or calculate money.
+- **Run orchestrator:** Owns stage ordering, Run/Revisions, durable state transitions, idempotency, leases, recovery, and publication gates.
+- **Period Billing service:** Coordinates schedule, account, allocation, charge, and Journal Port interfaces. It owns no source schedule, event master, or ledger.
+- **Demand Generation service:** Reads exactly one published Billing Snapshot, maps rows, groups batches, reconciles totals, and publishes the Demand Snapshot.
+- **Charge adapter:** Supplies authoritative ODI and Other Charges when configured. The default adapter implements the confirmed formulas. Neither adapter is called by the UI.
+- **Journal Port:** Calls Accounting/GL. AccountsService stores references and configured check results only.
+- **Pure helpers:** Have no database, HTTP, logger, or clock dependency. They implement normalization, arithmetic, allocation, eligibility, totals, grouping, fingerprinting, and gates.
+- **Repositories:** Persist Demand-owned records and apply mandatory scope predicates. They do not own source lifecycle.
+- **PDF export service:** Loads authorized persisted output, renders a PDF through an approved adapter, and returns a server-generated file response. It never recalculates amounts.
+- **Spool state handler:** Validates scope and `ReadyToSpool`, changes only the minimal persisted status to `Spooled`, records actor/time in the minimum audit record, and returns the resulting status. It does not invoke a delivery transport.
+- **Frontend:** Owns form/filter/loading/polling state and displays persisted values. It does not calculate EMI, override Billing values, or act as a security boundary.
 
 ## Requirements coverage map
 
 | Requirement | Design coverage |
 | --- | --- |
-| R1 Define and validate a Demand Run | Sections 2.2, 3.4, 4.1, 5.1, and 6.1: normalized scope, auth, run identity, idempotency, and audit. |
-| R2 Enforce successful internal Billing stage | Sections 2.2, 2.3, 4.2, 7, and 8: ordered stages, Billing gates, statuses, and no bypass route. |
-| R3 Execute schedule-driven Period Billing | Sections 4.3, 4.4, 7, 8.2, and 9: schedule references, principal-plus-interest installment, allocation, charges, journals, and snapshot publication. |
-| R4 Select eligible accounts | Sections 4.5 and 8.3: Active status at cut-off, resolvable references, and source evidence. |
-| R5 Calculate account-level Demand | Sections 4.6, 8.3, 9.3, and 11: Billing-derived Current Due/Arrears/charges and deterministic totals. |
-| R6 Create branch-wise batches | Sections 4.7 and 8.4: branch partition, totals, status, and spooling guard. |
-| R7 Trigger automatic processing/manual initiation | Sections 2.3, 6.1, 7.1, and 10: Automizer contract, worker lifecycle, authorization, and idempotency. |
-| R8 Maintain history and idempotent reruns | Sections 4.1, 4.10, 8.5, 10, and 12: revisions, source versions, stage results, and retained history. |
-| R9 Concurrency and atomic publication | Sections 2.3, 4.10, 7.4, 8.1, and 10.2: leases, uniqueness, transaction/publication gates. |
-| R10 Failures and reconciliation | Sections 5.7, 6.4, 7, 8.2-8.5, and 9.4: stage-specific failure classes and safe diagnostics. |
-| R11 Demand Run screen | Section 11.2: scope form, Billing/Demand status, polling, BillingIncomplete, and permission gating. |
-| R12 Demand Generation Output | Section 11.3: persisted values, Billing references, filters, pagination, and no client recalculation. |
-| R13 Demand Spooling | Sections 4.7, 8.4, 11.4: ready guard, stable batch identity, attempts, and no recalculation. |
-| R14 Authentication, authorization, and scope | Sections 2.4, 6.2, 9.2, 11.5, and 12.2. |
-| R15 Audit and traceability | Sections 4.8, 9.5, and 12.3: stage/result/snapshot/journal/allocation audit evidence. |
-| R16 Deterministic correctness/testing | Sections 9, 13, and 14: schedule, allocation, retry, publication, and batching properties. |
-| R17 India/English/no RTL | Sections 4.6, 11, and 12.4: INR, English-only content, and left-to-right UI. |
+| R1 Define and validate a Demand Run | Sections 2.3, 3.1, 4.1, 5.1, and 7.1: authentication, normalization, immutable GUID, omitted Branch expansion, deactivated-Branch rejection, and audit. |
+| R2 Enforce successful internal Billing stage | Sections 2.3, 4.2, 6, and 7: Billing Snapshot publication gate and no Demand bypass. |
+| R3 Execute schedule-driven Period Billing | Sections 2.5, 4.2-4.5, 5.2, and 6.1: available finalized schedule, one consistent source reference, exactly-once allocation, explicit charges, Journal Port, and Billing publication. |
+| R4 Select eligible accounts | Sections 2.3, 4.4, and 6.2: Active status, scope, resolvable references, diagnostics, and exclusion rules. |
+| R5 Calculate account-level Demand | Sections 4.6, 6.2, 8, and 9: Billing-derived components, INR arithmetic, zero-demand rows, and deterministic ordering. |
+| R6 Create branch-wise batches | Sections 2.3, 4.6, 6.3, and 7.3: one batch per represented Branch, NoDemand outcome, totals, isolation, and reconciliation. |
+| R7 Trigger automatic/manual processing | Sections 2.3, 2.4, 5.1, and 7.1: Automizer/manual command, common workflow, worker boundary, and idempotency. |
+| R8 Maintain history and idempotent reruns | Sections 4.1, 4.7, 5.1, and 7.4: retained Run/Revisions, deactivated-Branch reads, unchanged-result resolution, and configurable retention. |
+| R9 Concurrency and atomic publication | Sections 2.4, 4.7, 6, and 7.4: leases, uniqueness, transaction boundaries, and mixed Branch outcome handling. |
+| R10 Failures and reconciliation | Sections 6, 7, and 8: stable failure classes, safe diagnostics, branch isolation, retry paths, and reconciliation gates. |
+| R11 Demand Run screen | Section 9.2: protected scope form, stage statuses, BillingIncomplete, polling, and permission gating. |
+| R12 Demand Generation Output | Sections 5.2, 5.3, 9.3, and 10: persisted row queries, scope filters, deactivated-Branch history, and PDF export. |
+| R13 Demand Spooling | Sections 2.5, 4.6, 5.2, 7.3, and 9.4: minimal ReadyToSpool/Spooled/NotReady guard and batch PDF export without transport. |
+| R14 Authentication, authorization, and scope | Sections 2.5, 5.4, 8, and 9.5: configured policies, JWT ordering, and query/action scope. |
+| R15 Audit and traceability | Sections 4.8 and 8: minimum immutable audit fields and safe references; detailed taxonomy remains deferred. |
+| R16 Deterministic behavior/testing | Sections 6.4 and 11: pure calculation properties, integration tests, PDF contract tests, and UI tests. |
+| R17 India/English/no RTL | Sections 4.6, 9, and 10: INR, `Asia/Kolkata`, UTC, English-only display, and left-to-right UI. |
 
 ## Data Models
 
-### 4.1 Demand Run aggregate and revision
+### 4.1 Demand Run and Run Revision
 
-`DemandRun` is the lifecycle aggregate for one accepted scope and period. `DemandRunRevision` retains an immutable calculated revision when a controlled rerun is approved. The Run owns the two ordered stage records and references the final snapshots.
+`DemandRun` is the retained lifecycle aggregate for one logical LOB, Branch scope, Frequency, and Month/Year. `DemandRunRevision` is an immutable result revision created only for an authorized controlled rerun. Run ID is an immutable GUID; revision numbers are immutable within the logical Run lineage.
 
 | Field | Rule |
 | --- | --- |
-| `Id` | Immutable GUID Run identifier. |
-| `LogicalScopeKey` | Canonical generated key for normalized LOB, branch scope, frequency, Month-Year, and source scope identity. |
+| `Id` | Immutable system-generated GUID. |
+| `LogicalScopeKey` | Canonical normalized LOB, resolved Branch scope, Frequency, Month/Year, and action scope. |
 | `LineOfBusinessId` | Required source-owned LOB reference. |
-| `BranchScope` | Resolved authorized branches in a child table and stable order. |
-| `Frequency`, `PeriodYear`, `PeriodMonth` | Exact Billing-supported frequency and business period. |
-| `ProcessingCutoffUtc` | Approved cut-off retained for both stages. |
-| `IdempotencyKey`, `PayloadFingerprint` | Approved key and immutable normalized payload fingerprint. |
-| `Source`, `ActorId`, `CorrelationId` | Automizer or User; safe actor reference; correlation metadata. |
-| `Status` | `Accepted`, `BillingPending`, `BillingRunning`, `BillingIncomplete`, `BillingFailed`, `BillingSucceeded`, `DemandGenerating`, `Completed`, `PartiallyFailed`, `Failed`, `Deferred`, `Superseded`, or `Conflict`. |
-| `RevisionNumber` | Positive immutable revision number unique within the logical scope. |
-| `BillingStageRunId`, `BillingSnapshotId` | Required references after stage creation/publication. |
-| `DemandSnapshotId` | Set only after successful Demand Generation publication. |
-| `RowCount`, component totals, batch count | Reconciled summary values at approved INR precision. |
-| `Version` | SQL Server `rowversion` for lease/state concurrency. |
-| Lifecycle timestamps | UTC request, start, stage completion, final completion, and failure times. |
+| `BranchScope` | Resolved Active authorized Branch IDs in stable order. Omitted input is not persisted as an unresolved wildcard. |
+| `Frequency`, `PeriodYear`, `PeriodMonth` | Exact configured Frequency and business period. Default Frequency is `Monthly`. |
+| `BusinessTimezone` | `Asia/Kolkata` for period interpretation. |
+| `ProcessingCutoffReference` | Available internally consistent snapshot/cut-off reference. It may be null only when the source contract provides no reference; no new watermark is required. |
+| `IdempotencyKey`, `PayloadFingerprint` | Immutable normalized request identity and conflict fingerprint. |
+| `Source`, `ActorId`, `CorrelationId` | Automizer or user source and safe actor/correlation references. |
+| `Status` | Accepted, BillingPending, BillingRunning, BillingIncomplete, BillingFailed, BillingSucceeded, DemandGenerating, Completed, PartiallyFailed, Failed, Deferred, or Superseded. |
+| `RevisionNumber` | Immutable positive revision identifier. |
+| `BillingStageRunId`, `BillingSnapshotId`, `DemandSnapshotId` | References set when the relevant stage records/publications exist. |
+| `RowCount`, totals, batch count | Reconciled persisted summaries using INR precision. |
+| Lifecycle timestamps | UTC request, start, stage completion, final completion, and failure timestamps. |
+| `Version` | SQL Server rowversion for optimistic concurrency and lease transitions. |
 
-A completed unchanged request resolves to the existing revision. A controlled rerun preserves the original and creates a linked revision; it never silently overwrites delivered output.
+### 4.2 Billing Stage Run and Billing Period Result
 
-### 4.2 BillingStageRun
-
-`BillingStageRun` is Demand Processing's execution record for the first ordered stage. It is Demand-owned and does not become the source-of-truth schedule or accounting ledger.
+`BillingStageRun` is the Demand-owned execution record for Period Billing. Billing completion and snapshot rules are read from appSettings. The record retains the available internally consistent source reference but does not require a new schedule watermark or source-version system.
 
 | Field | Rule |
 | --- | --- |
-| `Id`, `RunId`, `RevisionNumber` | Immutable identity and parent reference. |
-| `LogicalBillingScopeKey` | Normalized LOB, branch scope, frequency, Month-Year, and approved idempotency/source fingerprint. |
-| `Status` | `Pending`, `Queued`, `Running`, `Incomplete`, `Failed`, `Cancelled`, `Succeeded`, `RetryPending`, or `Superseded`. |
-| `Source` and worker metadata | Automizer/User source, worker attempt, host, lease, and correlation reference. |
-| `ProcessingCutoffUtc` | Cut-off used for eligibility and source event selection. |
-| `ScheduleFinalizationReference` | Source schedule watermark/finalization version required for the run. |
-| `AllocationPolicyReference` | Immutable approved allocation policy/version. |
-| `ChargePolicyReference` | ODI/Other Charges policy/version. |
-| `JournalBatchReference` | Required after journal generation/posting. |
-| `BillingSnapshotId`/`Version` | Set only after successful immutable snapshot publication. |
-| Counts/totals | Eligible, successful, excluded, failed, allocation, and journal reconciliation counts. |
-| `FailureCode`, safe diagnostic | Machine-readable Billing code and redacted details. |
-| timestamps/version | UTC stage lifecycle and rowversion. |
+| `Id`, `RunId`, `RevisionNumber` | Immutable stage identity and parent dimensions. |
+| `LogicalBillingScopeKey` | Normalized LOB, resolved Branch scope, Frequency, Month/Year, and approved idempotency identity. |
+| `Status` | Pending, Queued, Running, Incomplete, Failed, Cancelled, Succeeded, RetryPending, or Superseded. |
+| `ProcessingCutoffReference` | Available run snapshot/cut-off reference used by both stages. |
+| `ScheduleReference` | Available schedule identity/entry reference. It is evidence, not a new external watermark prerequisite. |
+| `AllocationPolicyReference`, `ChargePolicyReference` | Policy names/versions used for the result. |
+| `JournalBatchReference`, `JournalCheckSummary` | References and configured check results returned by Accounting/GL. |
+| `BillingSnapshotId`, `BillingSnapshotVersion` | Set only after successful publication. |
+| Counts/totals/diagnostics | Eligible, successful, excluded, failed, allocation, journal, and reconciliation evidence. |
+| Source/actor/correlation and UTC timestamps | Operational traceability. |
 
-`BillingStageRun` has a unique authoritative record for the same logical Billing scope, period, source versions, revision, and approved idempotency key. A retry reads this record before doing any financial mutation.
-
-### 4.3 BillingPeriodResult
-
-`BillingPeriodResult` is the Demand-owned retained account result of Period Billing. It is created only when the selected finalized schedule and required allocation/charge checks succeed for the affected account.
+`BillingPeriodResult` is created for an eligible account only when the schedule, allocation, charge, and configured result checks succeed for that account. It retains the account's source dimensions and all persisted Billing-derived values.
 
 | Field | Rule |
 | --- | --- |
-| `Id`, `BillingStageRunId`, `RunId`, `RevisionNumber` | Immutable parent dimensions. |
-| `AccountId`, `CustomerId`, `LOB`, `Branch` | Source references and retained dimensions. |
-| `AccountStatusAtCutoff`, `EligibilityDecision` | Status/reference evidence used by Billing. |
-| `ScheduleId`, `ScheduleVersion`, `ScheduleEntryId`, `ScheduleEntryVersion` | Exact source-owned finalized schedule references. |
+| `AccountId`, `CustomerId`, `LineOfBusinessId`, `BranchId` | Source references and retained dimensions. |
+| `AccountStatusAtCutoff`, `EligibilityDecision` | Evidence for Active eligibility. |
+| `ScheduleId`, `ScheduleEntryId`, available source reference | Identifies the selected finalized schedule entry when provided. |
 | `ScheduledPrincipal`, `ScheduledInterestOrEmi` | Values read from the selected schedule entry. |
-| `ScheduledInstallment` | Exactly `ScheduledPrincipal + ScheduledInterestOrEmi` under approved precision. Never recomputed from account inputs. |
-| `CurrentDue` | Unpaid selected-period Scheduled Installment after approved allocations. |
-| `Arrears` | Previous-period unpaid value from prior Billing results, kept separate from Current Due. |
-| `Odi`, `OtherCharges` | Separate source/policy values, excluded from installment/current due/arrears. |
-| `AllocationPolicyReference` | Policy/version used for allocation. |
-| `AllocationEvidence` | Child allocation rows or event references described below. |
-| `JournalReference` | Billing journal batch/entry reference and posting/check status. |
-| `Status` | `Succeeded`, `Excluded`, `Failed`, or `Incomplete`; only successful results enter a successful Billing Snapshot. |
-| `SourceCutoff`, `SourceSnapshotVersion`, timestamps | Reproducibility and audit references. |
+| `ScheduledInstallment` | `ScheduledPrincipal + ScheduledInterestOrEmi`, rounded to INR precision. Never derived from account inputs. |
+| `CurrentDue` | Unpaid selected-period Scheduled Installment after approved allocation. |
+| `Arrears` | Prior-period unpaid value, separate from current-period unpaid value. |
+| `Odi`, `OtherCharges` | Separate Billing components supplied by the default policy or charge adapter. |
+| `AllocationPolicyReference` and child evidence | Policy and source-event references/outcomes. |
+| `JournalReference` | Accounting/GL reference and configured check outcome. |
+| `Status` | Succeeded, Excluded, Failed, or Incomplete. Only successful results enter a published Billing Snapshot. |
+| `ProcessingCutoffReference`, policy references, timestamps | Reproducibility and audit evidence. |
 
-A missing, unfinalized, stale, or wrong-period schedule produces a failure diagnostic and no successful Billing Period Result for that account.
+### 4.3 Allocation evidence
 
-### 4.4 Allocation evidence and event references
-
-`BillingAllocationEvidence` is Demand-owned evidence of how each approved event affected a Billing Period Result. The source event remains owned by the receipt/waiver/reversal/adjustment system.
+`BillingAllocationEvidence` is Demand-owned evidence that an approved receipt, waiver, reversal, adjustment, or other event was considered and, when applicable, applied exactly once. The source event remains owned by its source system.
 
 | Field | Rule |
 | --- | --- |
-| `Id`, `BillingPeriodResultId`, `BillingStageRunId` | Immutable identity and parent. |
-| `SourceEventType`, `SourceEventId`, `SourceEventVersion` | Receipt, waiver, reversal, adjustment, or other approved event reference. |
-| `EventEffectiveUtc`, `EventSourceCutoff` | Evidence that the event was eligible for the run. |
-| `AllocationPolicyReference`, `AllocationSequence` | Policy/version and deterministic order. |
-| `AllocatedAmount`, `Currency` | INR amount applied once to the result. |
-| `TargetComponent` | Selected installment/current due, prior-period arrears, charge, suspense, or approved target. |
-| `Outcome` | `Applied`, `Excluded`, `Deferred`, `Reversed`, or `Rejected` with safe reason. |
-| `IdempotencyKey`, `SourceFingerprint` | Unique event/application identity. |
+| `BillingPeriodResultId`, `BillingStageRunId` | Parent dimensions. |
+| `SourceEventType`, `SourceEventId`, `SourceEventVersion` | Source identity when the source provides it. |
+| `EventEffectiveUtc`, `EventSourceReference` | Evidence of period/cut-off eligibility. |
+| `AllocationPolicyReference`, `AllocationSequence` | Policy and deterministic sequence. |
+| `AllocatedAmount`, `Currency`, `TargetComponent` | INR amount and approved target such as Current Due, Arrears, Charges, or suspense. |
+| `Outcome` and safe reason | Applied, Excluded, Deferred, Reversed, or Rejected. |
+| `SourceFingerprint`, `ApplicationKey` | Stable logical identity used to prevent duplicate application. |
 
-A unique constraint on Billing Stage Run, source event identity/version, target scope, and allocation policy prevents the same event from being applied twice. Evidence supports allocation conservation and retry investigation.
+A unique logical application key prevents an equivalent retry from applying the same source event twice. The design does not require a new source-version integration; it uses the references available from existing contracts.
 
-### 4.5 BillingSnapshot
+### 4.4 Billing Snapshot
 
-`BillingSnapshot` is an immutable publication owned by Demand Processing. It contains the exact successful Billing Period Results and references needed by Demand Generation.
+`BillingSnapshot` is an immutable publication containing the complete successful Billing Period Results for the exact Run Revision, retained scope, period, and available source reference.
 
 | Field | Rule |
 | --- | --- |
-| `Id`, `Version`, `BillingStageRunId` | Immutable identity/version. |
-| Logical scope and period | Must equal the parent Demand Run. |
-| `ProcessingCutoffUtc`, schedule finalization reference | Common source boundary. |
-| `ResultCount`, component totals | Reconciled successful-result counts/totals. |
-| `JournalBatchReference`, journal check summary | Proof that required journals were generated/posted/checked. |
-| `PublicationStatus` | `Pending`, `Published`, `Rejected`, or `Superseded`; only Published can unlock Demand Generation. |
-| `ContentFingerprint` | Deterministic hash of results/references/policy versions. |
-| `PublishedAtUtc`, actor/source/correlation | Immutable publication evidence. |
+| `Id`, `Version`, `BillingStageRunId` | Immutable snapshot identity and parent. |
+| Logical scope and period | Must equal the Demand Run Revision. |
+| `ProcessingCutoffReference` | Common internally consistent source reference, if supplied. |
+| Result counts and component totals | Reconciled successful Billing totals. |
+| `JournalBatchReference`, `JournalCheckSummary` | Proof that configured Accounting/GL checks passed. |
+| `PublicationStatus` | Pending, Published, Rejected, or Superseded. Only Published unlocks Demand Generation. |
+| `ContentFingerprint` | Deterministic content identity for the persisted result set. |
+| Published actor/source/correlation and UTC timestamp | Publication evidence. |
 
-The snapshot is published in one transaction with the final Billing Stage status, journal check evidence, and audit event. No later source mutation changes the snapshot.
+### 4.5 Demand Snapshot, Demand Row, and Demand Batch
 
-### 4.6 Demand Snapshot, Demand Row, and Demand Batch
+`DemandSnapshot` is the immutable publication of Demand Generation output and references exactly one Published Billing Snapshot.
 
-`DemandSnapshot` is the immutable publication of Demand Generation output. It references exactly one Published BillingSnapshot and contains complete reconciled Demand Rows and Demand Batches.
+`DemandRow` contains Account, Customer, LOB, Branch, Month/Year, Frequency, Billing Period Result reference, Billing Snapshot version, Current Due, Arrears, ODI, Other Charges, Total Charges, Total Demand, row status, zero-demand indicator, and stable Account ordering. It copies persisted Billing-derived values and does not calculate EMI or replace Scheduled Installment.
 
-`DemandRow` contains Account, Customer, LOB, Branch, Month-Year, Frequency, `BillingPeriodResultId`, Billing Snapshot version, Current Due, Arrears, ODI, Other Charges, Total Charges, Total Demand, zero-demand indicator, and deterministic Account ordering. The row copies persisted Billing-derived values; it does not calculate or edit a Scheduled Installment.
+`DemandBatch` is one logical Branch collection for one Run Revision. It stores Branch/LOB/period dimensions, row count, component totals, Total Demand, Demand Snapshot reference, and minimal spool status:
 
-`DemandBatch` is one logical branch-scoped collection for a Run Revision. It stores row count, every component total, Total Demand, stable batch identity, `ReadyToSpool`/`Spooled`/failure state, and the parent Demand Snapshot reference. One row belongs to exactly one matching branch batch.
+- `NotReady` while publication or reconciliation is incomplete, or when the batch is empty/failed.
+- `ReadyToSpool` when the batch is completed and reconciled.
+- `Spooled` after an authorized state transition using the persisted batch.
+- `NoDemand` for an empty in-scope Branch. This is a non-failure and is not spoolable.
+- `Failed` when branch reconciliation or generation fails.
 
-### 4.7 Source ownership versus Demand ownership
+There is no downstream delivery metadata persisted for a Demand Batch.
+
+### 4.6 Source ownership and charge policy
 
 | Data | Owner | Demand behavior |
 | --- | --- | --- |
-| Amortization Schedule and finalized schedule entries | Existing Accounts/lending schedule source | Read finalized identity/version and scheduled principal/interest; never mutate or own schedule values. |
-| Account, Customer, LOB, Branch, status | Existing master/account sources | Read versioned/narrow projections for scope and eligibility; retain references and approved display snapshot values only. |
-| Receipts, waivers, reversals, adjustments, other allocation events | Existing collection/financial sources | Read eligible events; retain one allocation evidence record per applied event. |
-| ODI and Other Charges source/policy | Approved Billing/charge owner | Read and retain separate values and policy references; Demand does not recompute. |
-| Billing journals/ledger | Approved accounting owner | Invoke approved posting/check contract and retain journal references; do not create a second ledger. |
-| BillingStageRun, BillingPeriodResult, allocation evidence | Demand Processing | Own execution/result/evidence records and lifecycle audit. |
-| BillingSnapshot, DemandSnapshot, DemandRun, DemandRow, DemandBatch | Demand Processing | Own immutable publications and operational output. |
-| Audit, failure, lease, outbox records | Demand Processing/platform | Own append-only traceability and delivery coordination. |
+| Amortization Schedule | Existing schedule/lending source | Read available finalized selected-period values and references; never mutate or recompute. |
+| Account, Customer, LOB, Branch, status | Existing account/master sources | Read scoped projections at one internally consistent snapshot/cut-off and retain safe references/display values. |
+| Receipts, waivers, reversals, adjustments, suspense events | Existing financial sources | Read approved events and retain allocation evidence. |
+| ODI and Other Charges | Billing/Accounting source or configured charge adapter | Consume authoritative values through `IChargePolicyAdapter`; use the default formulas when no replacement adapter is configured. |
+| Accounting/GL journal and ledger | Existing Accounting/GL capability | Invoke through `IJournalPort`; store references/check results only. |
+| Billing and Demand execution/results/snapshots/batches | Demand Processing | Own lifecycle, retained output, and reconciliation records. |
 
-### 4.8 EF Core configuration, indexes, and migration
+#### Default charge policy
 
-Add Demand entities/configurations under the existing domain/configuration conventions and register DbSets in `FinnovaDbContext`. Use `ApplyConfigurationsFromAssembly`.
+The default `IChargePolicyAdapter` implements these formulas:
 
-Required constraints and indexes include:
+- `ODI = overdue principal balance × configured annual ODI rate × overdue days ÷ configured day-count basis`.
+- Day-count basis defaults to `365` when absent.
+- ODI excludes the current-period Scheduled Installment from overdue principal, is rounded to INR 2 decimals using `MidpointRounding.AwayFromZero`, and uses an optional configured cap. No cap applies by default.
+- `Other Charges = net eligible posted non-ODI charge events effective for the account and period - eligible waivers/reversals/adjustments allocated to those charge events after suspense treatment`.
+- Other Charges exclude scheduled installment, principal, interest, arrears, and ODI. If the net is negative, the implementation retains adjustment evidence and clamps Other Charges to zero. Other Charges are rounded to INR 2 decimals using `MidpointRounding.AwayFromZero`.
+- `Total Charges = ODI + Other Charges`.
+- `Total Demand = Current Due + Arrears + Total Charges`.
 
-- unique authoritative `(LogicalScopeKey, RevisionNumber)` for Demand Runs;
-- unique active lease/authoritative stage record for a normalized logical Billing scope, revision, source versions, and approved idempotency key;
-- unique `(BillingStageRunId, AccountId)` for successful Billing Period Results;
-- unique `(BillingPeriodResultId, SourceEventType, SourceEventId, SourceEventVersion, AllocationPolicyReference)` for allocation evidence;
-- unique `(BillingStageRunId, ScheduleId, ScheduleVersion, AccountId)` where the approved schedule identity requires it;
-- unique Published Billing Snapshot for a Billing Stage Run and revision;
-- unique `(DemandSnapshotId, AccountId)` for Demand Rows;
-- unique `(DemandSnapshotId, BranchId)` for logical Demand Batches;
-- unique `(BatchId, AttemptNumber)` for spool attempts;
-- unique journal idempotency key by Billing Stage Run/logical scope/period;
-- indexes for period, LOB, Branch, stage status, Billing status, account, customer, snapshot version, completion time, and audit correlation;
-- `decimal(19,2)` INR columns and UTC datetime columns;
-- non-cascading references to source IDs unless deletion behavior is explicitly approved;
-- restricted deletion for all Billing/Demand results, snapshots, evidence, failures, journals references, spool attempts, and audit records.
+A configured approved Billing/charge adapter may return the same separate `ODI` and `OtherCharges` contract and policy references. Demand Generation never calls the adapter and never recomputes values in the API response, PDF export, or UI.
 
-The migration is generated and reviewed by the implementer after source contracts and table ownership are confirmed. This design does not apply a migration.
+### 4.7 Persistence and indexes
 
-## Contracts and API flow
+Add Demand-owned entities and configurations through the existing `ApplyConfigurationsFromAssembly` convention. Required constraints include:
 
-All endpoints require JWT Bearer authentication. JSON uses configured camelCase and string status values. The client cannot supply Run ID, stage status, totals, Billing Snapshot ID, schedule version, journal status, or actor identity.
+- unique authoritative Run logical scope/revision identity;
+- unique Billing Stage Run for the normalized logical Billing scope and approved idempotency identity;
+- unique successful Billing Period Result by Billing Stage Run and Account;
+- unique logical allocation application key;
+- unique Published Billing Snapshot by Billing Stage Run/revision;
+- unique Demand Row by Demand Snapshot and Account;
+- unique Demand Batch by Demand Snapshot and Branch;
+- unique journal idempotency reference at the Billing Stage Run boundary;
+- indexes for period, LOB, Branch, statuses, account, customer, snapshot version, completion time, and correlation ID;
+- `decimal(19,2)` for all INR amounts and UTC datetime columns;
+- rowversion for Run/stage/batch state transitions;
+- restricted deletion for results, snapshots, allocation evidence, journal references, failures, batches, and audit records.
 
-### 5.1 Start and query contracts
+Deactivated Branches remain queryable through retained Run/Row/Batch records. New generation validates that selected or resolved Branches are Active.
+
+### 4.8 Minimum audit model
+
+`DemandAuditEntry` is append-only and records at least:
+
+- Run ID and Run Revision;
+- LOB and Branch scope, including the affected Branch for batch transitions;
+- actor/source and correlation ID;
+- previous and new status where applicable;
+- UTC timestamp;
+- outcome/error code; and
+- safe references such as stage, snapshot, batch, schedule, journal, or source identifiers.
+
+The detailed event taxonomy, additional content, retention duration, archival mechanism, and purge authority are configuration/deferred decisions. Audit entries must not contain bearer tokens, credentials, connection strings, secrets, or unnecessary customer fields.
+
+## Contracts and interfaces
+
+All endpoints require JWT Bearer authentication and use the existing JSON conventions. The client cannot provide Run ID, stage status, totals, Billing Snapshot ID, journal status, actor identity, or authoritative financial values.
+
+### 5.1 Commands and queries
 
 ```text
 StartDemandRunRequest
@@ -380,12 +346,10 @@ StartDemandRunRequest
   periodYear: int
   periodMonth: int
   idempotencyKey: string
-  confirmationToken?: string       // only if approved manual action requires it
 
-StartDemandRerunRequest
+RerunDemandRunRequest
   reason: string
   idempotencyKey: string
-  confirmationToken: string
 
 DemandRunQuery
   periodYear?: int
@@ -396,7 +360,7 @@ DemandRunQuery
   billingStatus?: string
   demandStatus?: string
   page: int = 1
-  pageSize: int = 20
+  pageSize: int = configured bound
 
 DemandRowsQuery
   runId?: Guid
@@ -407,8 +371,9 @@ DemandRowsQuery
   branchId?: Guid
   accountId?: Guid
   customerId?: Guid
+  rowStatus?: string
   page: int = 1
-  pageSize: int = 20
+  pageSize: int = configured bound
 
 DemandBatchesQuery
   runId?: Guid
@@ -419,74 +384,124 @@ DemandBatchesQuery
   branchId?: Guid
   status?: string
   page: int = 1
-  pageSize: int = 20
+  pageSize: int = configured bound
 
 SpoolBatchRequest
   idempotencyKey?: string
-  confirmationToken?: string
+
+DemandPdfExportQuery
+  runId?: Guid
+  revisionNumber?: int
+  periodYear?: int
+  periodMonth?: int
+  lineOfBusinessId?: Guid
+  branchId?: Guid
+  accountId?: Guid
+  customerId?: Guid
+  rowStatus?: string
+  pageSize?: int
 ```
 
-A Billing-specific internal work contract carries Run ID, BillingStageRun ID, scope, period, source/version references, approved idempotency key, and correlation ID. It is not exposed as a second public Billing API that could create an out-of-band result.
+`SpoolBatchRequest` contains only an optional idempotency key. The server takes the persisted batch as the only financial source.
 
-### 5.2 Endpoint semantics
+### 5.2 Application ports
+
+- `IFinalizedSchedulePort`: returns the available selected-period schedule entry, principal, interest/EMI, and safe schedule reference. It does not require a new watermark/source-version contract.
+- `IAccountSourcePort`: returns account/customer/LOB/Branch/status projections and authorized Active Branches for a LOB.
+- `IAllocationEventPort`: returns approved event projections and source identities used by the allocation policy.
+- `IAllocationPolicy`: pure policy that applies events exactly once and returns allocation evidence, Current Due, and Arrears inputs.
+- `IChargePolicyAdapter`: returns separate ODI and Other Charges, policy reference, evidence references, and configured check outcomes. The default implementation uses the formulas in Section 4.6.
+- `IJournalPort`: accepts a stable Billing Stage logical identity and Billing-derived journal request, then returns journal references and configured generation/posting/reconciliation checks. Accounting/GL remains the owner of the ledger and journal idempotency.
+- `IDemandRepository`: persists and queries Runs, Revisions, stages, results, snapshots, rows, batches, failures, leases, and audit entries with scope predicates.
+- `IBillingSnapshotRepository`: reads/publishes immutable Billing snapshots and checks publication completeness.
+- `IDemandUnitOfWork`: coordinates Billing Snapshot, Demand Snapshot, status, and audit publication transactions.
+- `IDemandLeaseStore`: acquires and renews durable stage leases using rowversion/unique logical identity.
+- `IAuthorizationScopeResolver`: derives authorized LOB/Branch scope from the authenticated principal or Automizer identity.
+- `IDemandPdfExportService`: accepts an authorized export model containing persisted values and metadata, renders a PDF through an approved adapter, and returns bytes/content type/file name. It has no calculation responsibility.
+- `IPdfRendererAdapter`: implementation seam for the selected server-side PDF renderer. The implementation must reuse an established repository dependency if one exists or document the separately approved dependency/implementation choice in the task execution; it must not silently introduce an unrelated library.
+- `IClock`: provides UTC timestamps and business-period normalization boundary.
+
+There is intentionally no downstream delivery port or delivery-state contract.
+
+### 5.3 API endpoints
 
 Controller prefix: `/api/demand-processing` in AccountsService.
 
 | Method | Route | Purpose | Success |
 | --- | --- | --- | --- |
-| POST | `/api/demand-processing/runs` | Automizer/scheduler or approved manual start of the overall two-stage run | `202 DemandRunAcceptedResponse` |
-| GET | `/api/demand-processing/runs/{runId}` | Query Run, Billing stage, Demand stage, snapshot references, diagnostics | `200 DemandRunResponse` |
-| GET | `/api/demand-processing/runs` | Authorized history/status query, including Billing/Demand filters | `200 PaginatedResponse<DemandRunSummaryResponse>` |
-| POST | `/api/demand-processing/runs/{runId}/rerun` | Controlled rerun of the overall Run; preserves prior revision | `202 DemandRunAcceptedResponse` |
-| GET | `/api/demand-processing/runs/{runId}/rows` | Query persisted Demand Rows after Billing/Demand publication | `200 PaginatedResponse<DemandRowResponse>` |
-| GET | `/api/demand-processing/batches` | Query branch batches and Billing/Demand readiness | `200 PaginatedResponse<DemandBatchResponse>` |
-| GET | `/api/demand-processing/batches/{batchId}` | Query batch and safe diagnostics | `200 DemandBatchResponse` |
-| POST | `/api/demand-processing/batches/{batchId}/spool` | Spool/re-spool a completed persisted batch only | `202 SpoolAcceptedResponse` or `200` existing acknowledgement |
-| GET | `/api/demand-processing/batches/{batchId}/spool-attempts` | Query immutable spool attempts | `200 SpoolAttemptResponse[]` |
+| POST | `/api/demand-processing/runs` | Start or resolve the ordered Automizer/manual Run | `202 DemandRunAcceptedResponse` |
+| GET | `/api/demand-processing/runs/{runId}` | Read Run, stage status, snapshots, diagnostics, and totals | `200 DemandRunResponse` |
+| GET | `/api/demand-processing/runs` | Read authorized history/status | `200 PaginatedResponse<DemandRunSummaryResponse>` |
+| POST | `/api/demand-processing/runs/{runId}/rerun` | Create a linked authorized Run Revision | `202 DemandRunAcceptedResponse` |
+| GET | `/api/demand-processing/runs/{runId}/rows` | Read persisted Demand Rows | `200 PaginatedResponse<DemandRowResponse>` |
+| GET | `/api/demand-processing/batches` | Read authorized Branch Batches | `200 PaginatedResponse<DemandBatchResponse>` |
+| GET | `/api/demand-processing/batches/{batchId}` | Read one batch and safe diagnostics | `200 DemandBatchResponse` |
+| POST | `/api/demand-processing/batches/{batchId}/spool` | Change an eligible persisted batch from ReadyToSpool to Spooled | `200 SpoolStatusResponse` or existing status |
+| GET | `/api/demand-processing/exports/output` | Render authorized Demand Generation Output PDF | `200 application/pdf` |
+| GET | `/api/demand-processing/exports/batches` | Render authorized Demand Spooling/batch PDF | `200 application/pdf` |
 
-There is deliberately no public `POST /billing`, `POST /demand-generation`, `POST /spool-from-billing`, or equivalent endpoint that allows a caller to bypass the overall Run. Spooling remains available only for a batch linked to a published Demand Snapshot and a successful Billing Snapshot.
+There is no public Billing-only generation route, Demand-only generation route, or downstream delivery route.
 
-### 5.3 Response contracts
+### 5.4 Response contracts and export contract
 
-`DemandRunResponse` includes Run ID, revision, normalized scope, period, overall status, `billingStage` status and diagnostics, `demandStage` status and diagnostics, Billing Stage Run ID, Billing Snapshot version, Demand Snapshot ID/version when available, schedule finalization reference, allocation policy reference, journal reference/check state, counts/totals, source, actor, correlation ID, and UTC timestamps.
+`DemandRunResponse` includes Run ID, revision, normalized scope, period, overall status, Billing/Demand stage statuses, available Processing Cut-off/source reference, Billing Stage Run ID, Billing Snapshot version, Demand Snapshot ID/version, counts/totals, source, actor, correlation ID, diagnostics, and UTC lifecycle timestamps.
 
-`BillingStageResponse` includes Billing status, Processing Cut-off, schedule/version checks, eligible/successful/failed account counts, allocation event counts, allocation policy reference, Billing Period Result count, journal status/reference, Billing Snapshot publication status/version, retry/idempotency state, safe failure code, and last transition.
+`DemandRowResponse` includes Account, Customer, Branch, LOB, Month/Year, Frequency, Current Due, Arrears, ODI, Other Charges, Total Charges, Total Demand, Billing Period Result reference, Billing Snapshot version, row status, zero-demand indicator, and deterministic order fields.
 
-`BillingPeriodResultResponse` is exposed only through an authorized Run/result diagnostic contract where approved. It includes Account, schedule identity/version, scheduled principal, scheduled interest/EMI, Scheduled Installment, Current Due, Arrears, ODI, Other Charges, allocation evidence references/summary, journal reference, Billing Snapshot version, status, and source cut-off. It does not provide a client edit action.
+`DemandBatchResponse` includes Branch, LOB, Frequency, Month/Year, Run/revision, Billing Snapshot version, Demand Snapshot version, row count, component totals, Total Demand, minimal spool status, source/actor, last state-change UTC timestamp, and failure class/reason when present.
 
-`DemandRowResponse` includes Account, Customer, Branch, LOB, Month-Year, Frequency, Current Due, Arrears, ODI, Other Charges, Total Charges, Total Demand, Billing Period Result reference, Billing Snapshot version, row status, and stable ordering fields.
+The server-side PDF export contract is:
 
-`DemandBatchResponse` includes Branch, LOB, period, Run/revision, Billing Snapshot and Demand Snapshot versions, row count, component totals, Total Demand, batch status, last spool time, source/actor, acknowledgement/reference, and safe failure information.
+```text
+DemandPdfExportRequest
+  exportType: Output | Batch
+  authorizedScope: LOB/Branch scope resolved server-side
+  filters: normalized persisted-data filters
 
-### 5.4 Error codes and idempotency
+DemandPdfDocumentModel
+  title: English string
+  generatedAtUtc: DateTimeOffset
+  runMetadata: Run ID, revision, LOB, Branch, Frequency, Month/Year
+  billingMetadata: Billing Stage Run ID, Billing Snapshot version
+  rowsOrBatches: persisted values selected by authorized filters
+  totals: persisted/reconciled INR totals
+  status: persisted status and safe failure information
 
-Extend `ExceptionHandlingMiddleware` with a stable Demand/Billing error family and RFC 7807-compatible JSON containing `status`, `code`, `message`, `correlationId`, and safe field errors.
+IDemandPdfExportService.RenderAsync(request, cancellationToken)
+  -> PdfFileResult { Content, ContentType, FileName }
+```
+
+The service applies authorization and data scope before loading data. It includes persisted values, run/period/Branch metadata, totals, and a UTC generated-at timestamp. It does not recalculate demand or expose unauthorized data. Browser print remains deferred. PDF renderer selection is an implementation decision in the task list and must not introduce a transport dependency.
+
+### 5.5 Error codes and idempotency
+
+Extend `ExceptionHandlingMiddleware` with RFC 7807-compatible responses containing `status`, `code`, `message`, `correlationId`, and safe field errors.
 
 | Condition | HTTP | Code |
 | --- | --- | --- |
-| Missing/invalid JWT | 401 | Platform authentication response |
-| Authenticated identity out of policy/scope | 403 | Platform authorization response |
+| Missing/invalid JWT | 401 | Existing platform authentication response |
+| Authenticated identity outside policy/scope | 403 | Existing platform authorization response |
 | Missing/malformed input | 400 | `ERR-DEMAND-VALIDATION` |
-| Unsupported frequency/period | 400 | `ERR-DEMAND-FREQUENCY` / `ERR-DEMAND-PERIOD` |
-| Billing not complete or required dependency missing | 409 or configured deferred response | `ERR-DEMAND-BILLING-INCOMPLETE` |
+| Unsupported Frequency/period | 400 | `ERR-DEMAND-FREQUENCY` / `ERR-DEMAND-PERIOD` |
+| No authorized Active Branches for omitted Branch | 400 | `ERR-DEMAND-NO-ACTIVE-BRANCH` |
+| Deactivated Branch for new generation | 400 | `ERR-DEMAND-BRANCH-DEACTIVATED` |
+| Billing incomplete or required check missing | 409 | `ERR-DEMAND-BILLING-INCOMPLETE` |
 | Billing scope mismatch | 409 | `ERR-DEMAND-BILLING-SCOPE` |
-| Schedule absent/unfinalized/stale/wrong period | 422 | `ERR-BILLING-SCHEDULE-INCOMPLETE` |
-| Allocation event duplicate/conflict/policy failure | 409/422 | `ERR-BILLING-ALLOCATION-CONFLICT` |
-| Required journal check/posting incomplete | 409/422 | `ERR-BILLING-JOURNAL-INCOMPLETE` |
-| Billing Snapshot cannot publish | 409 | `ERR-BILLING-SNAPSHOT-BLOCKED` |
-| Billing retry with changed source/payload | 409 | `ERR-DEMAND-IDEMPOTENCY-CONFLICT` |
-| Active concurrent worker/lease | 409 or existing accepted reference | `ERR-DEMAND-CONCURRENT` |
-| Run/batch not found in caller scope | 404 | `ERR-DEMAND-NOT-FOUND` |
+| Schedule diagnostic | 422 | `ERR-BILLING-SCHEDULE-INCOMPLETE` |
+| Allocation conflict | 409/422 | `ERR-BILLING-ALLOCATION-CONFLICT` |
+| Required journal check missing/fails | 409/422 | `ERR-BILLING-JOURNAL-INCOMPLETE` |
+| Billing Snapshot blocked | 409 | `ERR-BILLING-SNAPSHOT-BLOCKED` |
+| Changed idempotent request | 409 | `ERR-DEMAND-IDEMPOTENCY-CONFLICT` |
+| Concurrent active Run/lease | 409 or existing accepted response | `ERR-DEMAND-CONCURRENT` |
+| Not found in caller scope | 404 | `ERR-DEMAND-NOT-FOUND` |
 | Invalid source/reference/amount | 422 | `ERR-DEMAND-DATA-QUALITY` |
 | Aggregate/dimension mismatch | 422 | `ERR-DEMAND-RECONCILIATION` |
-| Demand requested before Billing publication | 409 | `ERR-DEMAND-BILLING-INCOMPLETE` |
-| Spool requested before Demand Snapshot/batch readiness | 409 | `ERR-DEMAND-SPOOL-NOT-READY` |
-| Downstream spool failure | 502/409 | `ERR-DEMAND-SPOOL` |
-| Unexpected dependency failure | 503 | `ERR-DEMAND-DEPENDENCY` |
+| PDF export unavailable/invalid | 422/503 | `ERR-DEMAND-PDF-EXPORT` |
+| Batch not ReadyToSpool | 409 | `ERR-DEMAND-SPOOL-NOT-READY` |
 
-The service computes a canonical fingerprint from normalized LOB/branch scope, frequency, Month-Year, action, approved source references, and immutable request payload. Reusing an idempotency key with a different fingerprint is rejected without modifying the original Run. Retried equivalent requests resolve the existing stage/results and do not insert duplicate allocations, Billing Period Results, journal requests, Demand Rows, or batches.
+The fingerprint uses normalized LOB/Branch scope, Frequency, Month/Year, action, Billing reference when supplied, and immutable request fields. Equivalent requests resolve existing records. A changed idempotency payload is rejected without changing the original Run. No logical count increases for allocations, Billing Period Results, journals, snapshots, Demand Rows, or Batches on equivalent retries.
 
-## Backend component and interface design
+## Components and Interfaces
 
 ### 6.1 Proposed namespaces and files
 
@@ -502,11 +517,11 @@ Finnova.Models/
   Domain/Entities/DemandRow.cs
   Domain/Entities/DemandBatch.cs
   Domain/Entities/DemandFailure.cs
-  Domain/Entities/DemandSpoolAttempt.cs
   Domain/Entities/DemandAuditEntry.cs
-  Domain/DomainEnums/BillingStageStatus.cs
-  Domain/DomainEnums/DemandStageStatus.cs
   Domain/DomainEnums/DemandRunStatus.cs
+  Domain/DomainEnums/BillingStageStatus.cs
+  Domain/DomainEnums/DemandBatchStatus.cs
+  Domain/DomainEnums/DemandFailureClass.cs
   Contracts/DemandProcessing/...
 
 Finnova.Service/DemandProcessing/
@@ -516,7 +531,6 @@ Finnova.Service/DemandProcessing/
   Commands/GenerateDemand/
   Commands/SpoolDemandBatch/
   Queries/GetDemandRun/
-  Queries/GetBillingResults/
   Queries/GetDemandRows/
   Queries/GetDemandBatches/
   Calculation/
@@ -524,6 +538,7 @@ Finnova.Service/DemandProcessing/
   Allocation/
   Eligibility/
   Batching/
+  PdfExport/
   Ports/
   Validation/
   Workers/
@@ -534,226 +549,167 @@ Finnova.Repository/
   Interfaces/IFinalizedSchedulePort.cs
   Interfaces/IAccountSourcePort.cs
   Interfaces/IAllocationEventPort.cs
-  Interfaces/IChargeSourcePort.cs
+  Interfaces/IChargePolicyAdapter.cs
   Interfaces/IJournalPort.cs
+  Interfaces/IDemandPdfExportService.cs
+  Interfaces/IPdfRendererAdapter.cs
   Repositories/DemandProcessingRepository.cs
   Configuration/Demand*.Configuration.cs
 ```
 
-The exact casing follows existing conventions. Contracts may be placed in `Finnova.Models.Contracts.DemandProcessing`; entities remain in the domain layer.
+### 6.2 CQRS and worker slices
 
-### 6.2 Source and application ports
+- `StartDemandRunCommand`: authenticate/authorize through the host, normalize inputs, resolve scope, compute idempotency, create or resolve Run/Billing Stage Run, append minimum audit, enqueue Period Billing, and return `202`.
+- `RunPeriodBillingCommand`: claim the Billing lease, read the internally consistent source reference and available schedule/events, select Active accounts, apply allocation, obtain charges through `IChargePolicyAdapter`, invoke `IJournalPort`, evaluate configured checks, and publish Billing Snapshot atomically.
+- `GenerateDemandCommand`: require Published Billing Snapshot, map persisted components, create rows and branch batches, handle empty Branches as NoDemand, isolate Branch failures, reconcile totals, and publish Demand Snapshot.
+- `RerunDemandRunCommand`: authorize, preserve the prior revision, create linked immutable revision, and submit the same ordered workflow.
+- `SpoolDemandBatchCommand`: enforce authorization and the exact `ReadyToSpool` guard, set `Spooled` using optimistic concurrency, append minimum audit, and return persisted status. It performs no delivery.
+- Queries: Run/history, Billing diagnostics/results as authorized, Demand Rows, Batches, and PDF export source data. Every query applies authorization scope before filters and paging.
 
-- `IFinalizedSchedulePort`: resolve finalized schedule and selected period entry by account, period, cut-off, and supported frequency; return schedule ID/version, entry ID/version, scheduled principal, scheduled interest/EMI, and finalization metadata.
-- `IAccountSourcePort`: read account/customer/LOB/Branch/status projections at the approved cut-off and resolve authorized scope.
-- `IAllocationEventPort`: read approved receipts, waivers, reversals, adjustments, and other events with source identity/version and cut-off; it must support exactly-once event identity.
-- `IAllocationPolicy`: pure approved ordering and component allocation policy with policy/version reference.
-- `IChargeSourcePort`: return ODI and Other Charges separately with charge policy/version and source references.
-- `IJournalPort`: generate/post/check billing journals using the Billing Stage logical idempotency key; return journal references and check results. It must not create duplicate journals on retry.
-- `IBillingSnapshotRepository`: persist/read immutable Billing Period Results and publish one Billing Snapshot only after all gates.
-- `IDemandRepository`: persist/read Run, stage, snapshots, rows, batches, failures, audits, leases, and spool attempts.
-- `IDemandUnitOfWork`: transaction boundaries for stage publication, Demand Snapshot publication, and spool state.
-- `IDemandLeaseStore`: acquire/renew/release durable logical scope and stage lease using uniqueness/rowversion.
-- `IDemandSpoolTransport`: deliver a completed batch reference/snapshot with stable downstream key and record acknowledgement.
-- `IClock`: UTC clock and business-period normalization boundary.
-- `IAuthorizationScopeResolver`: derive permitted LOB/Branch IDs from the principal or Automizer identity.
+### 6.3 Pure helpers
 
-Ports return typed immutable projections/result objects and do not leak EF entities into handlers. A snapshot reader must reject mixed source versions.
-
-### 6.3 CQRS and worker slices
-
-- `StartDemandRunCommand`: authenticate/authorize through the host, validate and normalize, resolve scope, compute idempotency key, create or resolve Run/BillingStageRun, append audit, enqueue first stage, and return `202`.
-- `RunPeriodBillingCommand`: claim Billing Stage Run, validate exact scope/frequency/period, resolve schedule finalization, select eligible Active accounts at cut-off, apply allocation, create results/evidence, invoke journals, and publish Billing Snapshot transactionally.
-- `GenerateDemandCommand`: accept only a Published Billing Snapshot, create Demand Rows/Batches, reconcile, publish Demand Snapshot transactionally, and advance Run stage status.
-- `RerunDemandRunCommand`: authorize and preserve prior revision, create a new stage/revision with explicit lineage and idempotency, then follow the same two-stage workflow.
-- `SpoolDemandBatchCommand`: authorize branch, require a completed batch linked to a Published Demand Snapshot and successful Billing Snapshot, create an attempt/outbox record, deliver stable key, persist acknowledgement, and audit.
-- Queries: Run/status/history, Billing results/diagnostics, Demand rows, batches, and spool attempts. Every query applies authorization scope before filters/paging.
-
-### 6.4 Pure financial and domain helpers
-
-- `ScheduleInstallmentCalculator`: `ScheduledInstallment = scheduledPrincipal + scheduledInterestOrEmi` from the selected finalized schedule entry only; rejects missing/stale/wrong-period entries.
-- `AllocationEngine`: applies the approved ordering once per source event, returns allocation evidence and remaining unpaid amounts, and preserves source event identity.
-- `UnpaidBalanceCalculator`: calculates Current Due from the selected period's unpaid Scheduled Installment and Arrears from prior-period unpaid Billing results without moving current unpaid value into previous periods.
-- `ChargeCalculator`: retains ODI and Other Charges separately and calculates Total Charges once.
-- `DemandCalculation`: calculates Total Demand from persisted Billing-derived components.
-- `EligibilityPredicate`: exact Active status, valid customer/LOB/Branch references, in-scope dimensions, and cut-off evidence.
-- `BatchingAndReconciliation`: deterministic branch partition and row/component aggregate checks.
-- `IdempotencyFingerprint`: canonical scope/source/action payload fingerprint.
-- `PublicationGate`: verifies Billing status, all required result/allocations, journal checks, and snapshot publication before Demand Generation or spooling.
+- `PeriodNormalizer`: validates Month/Year and uses `Asia/Kolkata` for business period interpretation.
+- `ScheduleInstallmentCalculator`: returns selected schedule principal plus scheduled interest/EMI and rejects missing required schedule values without deriving a replacement EMI.
+- `AllocationEngine`: applies each approved event once and returns evidence, Current Due, and Arrears inputs.
+- `DefaultChargePolicyAdapter`: implements the ODI, Other Charges, Total Charges, rounding, cap, and negative-clamp rules in Section 4.6.
+- `DemandCalculation`: calculates Total Charges and Total Demand from persisted Billing components.
+- `EligibilityPredicate`: requires in-scope LOB/Branch, resolvable Customer/Branch/LOB references, and exactly Active status at the retained snapshot/cut-off reference.
+- `BatchingAndReconciliation`: deterministic Branch grouping, NoDemand classification, row dimensions, totals, and mismatch detection.
+- `IdempotencyFingerprint`: canonical normalized request identity.
+- `PublicationGate`: verifies exact scope, successful Billing, complete required results/check groups, journal checks, and Published Billing Snapshot before Demand Generation.
 
 ## State transitions and workflow rules
 
-### 7.1 Overall Demand Run state machine
+### 7.1 Overall Run state machine
 
 ```mermaid
 stateDiagram-v2
     [*] --> Accepted: authenticated, authorized, validated
-    Accepted --> BillingPending: queued or waiting for approved Billing retry
-    Accepted --> BillingRunning: worker claims Billing stage
-    BillingPending --> BillingRunning: approved retry
-    BillingRunning --> BillingIncomplete: schedule/allocation/charge/journal dependency incomplete
-    BillingRunning --> BillingFailed: permanent Billing or journal failure
+    Accepted --> BillingPending: work persisted
+    BillingPending --> BillingRunning: worker lease acquired
+    BillingRunning --> BillingIncomplete: required Billing dependency/check incomplete
+    BillingRunning --> BillingFailed: permanent Billing failure
     BillingRunning --> BillingSucceeded: Billing Snapshot published
     BillingSucceeded --> DemandGenerating: Demand worker claims snapshot
-    DemandGenerating --> Completed: Demand Snapshot published and batches reconciled
-    DemandGenerating --> PartiallyFailed: branch-isolated Demand batch failure
-    DemandGenerating --> Failed: unrecoverable Demand failure
-    BillingIncomplete --> BillingRunning: controlled retry, same logical key
-    BillingFailed --> BillingRunning: authorized rerun/new revision
-    Failed --> BillingRunning: authorized rerun/new revision
-    PartiallyFailed --> DemandGenerating: approved branch recovery
-    Completed --> Superseded: approved rerun creates new revision
+    DemandGenerating --> Completed: all branches reconciled and snapshot published
+    DemandGenerating --> PartiallyFailed: mixed successful and failed Branch Batches
+    DemandGenerating --> Failed: no recoverable Demand result
+    BillingIncomplete --> BillingRunning: approved retry/recovery
+    BillingFailed --> BillingRunning: authorized new revision
+    Failed --> BillingRunning: authorized new revision
+    PartiallyFailed --> DemandGenerating: approved Branch retry
+    Completed --> Superseded: authorized controlled rerun
 ```
 
-The top-level Run status must expose the current Billing and Demand stage statuses separately. A Run cannot be `Completed` unless Billing Snapshot and Demand Snapshot are both published. `BillingIncomplete`, `BillingFailed`, and `BillingSucceeded` are durable stage outcomes, not transient UI-only labels.
+`Completed` requires successful Billing and Demand Snapshot publication. A `BillingIncomplete` or `BillingFailed` Run has no processable Demand Snapshot or spoolable batch. A mixed branch result is `PartiallyFailed`; successful batches remain inspectable and eligible for the configured spool guard, while failed batches remain inspectable and retryable.
 
 ### 7.2 Billing Stage state machine
 
 ```mermaid
 stateDiagram-v2
     [*] --> Pending
-    Pending --> Queued: overall Run accepted
+    Pending --> Queued: Run accepted
     Queued --> Running: worker lease acquired
-    Running --> ScheduleChecking: scope/cut-off validated
-    ScheduleChecking --> AllocationApplying: finalized schedule resolved
-    ScheduleChecking --> Failed: absent, stale, unfinalized, or wrong-period schedule
-    AllocationApplying --> JournalChecking: all results and evidence complete
-    AllocationApplying --> Incomplete: missing event/dependency or allocation conflict
-    JournalChecking --> SnapshotPublishing: journals posted and checks succeed
-    JournalChecking --> Incomplete: journal not posted/check missing
-    SnapshotPublishing --> Succeeded: immutable Billing Snapshot committed
-    SnapshotPublishing --> Failed: transaction/publication failure
-    Incomplete --> RetryPending: controlled retry available
+    Running --> ScheduleChecking: scope and source reference validated
+    ScheduleChecking --> AllocationApplying: required schedule value available
+    ScheduleChecking --> Failed: required schedule value unavailable
+    AllocationApplying --> JournalChecking: results and evidence complete
+    AllocationApplying --> Incomplete: dependency or allocation issue
+    JournalChecking --> SnapshotPublishing: configured checks pass
+    JournalChecking --> Incomplete: journal/check incomplete
+    SnapshotPublishing --> Succeeded: Billing Snapshot committed
+    SnapshotPublishing --> Failed: publication failure
+    Incomplete --> RetryPending: approved recovery available
     RetryPending --> Running: same logical idempotent retry
 ```
 
-Billing failure for any required eligible result prevents a successful Billing Snapshot. The affected result is never silently dropped into a successful snapshot.
+The design does not require a new schedule watermark. The stage retains the available schedule/source reference and uses one internally consistent run snapshot/reference for the stage.
 
-### 7.3 Detailed Period Billing flow
+### 7.3 Period Billing and Demand Generation rules
 
-1. Resolve the exact normalized LOB, Branch scope, Frequency, Month-Year, Processing Cut-off, approved idempotency key, and source-version fingerprint.
-2. Resolve or create the Billing Stage Run. If a successful same-key result already exists, return its Billing Snapshot and do not repeat financial operations.
-3. Resolve the source-owned finalized Amortization Schedule for each eligible Active account. Retain schedule ID, schedule version, entry ID/version, and finalization reference.
-4. Select accounts whose authoritative status is exactly Active and whose LOB, Branch, Customer, and references are resolvable at the approved cut-off. Exclude Closed, Cancelled, Pre-Closed, unsupported, or invalid accounts with diagnostics.
-5. Read the selected schedule entry. Set `Scheduled Installment` to `scheduled principal + scheduled interest/EMI`. Do not recompute EMI, replace the schedule value, or mutate the schedule.
-6. Read eligible receipts, waivers, reversals, adjustments, and other account-level events. Apply each event exactly once according to the approved allocation policy and retain an evidence row/event reference for each applied event.
-7. Calculate unpaid `Current Due` from the selected period's Scheduled Installment after allocation. Calculate previous-period `Arrears` from prior Billing Period Results. Keep the current selected-period unpaid balance out of prior-period Arrears.
-8. Read and retain separate ODI and Other Charges. Exclude them from Scheduled Installment, Current Due, and Arrears.
-9. Create Billing Period Results with schedule references, allocation evidence, policy versions, charges, cut-off, and source versions.
-10. Generate/post billing journals using the stable logical Billing idempotency key. Verify required journal checks and retain journal references.
-11. Reconcile result counts, allocation conservation, schedule equality, charge components, and journal references.
-12. Publish exactly one immutable Billing Snapshot in the same application transaction as the successful stage state and publication audit. Enqueue Demand Generation only after commit.
+Period Billing:
 
-### 7.4 Demand Generation and spooling flow
+1. Validate normalized LOB, resolved Branch scope, configured Frequency, Month/Year, and idempotency before financial reads.
+2. Resolve the existing Billing Stage Run for equivalent retries.
+3. Select all Active accounts in scope at the retained internally consistent snapshot/reference. Exclude Closed, Cancelled, Pre-Closed, unsupported, unresolved, or conflicting accounts with diagnostics.
+4. Read the available selected-period schedule entry. Set Scheduled Installment to scheduled principal plus scheduled interest/EMI. Do not recalculate EMI or mutate the schedule.
+5. Apply receipts, part-payments, waivers, reversals, adjustments, and suspense under the approved allocation policy exactly once, retaining evidence.
+6. Calculate Current Due and Arrears as separate values. Obtain ODI and Other Charges from the default formula adapter or approved authoritative adapter.
+7. Invoke Accounting/GL through `IJournalPort`. Store journal references and configured check results only.
+8. Publish Billing Snapshot only when Billing completion/snapshot settings and required journal checks pass.
 
-1. Claim Demand Generation only when the parent Billing Stage Run is `Succeeded` and Billing Snapshot is `Published`.
-2. Verify the snapshot's scope, frequency, period, cut-off, schedule finalization reference, and journal check summary match the Demand Run.
-3. Copy persisted Billing-derived Current Due, Arrears, ODI, and Other Charges into Demand Rows. Calculate Total Charges and Total Demand with approved precision.
-4. Sort by Branch then Account identifier, create one logical batch per represented Branch, persist aggregate totals, and reconcile each row/batch/revision.
-5. Publish Demand Snapshot with the Billing Snapshot reference only after complete row/batch reconciliation. Set batches `ReadyToSpool` only after this transaction commits.
-6. Spooling queries only `ReadyToSpool` batches linked to the Demand Snapshot and successful Billing Snapshot. It sends a stable batch/revision/branch key, records attempts and acknowledgement, and never changes Billing Period Results or Demand Rows.
+Demand Generation:
 
-### 7.5 Worker and queue lifecycle
+1. Claim only a Run with a Published Billing Snapshot.
+2. Copy Current Due, Arrears, ODI, and Other Charges from Billing Period Results. Calculate Total Charges and Total Demand with approved INR precision.
+3. Retain every Active account row, including zero-demand rows.
+4. Create one Demand Batch per represented Branch. Create a `NoDemand` non-failure batch for each in-scope Branch with no eligible account.
+5. Reconcile row dimensions and totals. Isolate failed Branches; preserve successful Branches; mark the Run `PartiallyFailed` for mixed outcomes.
+6. Publish Demand Snapshot only after successful Branch outcomes and reconciliation gates. `ReadyToSpool` applies only to a completed reconciled non-empty batch.
 
-```mermaid
-sequenceDiagram
-    participant A as Automizer/UI
-    participant API as Demand API
-    participant DB as Demand DB
-    participant W as AccountsService worker
-    participant S as Schedule/Event sources
-    participant J as Journal port
-    participant G as Demand generation
+Minimal spooling:
 
-    A->>API: Start overall Demand Run + scope + idempotency key
-    API->>DB: Insert/resolve Run and BillingStageRun
-    API-->>A: 202 Run ID + BillingPending
-    API->>DB: Enqueue PeriodBilling work item
-    W->>DB: Claim Billing lease
-    W->>S: Read finalized schedule and approved events
-    W->>W: Apply allocation and create BillingPeriodResults/evidence
-    W->>J: Generate/post/check journals with stable key
-    W->>DB: Publish BillingSnapshot + BillingSucceeded atomically
-    W->>DB: Enqueue DemandGeneration only after commit
-    G->>DB: Claim Demand stage and read Published BillingSnapshot
-    G->>DB: Persist rows/batches and publish DemandSnapshot atomically
-    API-->>A: Poll returns Billing + Demand statuses and references
-```
+1. Verify caller scope, batch identity, Run Revision, Published Demand Snapshot, and `ReadyToSpool` status.
+2. In one state transition, set the batch to `Spooled`, retain actor and UTC state-change time, and append minimum audit.
+3. Repeated requests return the existing `Spooled` status. Non-ready and NoDemand batches remain unchanged and return `ERR-DEMAND-SPOOL-NOT-READY`.
+4. No downstream delivery operation or delivery metadata is created.
 
-A lost lease, worker crash, queue redelivery, or timeout returns to durable recovery. No redelivery may create a second event allocation, Billing Period Result, journal, snapshot, Demand Row, or batch.
+### 7.4 Concurrency, reruns, and history
 
-## Persistence, transactions, publication, and observability
+A durable unique logical scope identity and rowversion/lease designate one authoritative active Run Revision. Equivalent requests return the existing Run. A changed idempotency payload returns conflict and preserves the original.
 
-### 8.1 Transaction/publication gates
+An unchanged completed result is returned without a new calculation. An authorized controlled rerun creates a linked revision and preserves the prior Run, Rows, Batches, snapshots, statuses, failures, and audit records. Deactivated Branches are excluded from later new generation but their retained Runs, Rows, and Batches remain readable to authorized callers.
 
-**Billing transaction:** source reads may be outside the write transaction, but the selected source versions, result/evidence inserts, journal request/result references, reconciliation checks, Billing Snapshot publication, stage status, and publication audit must be committed as one logical publication boundary. If the journal contract is external, its stable idempotency key and returned reference are persisted before the snapshot gate succeeds.
-
-**Demand transaction:** Demand Generation reads one Published Billing Snapshot and writes Demand Rows, Demand Batches, Demand Snapshot, stage status, and audit atomically. Readers expose only rows/batches linked to a published snapshot and allowed status.
-
-**Spooling transaction:** claim immutable batch state, insert one attempt/outbox record, send with stable idempotency key, and persist acknowledgement/state with optimistic concurrency. A transport retry never mutates the financial output.
-
-### 8.2 Failure handling
-
-- **BillingIncomplete:** missing/in-progress/partial Billing dependency, schedule, event, charge, or journal check. Retain stage diagnostics; create no successful Billing Snapshot and no processable Demand output.
-- **BillingScheduleIncomplete:** schedule absent, unfinalized, stale at cut-off, or missing selected period. No successful Billing Period Result for the affected account.
-- **BillingAllocationConflict:** duplicate event, policy mismatch, allocation failure, or conservation mismatch. Preserve evidence and block publication.
-- **BillingJournalIncomplete:** journal generation/posting/check failure. Billing Snapshot remains unpublished.
-- **BillingSnapshotBlocked:** all source results may exist, but a required publication gate is missing or inconsistent. Demand Generation remains blocked.
-- **Dependency/Transient:** retain source, scope, correlation, attempt, and safe diagnostics; permit only configured retry/recovery.
-- **DataQuality:** unresolved account/customer/LOB/Branch/status or invalid amount; exclude affected account and retain evidence.
-- **Reconciliation:** schedule equality, allocation conservation, component totals, row dimensions, or snapshot mismatch; block the affected publication/spool state.
-- **Authorization:** reject before data disclosure or processable mutation. Security audit may record the rejected request.
-- **Idempotency:** changed payload/key returns conflict and preserves original records; equivalent retry resolves existing records.
-- **Spooling:** preserve immutable output, append an attempt, and expose only approved retry/re-spool.
-
-Diagnostics contain Run ID, stage, Billing Stage Run ID, Billing Snapshot/Demand Snapshot versions, account/batch identifiers where necessary, scope, period, correlation ID, status/code, and UTC time. They exclude bearer tokens, connection strings, secrets, and unnecessary raw customer fields.
-
-### 8.3 Audit and evidence
-
-Append-only `DemandAuditEntry` records must cover accepted/rejected starts, stage transitions, schedule checks, allocation outcomes, journal requests/checks, Billing Snapshot publication, Demand Snapshot publication, batch transitions, spool attempts, retries, reruns, and failures. Each record includes request/Run/stage/batch identifiers, logical scope, period, actor/source, correlation ID, prior/new status, reason/failure class, relevant schedule/snapshot/journal reference, and UTC timestamp.
-
-Allocation evidence and schedule references are retained with the Billing Period Result. Journal references are retained with both Billing Stage Run and Billing Snapshot. Demand Rows and Batches retain their Billing Period Result/Billing Snapshot references so an output row can be traced back without recreating financial logic.
-
-### 8.4 Observability
-
-Structured logs and metrics include correlation ID, Run ID, revision, Billing Stage Run ID, Billing Snapshot version, Demand Snapshot version, batch ID, period, LOB/Branch scope, source, worker attempt, duration, status, failure class, row/result/event counts, journal outcome, and spool outcome. Never log JWTs, credentials, raw tokens, or unnecessary customer data.
-
-Recommended metrics include:
-
-- accepted/rejected Runs and active lease conflicts;
-- Billing queued/running/incomplete/failed/succeeded counts;
-- schedule-missing/stale/finalization failures;
-- allocation event counts, duplicate/conflict counts, and conservation failures;
-- journal generation/posting/check failures;
-- Billing Snapshot publication latency and blocked gates;
-- Demand Generation duration, rows, branches, reconciliation failures;
-- BillingIncomplete and idempotency conflicts;
-- spool attempts, acknowledgements, retries, downstream latency, and failures;
-- API/UI latency and timeout counts using existing telemetry.
+Retention duration, archival behavior, purge authority, and detailed event taxonomy are configuration/deferred. No design value is hard-coded for retention.
 
 ## Error Handling
 
-Errors are stage-specific, durable, machine-readable, and safe to expose. The controller and `ExceptionHandlingMiddleware` map typed application outcomes to the stable codes in Section 5.4. A failure in Period Billing prevents Billing Snapshot publication and therefore prevents Demand Generation and Spooling. A Demand Generation failure prevents Demand Snapshot publication but preserves the successful Billing Snapshot and its evidence for controlled recovery. A spool failure preserves both snapshots and all financial output and appends only a new spool attempt.
+### 8.1 Publication transactions
 
-- **Authentication/authorization:** return 401 or 403 before source reads or processable mutations. A security audit entry may record the rejected request without creating a Run.
-- **Validation:** return field-specific validation errors and create no processable Run or stage result.
-- **Billing incomplete:** retain stage status, source/version references, failed check, retry/defer reason, and correlation ID. Return `ERR-DEMAND-BILLING-INCOMPLETE`; expose no Demand Snapshot or spoolable batch.
-- **Schedule failure:** classify absent, unfinalized, stale, or wrong-period schedule as `ERR-BILLING-SCHEDULE-INCOMPLETE`; create no successful Billing Period Result for that account.
-- **Allocation failure:** classify duplicate/conflicting source event, policy mismatch, or conservation failure as `ERR-BILLING-ALLOCATION-CONFLICT`; preserve existing evidence and block the Billing Snapshot.
-- **Journal failure:** classify missing generation, posting, or required check as `ERR-BILLING-JOURNAL-INCOMPLETE`; do not mark Billing succeeded or publish the Billing Snapshot.
-- **Snapshot/publication failure:** keep the stage out of success, roll back incomplete publication records where the transaction permits, retain an immutable failure/audit record, and allow only controlled retry or rerun.
-- **Dependency/transient failure:** retain attempt and safe source diagnostics, use the configured retry/lease recovery path, and never apply financial events again on retry.
-- **Data quality/reconciliation:** exclude only the affected invalid account when the approved policy permits account-level exclusion; otherwise block the stage. In either case retain the account/reference/component and discrepancy code.
-- **Idempotency/concurrency:** resolve equivalent retries to the existing Run/stage/result or return a conflict for changed payloads. Never create duplicate allocation evidence, Billing Period Results, journal requests, snapshots, rows, batches, or logical spool deliveries.
-- **Frontend:** branch on machine-readable stage/error codes, preserve submitted filters and last-good data, show English messages, and expose only approved refresh/retry/recovery actions. The UI never hides a BillingIncomplete state by presenting Demand as ready.
+**Billing publication:** source reads may occur before the write transaction. The selected available source reference, Billing Period Results, allocation evidence, charge policy references, Journal Port references/checks, Billing Snapshot, stage status, and minimum audit transition must commit as one logical publication boundary. A failed required check leaves the stage incomplete/failed and the Billing Snapshot unpublished.
 
-All diagnostics exclude bearer tokens, connection strings, secrets, and unnecessary raw customer data. They include only the identifiers and values needed for reconciliation: Run/stage/snapshot/batch IDs, scope, period, source/version references, correlation ID, failure class/code, and UTC timestamp.
+**Demand publication:** Demand Generation reads one Published Billing Snapshot and writes Demand Rows, Demand Batches, Demand Snapshot, stage status, and minimum audit transitions atomically. Output queries expose only records linked to the published snapshot and permitted status.
+
+**Spool state:** A batch status transition uses optimistic concurrency and one persistence transaction. It stores only the minimal status, actor, UTC time, and minimum audit. No external send occurs.
+
+### 8.2 Failure classes
+
+- **BillingIncomplete:** Billing stage or configured completion/snapshot check is missing, partial, in progress, or unavailable. No Demand Snapshot or spoolable batch.
+- **BillingScheduleIncomplete:** required schedule value/reference is absent or the selected period cannot be resolved. No successful result for the affected account.
+- **BillingAllocationConflict:** duplicate event identity, policy conflict, or conservation failure. Preserve evidence and block required publication.
+- **BillingJournalIncomplete:** Accounting/GL generation, posting, idempotency, or configured check result is missing or unsuccessful. Accounting/GL remains the owner; Demand remains blocked.
+- **BillingSnapshotBlocked:** required publication gate is inconsistent or incomplete.
+- **Dependency:** required source or configured adapter is unavailable.
+- **Transient:** configured timeout or temporary dependency failure, eligible only for configured recovery.
+- **Permanent:** invalid input or amount that cannot be processed.
+- **DataQuality:** unresolved or conflicting Account, Customer, Branch, LOB, or status reference.
+- **Reconciliation:** row, batch, schedule, component, or snapshot totals/dimensions do not reconcile.
+- **Authorization:** request rejected before financial data disclosure or processable mutation.
+- **Idempotency:** changed payload/key conflicts with an existing Run.
+- **Spooling:** batch is not ReadyToSpool or the caller is outside the authorized scope.
+- **PdfExport:** authorized persisted values cannot be rendered by the configured PDF adapter.
+
+All diagnostics contain only the identifiers and references required for reconciliation, such as Run/stage/snapshot/batch IDs, scope, period, correlation ID, code, and UTC timestamp. They exclude tokens, credentials, connection strings, secrets, and unnecessary customer fields.
+
+## Security and data scope
+
+- All API endpoints use the existing JWT Bearer authentication pipeline.
+- Authentication occurs before authorization, scope resolution, source reads, Run creation, spool-state changes, or PDF data loading.
+- Roles and policy names for Run/rerun, manual initiation, output/history, PDF export, and spooling are read from appSettings. Configured admin-role overrides apply within the configured admin data scope. No operational role name is hard-coded outside configuration defaults.
+- Backend handlers and query repositories enforce LOB/Branch scope. UI filters never provide security.
+- Omitted Branch is expanded only to authorized Active Branches. Deactivated Branches can be queried only as retained history within caller scope.
+- Automizer uses an authenticated identity. Client-provided source values cannot impersonate Automizer.
+- PDF export authorization is checked before querying rows/batches. The export contains only persisted values in the caller's scope.
+- The client cannot mutate schedules, Billing results, allocation evidence, journal state, snapshots, rows, batches, failures, or audit entries.
+- Database uniqueness, rowversion, leases, and transaction gates prevent duplicate logical financial results and partial publication.
+- Audit records are immutable and minimum-sized. They never contain secrets or unnecessary customer fields.
+- All labels, statuses, errors, seed/reference values, fixtures, PDF text, and documentation examples are English-only. Amounts are INR. UI remains left-to-right and adds no RTL handling.
 
 ## Frontend architecture
 
-The frontend target is `E:\Finnova\Finnova-UI\Finnova-UI`. It mirrors existing service/page conventions and communicates only through the shared axios instance.
+The frontend target is `E:\Finnova\Finnova-UI\Finnova-UI`. It communicates only through the shared axios instance and mirrors existing service/page conventions.
 
-### 9.1 Model and service modules
+### 9.1 Models and service modules
 
 Proposed files:
 
@@ -775,7 +731,7 @@ src/components/demandProcessing/DemandFailurePanel.tsx
 src/components/demandProcessing/SpoolConfirmationDialog.tsx
 ```
 
-Models include `DemandRun`, `BillingStageRun`, `BillingPeriodResultSummary`, `BillingSnapshot`, `DemandSnapshot`, `DemandRow`, `DemandBatch`, `DemandFailure`, `SpoolAttempt`, request/query types, and string-union statuses. They use one English display value per business value, no bilingual fields, and no client-owned EMI calculation fields beyond persisted schedule references/values needed for display and reconciliation.
+Models include Run, Revision, Billing Stage, Billing Snapshot, Demand Snapshot, Demand Row, Demand Batch, failure, PDF export response metadata, requests, queries, and string-union statuses. They use one English display value per business value, no bilingual fields, no translation scaffolding, and no client-owned EMI calculation.
 
 `IDemandProcessingService` exposes methods equivalent to:
 
@@ -784,249 +740,181 @@ startRun(request): Promise<DemandRunAcceptedResponse>
 getRun(runId): Promise<DemandRun>
 getHistory(query): Promise<PaginatedResponse<DemandRunSummary>>
 rerun(runId, request): Promise<DemandRunAcceptedResponse>
-getBillingResults(query): Promise<PaginatedResponse<BillingPeriodResultSummary>>
 getRows(query): Promise<PaginatedResponse<DemandRow>>
 getBatches(query): Promise<PaginatedResponse<DemandBatch>>
-spoolBatch(batchId, request): Promise<SpoolAcceptedResponse>
-getSpoolAttempts(batchId): Promise<SpoolAttempt[]>
+spoolBatch(batchId, request): Promise<SpoolStatusResponse>
+exportOutputPdf(query): Promise<Blob>
+exportBatchPdf(query): Promise<Blob>
 ```
 
-The real implementation uses only shared `api`, with a gateway-compatible base path. The mock returns deterministic English-only stage transitions, BillingIncomplete/failed states, persisted Billing-derived amounts, pagination, and idempotent repeated actions. No UI service method starts Demand Generation independently or accepts free-form billing values.
+The real service uses only shared `api` and the gateway-compatible base path. The mock provides deterministic English-only stage, NoDemand, PartiallyFailed, deactivated-history, PDF, and minimal spool-state fixtures. No service method starts Demand Generation independently or accepts financial values from the browser.
 
 ### 9.2 Demand Run screen
 
 Route proposal: `/demand-processing/run`.
 
-- Controls: LOB, Branch, Frequency, Month, Year, and approved manual confirmation.
-- On submit, send only normalized scope and approved idempotency data. Disable duplicate submission, preserve input, and show Run ID.
-- Display **Billing status first** and Demand status second, including stage timestamps, schedule finalization reference, allocation policy reference, journal check state, and snapshot version when available.
-- Poll/refresh while the Run is Accepted, BillingPending, BillingRunning, BillingIncomplete with retry permitted, BillingSucceeded/DemandGenerating, or Deferred.
-- Distinguish loading, BillingIncomplete, BillingFailed, Demand failed, partial failure, completed, conflict, timeout, unauthorized, and empty states.
-- BillingIncomplete and BillingFailed expose only approved refresh/retry/recovery actions. They do not expose Demand Generate or Spool buttons.
-- Manual start/rerun controls appear only after server-side permission checks and required confirmation. The UI does not infer permission solely from a client role string.
-
-The screen has no EMI calculator, no Scheduled Installment input, no allocation editor, no receipt/waiver/reversal/adjustment editor, and no free-form Billing override. Billing values are read-only persisted results.
+- Show LOB, Branch, Frequency, Month, and Year controls. Branch options for a new Run contain only authorized Active Branches and allow empty Branch to mean all authorized Active Branches.
+- Show Billing status before Demand status, including Run ID, period, scope, Billing reference, available source reference, and journal check state.
+- Poll or refresh while the Run is accepted, Billing pending/running/incomplete, Billing succeeded/Demand generating, deferred, or partially failed according to configured polling settings.
+- Show distinct BillingIncomplete, BillingFailed, Demand failure, PartiallyFailed, conflict, timeout, unauthorized, and completed states.
+- Manual Run/rerun controls appear only after the server permits the action and require the approved confirmation flow.
+- Preserve entered values on validation/service failure. Do not show an EMI calculator, Billing editor, allocation editor, or Demand Generate bypass button.
 
 ### 9.3 Demand Generation Output screen
 
 Route proposal: `/demand-processing/output`.
 
-- Query only Runs with a Published Billing Snapshot and eligible Demand Snapshot/status.
-- Filters: Run, Month-Year, LOB, Branch, Account, Customer, and row status.
-- Use server-side MUI DataGrid paging and stable Account identifier ordering.
-- Columns: Account, Customer, Branch, LOB, Month-Year, Frequency, Current Due, Arrears, ODI, Other Charges, Total Charges, Total Demand, Billing Period Result reference, Billing Snapshot version, and row status.
-- Display persisted values with two INR decimals. Make `Current Due + Arrears + Total Charges = Total Demand` verifiable, but do not calculate a replacement total in the browser.
-- Preserve the last successful page on refresh failure/timeout. Distinguish empty, processing, BillingIncomplete, failed, and unauthorized states.
-- Export/print is absent unless separately authorized and supported by an API contract.
+- Query persisted Rows using Run, Month/Year, LOB, Branch, Account, Customer, and row-status filters.
+- Display Account, Customer, Branch, LOB, Month/Year, Frequency, Current Due, Arrears, ODI, Other Charges, Total Charges, Total Demand, row status, Run ID, Billing Snapshot version, and zero-demand indicator.
+- Use server-side paging with configured bounds and deterministic Account ordering.
+- Display retained rows for a deactivated Branch when an authorized user filters history. Mark the Branch as deactivated without excluding the retained row.
+- Distinguish empty, loading, still-processing, BillingIncomplete, failed, unauthorized, and timeout states. Preserve last-good data on refresh failure.
+- Provide authorized PDF export. The browser requests a server-rendered PDF from persisted data; it does not recompute totals and does not expose browser print as a feature.
 
-### 9.4 Demand Spooling screen
+### 9.4 Demand Spooling/batch screen
 
 Route proposal: `/demand-processing/spooling`.
 
-- Query only branch batches linked to a published Demand Snapshot and successful Billing Snapshot.
-- Columns: Branch, LOB, Frequency, Month-Year, Run/revision, Billing Snapshot version, Demand Snapshot version, row count, Current Due, Arrears, ODI, Other Charges, Total Charges, Total Demand, status, last spool time, source/actor, acknowledgement/reference, and failure class.
-- Disable spool for BillingIncomplete, BillingFailed, Billing Snapshot pending, Demand Generating, unreconciled, Pending, Failed, NoDemand, out-of-scope, or otherwise ineligible batches. Explain the machine-readable reason in English.
-- Confirm an eligible spool, send only the persisted batch identity and approved idempotency key, display acknowledgement/correlation, and refresh status without recalculating rows.
-- Re-spool uses the same immutable batch and appends attempt history.
+- Query only Branch Batches within the caller's authorized LOB/Branch scope, including retained deactivated-Branch history when authorized.
+- Display Branch, deactivated label when applicable, LOB, Frequency, Month/Year, Run/revision, Billing Snapshot version, Demand Snapshot version, row count, component totals, Total Demand, minimal spool status, last state-change UTC time, and safe failure class.
+- Enable the spool action only for `ReadyToSpool`. Disable it for `NotReady`, `NoDemand`, `Failed`, `BillingIncomplete`, `DemandGenerating`, or unreconciled batches and display the machine-readable reason.
+- Confirm the action, send only batch identity and optional idempotency key, display the returned persisted status, and never recalculate rows.
+- Provide authorized server-rendered batch PDF export with persisted batch values, metadata, totals, and UTC generated-at timestamp.
+- Do not display downstream delivery details because that capability is deferred.
 
-### 9.5 Routing, navigation, and localization
+### 9.5 Routing and localization
 
-Add protected routes in `App.tsx` within the existing authenticated `Layout` group and add the Demand Processing navigation item according to current role/navigation conventions. The gateway base path must match the configured alias. Use MUI's standard left-to-right layout. Add no `dir="rtl"`, RTL direction handling, bilingual field, translation framework, Arabic content, or non-English fixture.
+Add protected routes in `App.tsx` inside the authenticated `Layout` group and add navigation according to existing role/navigation conventions. The gateway path must match the configured alias. Use standard MUI left-to-right layout. Add no `dir="rtl"`, RTL handling, bilingual field, translation framework, Arabic content, or non-English fixture.
 
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system-essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+*A property is a characteristic or behavior that should hold true across all valid executions of a system. Properties bridge human-readable requirements and executable correctness checks. Each applicable property is implemented as one FsCheck.Xunit property test with at least 100 iterations; external I/O and UI rendering use example or integration tests instead.*
 
-FsCheck is appropriate for the pure schedule, allocation, unpaid-balance, charge, eligibility, batching, idempotency, and publication-gate model. It is not used for JWT middleware, SQL Server behavior, gateway routing, UI layout, or external journal/delivery behavior.
+### Property 1: Billing arithmetic preserves schedule and charge rules
 
-### Property 1: Scheduled installment is schedule-derived
+For all valid selected schedule entries, allocation outcomes, charge-policy inputs, and configured rounding values, the Billing result SHALL set Scheduled Installment to scheduled principal plus scheduled interest/EMI, SHALL retain separate ODI and Other Charges, SHALL apply the default ODI and Other Charges formulas when the default adapter is selected, SHALL clamp negative Other Charges only after retaining evidence, and SHALL round all monetary components to INR 2 decimals using `MidpointRounding.AwayFromZero`.
 
-For all eligible accounts with a finalized schedule entry for the selected period, the Billing Period Result SHALL set `ScheduledInstallment` equal to the finalized entry's `ScheduledPrincipal + ScheduledInterestOrEmi`, retain the exact schedule identity/version, and produce the same value on repeat processing; no account inputs or recomputed EMI may change the result.
+**Validates: Requirements 3.6, 3.19, 3.20, 3.24, 3.25, 3.26, 3.27, 3.28, 3.29, 3.30, 3.31, 3.32, 3.33, 3.34, 3.35, 3.36, 3.37, 3.38, 3.39, 3.40, 5.10, 16.1, 16.5, 17.1, 17.2, 17.3, 17.4, 17.5**
 
-**Validates: Requirements 3.3, 3.4, 3.5, 3.10, 16.1, 16.2**
+### Property 2: Allocation is exactly once and conserves approved values
 
-### Property 2: Allocation is exactly once and conserves the approved balance
+For all valid account obligations and approved allocation-event sequences, each logical source event SHALL produce at most one applied allocation evidence record, equivalent retry SHALL not change applied totals, Current Due SHALL equal the selected-period unpaid Scheduled Installment after allocation, and prior-period unpaid values SHALL remain separate Arrears.
 
-For all valid account schedule obligations and approved receipt, waiver, reversal, adjustment, and other event sequences under one allocation policy, each source event SHALL produce at most one applied allocation evidence record, retrying the same event SHALL not change the applied total, and the resulting unpaid Scheduled Installment plus approved allocated amounts SHALL equal the policy-defined obligation/conservation total; Current Due SHALL be the selected-period unpaid amount and previous-period unpaid values SHALL remain Arrears.
+**Validates: Requirements 3.15, 3.16, 3.17, 3.18, 3.19, 3.20, 3.21, 3.36, 3.37, 3.45, 3.46, 3.47, 3.48, 3.49, 3.50, 16.6, 16.7, 16.8, 16.16, 16.19**
 
-**Validates: Requirements 3.7, 3.8, 3.10, 3.12, 3.13, 16.3, 16.7**
+### Property 3: Demand totals are deterministic and source-derived
 
-### Property 3: Billing component and Demand totals are deterministic
+For all valid Billing Period Results and configured adapter outputs, repeated Demand mapping with identical normalized inputs and Billing Snapshot version SHALL preserve Current Due, Arrears, ODI, Other Charges, and source references, SHALL calculate `Total Charges = ODI + Other Charges`, SHALL calculate `Total Demand = Current Due + Arrears + Total Charges`, and SHALL order Account identifiers identically.
 
-For all valid finalized schedule results, allocation outcomes, separate ODI/Other Charges, scope, policy versions, and Billing Snapshot versions, repeated processing SHALL preserve schedule references and component values, produce `TotalCharges = ODI + OtherCharges`, produce `TotalDemand = CurrentDue + Arrears + TotalCharges` at approved INR precision, and preserve deterministic Account ordering.
-
-**Validates: Requirements 5.2, 5.3, 5.4, 5.6, 5.9, 16.1, 16.4**
+**Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 5.10, 5.11, 5.12, 5.13, 5.14, 5.18, 5.19, 5.20, 5.21, 16.1, 16.2, 16.3, 16.4, 16.9, 16.10**
 
 ### Property 4: Eligibility and scope invariants hold
 
-For all generated account projections, a successful Billing Period Result and Demand Row SHALL exist if and only if the account is within the normalized LOB/Branch scope, has resolvable Customer/Branch/LOB references, has authoritative status exactly Active at the pinned cut-off, and has a valid finalized schedule/result; every excluded status, unresolved reference, invalid schedule, or out-of-scope account SHALL be excluded and diagnosed.
+For all account projections, a successful Billing Period Result and Demand Row SHALL be eligible only when the account belongs to the normalized LOB and Active Branch scope, has resolvable Customer/Branch/LOB references, has authoritative status exactly Active at the retained internally consistent snapshot/reference, and has a valid schedule/result; every excluded status, unresolved reference, invalid schedule, deactivated new-generation Branch, or out-of-scope account SHALL be excluded and diagnosed.
 
-**Validates: Requirements 2.1, 3.2, 3.6, 4.1, 4.5, 4.6, 4.7, 16.5**
+**Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10, 3.11, 3.12, 3.13, 3.14, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 4.10, 4.11, 4.12, 4.13, 4.14, 4.15, 4.16, 4.17, 4.18, 4.19, 4.20, 4.21, 8.23, 8.24, 8.25, 8.26, 8.27, 16.11, 16.12, 16.13**
 
-### Property 5: Equivalent Billing retries are idempotent
+### Property 5: Equivalent processing is idempotent
 
-For all valid logical Billing scopes, source versions, and approved idempotency keys, repeating the same Billing Stage Run or redelivering the same worker item SHALL not increase the logical counts of allocation evidence, Billing Period Results, billing journals, Billing Snapshots, Demand Rows, or Demand Batches, and a changed immutable payload SHALL return IdempotencyConflict without changing the original result.
+For all valid logical scopes, Billing references, normalized request payloads, and idempotency keys, repeating the same Run, Billing Stage, Demand Generation, or minimal spool-state request SHALL not increase the logical count of allocations, Billing Period Results, journals, snapshots, Demand Rows, Demand Batches, or spool state transitions; a changed immutable payload SHALL return an idempotency conflict and preserve the original records.
 
-**Validates: Requirements 3.12, 7.3, 7.7, 8.3, 9.1, 9.2, 16.7, 16.9**
+**Validates: Requirements 3.45, 3.46, 3.47, 3.48, 7.3, 7.4, 7.5, 7.6, 7.7, 7.15, 7.16, 7.17, 7.18, 7.19, 8.7, 8.8, 8.9, 8.10, 8.11, 8.12, 8.13, 8.14, 8.15, 8.16, 8.17, 8.18, 8.19, 9.1, 9.2, 9.3, 9.4, 9.5, 13.7, 13.8, 13.9, 13.10, 13.11, 13.12, 13.13, 13.14, 16.16, 16.17, 16.18, 16.19, 16.20, 16.25, 16.26, 16.27**
 
 ### Property 6: Publication is gated by Billing success
 
-For all Demand Run state sequences, Demand Snapshot publication, Demand Row/Batch readiness, and Demand Spooling SHALL be impossible until the exact Billing Stage Run is successful, all required Billing Period Results and allocation checks succeed, all required billing journal checks succeed, and the immutable Billing Snapshot is published; any BillingIncomplete or failed prerequisite SHALL leave Demand output unpublished and blocked.
+For all combinations of Billing stage status, required Billing check groups, scope match, journal check state, and snapshot publication state, Demand Snapshot publication, completed Demand output, and `ReadyToSpool` SHALL be possible only when the exact Billing Stage Run succeeds, required Billing results and checks succeed, configured journal checks pass, and the Billing Snapshot is Published.
 
-**Validates: Requirements 2.2, 2.3, 2.4, 2.5, 2.6, 3.11, 3.13, 3.14, 9.3, 16.8**
+**Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 2.10, 2.11, 2.12, 2.13, 2.14, 2.15, 2.16, 2.17, 2.18, 2.19, 2.20, 2.21, 2.22, 2.24, 3.41, 3.42, 3.43, 3.44, 3.45, 3.46, 3.47, 3.48, 3.49, 3.50, 3.51, 3.52, 3.53, 3.54, 3.55, 3.56, 3.57, 7.8, 7.9, 7.10, 9.6, 9.7, 9.8, 9.9, 9.10, 9.11, 9.12, 9.13, 9.14, 9.23, 16.21, 16.22, 16.23, 16.24**
 
-### Property 7: Batching is a deterministic reconciled partition
+### Property 7: Branch batching is a deterministic reconciled partition
 
-For all valid completed Demand Rows and normalized branch scopes, each row SHALL belong to exactly one batch whose dimensions match the row, represented branches SHALL have deterministic logical batch identity/order, and each batch/revision total SHALL equal the sum of its persisted rows at approved precision.
+For all valid completed Demand Rows and resolved Branch scopes, every row SHALL belong to exactly one matching Branch Batch, represented in-scope empty Branches SHALL produce one non-failure NoDemand batch, each batch total SHALL equal its persisted row sum at approved precision, and a dimension or total mismatch SHALL make only the affected batch failed and not ready to spool.
 
-**Validates: Requirements 6.1, 6.4, 6.5, 6.6, 6.7, 9.5, 16.6**
+**Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 6.10, 6.11, 6.12, 6.13, 6.14, 6.15, 6.16, 6.17, 6.18, 6.19, 6.20, 6.21, 9.15, 9.16, 9.17, 9.18, 9.19, 9.20, 9.21, 9.22, 16.14, 16.15, 17.6, 17.7, 17.8, 17.9, 17.10, 17.11, 17.12**
 
-Each property test uses FsCheck.Xunit with at least 100 iterations and includes a comment in the required format:
+## Testing Strategy
+
+### 11.1 Backend unit and property tests
+
+Use xUnit in `Finnova.Tests` and FsCheck.Xunit for pure logic. Each correctness property above is one property-based test with at least 100 iterations and a comment in the required format:
 
 ```text
 Feature: demand-processing, Property N: <property text>
 ```
 
-External I/O, journal posting, database races, middleware, gateway routing, and downstream acknowledgement remain example or integration tests. The property tests use mocked ports and pure models.
+Property tests cover schedule arithmetic, charge formulas, rounding, allocation evidence/conservation, eligibility, scope, deterministic demand totals, idempotency fingerprinting, publication gates, and branch partition/reconciliation. They use mocked ports and pure models, not real source systems or Accounting/GL.
 
-## Security and data scope
+Example and edge tests cover missing schedule values, zero values, cap/no-cap ODI, negative Other Charges with evidence, allocation conflicts, Current Due/Arrears boundaries, all excluded statuses, missing references, deactivated Branches, omitted Branch with no authorized Active Branches, NoDemand batches, partial Branch failure, configured defaults, journal check outcomes, PDF export authorization/content, minimal spool status, safe diagnostics, and UTC/English/INR constraints.
 
-- All API endpoints use JWT Bearer authentication in the existing middleware order.
-- Authentication happens before authorization, scope resolution, source reads, stage creation, or processable mutation.
-- Policies are separate for start/rerun, output/history, spooling, and optional Billing/audit diagnostics. Exact role/policy names remain an assumption for confirmation.
-- Scope is enforced in the backend command/query predicates. UI filters are never a security boundary.
-- Automizer has a dedicated authenticated identity and cannot be impersonated through a client `source` field.
-- The API exposes Billing results and allocation evidence only to authorized operational/financial readers. It never exposes bearer tokens, raw source credentials, or unnecessary customer data.
-- The client cannot mutate schedule values, Billing Period Results, allocation evidence, journal state, snapshots, rows, batches, failures, or audit records.
-- Durable uniqueness, rowversion, leases, idempotency keys, and transaction gates protect against duplicate financial application and partial publication.
-- Amounts are INR. User-facing labels, statuses, errors, seed values, fixtures, and docs are English-only. UI remains left-to-right with no RTL behavior.
+### 11.2 Backend integration tests
 
-## Testing Strategy
+Use `WebApplicationFactory<Program>` with the approved isolated relational test harness. Verify:
 
-### 13.1 Backend unit and property tests
+- JWT 401/403 ordering and no processable mutation on denial;
+- configured roles/policies, LOB/Branch scope, Automizer identity, and omitted Branch expansion;
+- AccountsService controller, worker, DI, middleware, and gateway-composed route wiring;
+- one Run with ordered Billing and Demand stages and no independent Demand bypass route;
+- Billing completion/snapshot configuration, one internally consistent source reference, no new watermark prerequisite, schedule/charge adapters, Journal Port references/checks, and publication gating;
+- duplicate/concurrent starts, worker recovery, idempotent allocation and journal requests, and Run Revision lineage;
+- zero-demand rows, NoDemand batches, deactivated-Branch history, branch-isolated failures, `PartiallyFailed`, and batch retryability;
+- persisted output filtering, deterministic paging, authorized Output and Batch PDF export, PDF scope enforcement, persisted values, totals, metadata, and UTC generated-at timestamp;
+- ReadyToSpool/Spooled/NotReady behavior without downstream delivery records;
+- EF precision, rowversion, uniqueness, restricted deletion, and minimum audit fields.
 
-Use xUnit in `Finnova.Tests` and FsCheck.Xunit for pure logic. Each property above is one property-based test with a minimum of 100 iterations and its required design-property comment.
+### 11.3 Frontend Vitest and React Testing Library tests
 
-Cover with properties:
+Cover shared mock/real service selection, shared axios/JWT behavior, protected routes, form validation, normalized omitted-Branch requests, stage status display, BillingIncomplete/failed/partial states, polling, rerun permission, deactivated-Branch history labels, zero-demand output, deterministic filters/paging, last-good-data preservation, output PDF download, batch PDF download, minimal spool status action, disabled non-ready actions, and no client-side recalculation or transport status UI.
 
-- schedule principal-plus-interest equality and exact schedule/version retention;
-- allocation exactly-once evidence and unpaid-amount conservation;
-- separate ODI/Other Charges and component sums;
-- Active eligibility, scope, cut-off, deterministic ordering;
-- retry/idempotency model for duplicate events, worker redelivery, journal keys, snapshots, rows, and batches;
-- publication gate for Billing success, all result checks, journals, and Demand Snapshot readiness;
-- branch partition and aggregate reconciliation.
+PBT is not used for UI rendering/layout, PDF renderer internals, configuration wiring, database races, JWT middleware, YARP routing, Accounting/GL behavior, or simple persistence. Those concerns use examples, contract tests, integration tests, smoke checks, or adapter tests.
 
-Cover with xUnit facts/theories and edge cases:
+## Design decisions and tradeoffs
 
-- missing/unfinalized/stale/wrong-period schedules;
-- zero principal/interest, approved rounding boundaries, unsupported currency/sign/precision;
-- partial receipts, waivers, reversals, adjustments, duplicate/conflicting event versions;
-- previous-period arrears and no current-to-previous leakage;
-- ODI/Other Charges missing or invalid;
-- journal posting/check failure and retry;
-- each excluded status and unresolved reference;
-- BillingIncomplete, BillingScopeMismatch, idempotency conflict, lease loss, partial branch failure, rerun lineage, safe diagnostics, and no Demand Snapshot before Billing success.
-
-### 13.2 Backend integration tests
-
-Use `WebApplicationFactory<Program>` and an isolated relational test database or approved harness. Verify:
-
-- JWT missing/invalid/expired returns 401 before authorization; out-of-scope identity returns 403.
-- Controller, DI, worker registration, middleware, gateway-composed route, and Authorization forwarding.
-- Start creates/resolves one overall Run and two ordered stage records; no independent Demand Generation route exists.
-- Exact Billing schedule/source version, allocation evidence, journal idempotency, Billing Snapshot publication, and Demand transition.
-- Concurrent equivalent starts and worker redelivery resolve to one Run/stage/result/journal.
-- Atomic publication never exposes a Completed/Demand Snapshot state with failed Billing checks or partial rows.
-- Authorized Billing/Demand history, row, batch, allocation evidence, journal references, and audit scope filtering.
-- Controlled rerun lineage, immutable historical records, spooling acknowledgement, duplicate spool request, and downstream failure recovery.
-- Migration indexes, decimal precision, rowversion, and append-only constraints after the implementer generates the migration.
-
-### 13.3 Frontend Vitest and RTL tests
-
-Cover:
-
-- mock/real selection through `VITE_USE_MOCK_API` and use of the shared axios instance;
-- unauthorized route and permission-gated run/rerun/spool controls;
-- Run form validation, normalized request, returned Run ID, Billing-first/Demand-second statuses, polling, BillingIncomplete, BillingFailed, Demand failure, conflict, timeout, and retry states;
-- absence of EMI calculator, free-form Billing edits, Demand bypass action, and client-side financial overrides;
-- output columns, persisted INR formatting, Billing Snapshot/reference display, server-side filters, deterministic pagination, empty state, and last-good-data preservation;
-- spooling eligibility gate, confirmation, acknowledgement, failed retry, attempt history, and no recalculation;
-- English-only labels/statuses and absence of RTL attributes.
-
-Property-based testing is not required for UI rendering/layout, configuration, gateway wiring, simple persistence, or external journal/downstream behavior. Use example, integration, snapshot, or smoke tests for those concerns.
+- **AccountsService host and worker:** keeps the first implementation close to account, Billing, and transaction dependencies and avoids a new deployment. Ports preserve a future extraction seam without requiring a separate Billing host.
+- **One Run with two stages:** gives Operations one lifecycle and audit unit and makes Billing-before-Demand explicit. It requires durable stage state and worker coordination.
+- **Internally consistent source reference without a new watermark:** satisfies snapshot consistency while avoiding an unapproved external schedule/version dependency. The design retains whatever source reference existing contracts provide.
+- **Config-driven Billing completion and journal checks:** allows existing Billing/Accounting contracts to supply completion semantics without hard-coding a new external contract. Publication remains blocked until the configured checks pass.
+- **Charge adapter seam:** keeps authoritative Billing/charge ownership outside Demand Processing while providing a fully implementable default policy and stable output contract.
+- **Accounting/GL Journal Port:** prevents a second ledger implementation. AccountsService owns orchestration and references/checks, while Accounting/GL owns creation, posting, idempotency, and reconciliation.
+- **Branch isolation:** allows successful Branch Batches to remain useful while making failures visible and retryable. The Run reports `PartiallyFailed` for mixed outcomes.
+- **Zero-demand and NoDemand retention:** preserves complete scope accounting and makes empty Branch outcomes explicit without treating them as errors.
+- **Minimal spool state:** meets the current operational guard without inventing transport semantics. Downstream delivery can be added later behind a new approved contract.
+- **Server-side PDF adapter:** protects persisted financial values and authorization. The implementation chooses an approved renderer instead of assuming a library absent from the repository.
+- **Minimum audit record:** provides traceability now while leaving detailed taxonomy, retention, and purge policy configurable/deferred.
 
 ## Rollout and migration considerations
 
-1. Confirm Billing Completion/Snapshot, finalized schedule/version, allocation event/policy, ODI/Other Charges, journal posting/check, idempotency, frequency, period/timezone, branch omission, zero/empty behavior, role policies, retention, and spool acknowledgement contracts.
-2. Add Demand-owned Billing and Demand tables, indexes, decimal precision, rowversion, publication constraints, allocation evidence, journal reference, and append-only audit records through a reviewed EF migration. Do not backfill historical results without an approved reconciliation decision.
-3. Deploy AccountsService code with worker/queue settings, lease/recovery settings, policy names, source adapters, journal adapter, spool transport, retention, and polling limits. Validate required configuration at startup.
-4. Add YARP aliases for `/api/ua/api/demand-processing` and `/api/ua/api/demand-processing/{**catch-all}` to `accounts-cluster`, rewriting to `/api/demand-processing` and forwarding Authorization.
-5. Enable one controlled Automizer LOB/Branch/period. Compare Billing Period Results and journal references with the approved source/ledger, then compare Demand Snapshot totals and branch batches.
-6. Deploy the UI with mock mode available for local development and real mode pointed to the shared gateway prefix. Confirm stage statuses, BillingIncomplete/failed states, no billing edit controls, and role navigation.
-7. Monitor schedule failures, allocation conflicts, BillingIncomplete, journal failures, snapshot gate blocks, idempotency/lease conflicts, reconciliation failures, spool acknowledgement, and latency before broad automation.
-8. Rollback disables new triggers or UI actions while preserving immutable Runs, Billing results, snapshots, evidence, journal references, Demand output, spool attempts, and audit history. Do not drop tables or delete financial output during rollback.
-
-## Design decisions, tradeoffs, and unresolved assumptions
-
-### 15.1 Decisions and tradeoffs
-
-- **One Run with two ordered stages:** gives Operations one status/history/audit unit and makes the Billing-to-Demand gate explicit. The tradeoff is more lifecycle state and worker coordination than an isolated Demand calculation.
-- **Billing worker inside AccountsService initially:** avoids a new deployment and keeps operational account/Billing dependencies close. The tradeoff is stronger internal ports and future extraction discipline.
-- **Immutable Billing Snapshot before Demand:** prevents mixed schedule/event/journal reads and gives Demand reproducibility. The tradeoff is snapshot storage and a clear source-version contract.
-- **Schedule-derived installment:** preserves the finalized schedule as the authority and prevents financial drift. The tradeoff is that missing/stale schedules block an account/result rather than allowing a fallback calculation.
-- **Allocation evidence and stable event keys:** supports exactly-once logical application and financial investigation. The tradeoff is additional evidence storage and policy-version management.
-- **Journal gate before snapshot:** prevents unposted dues from becoming demand. The tradeoff is that journal outages block the whole Billing publication even when source schedule data is available.
-- **Database uniqueness plus lease:** works across replicas/restarts and prevents duplicate Billing/Demand results. The tradeoff is more transaction/index/recovery design than an in-memory lock.
-- **At-least-once worker/transport with idempotent keys:** is realistic for queues and external journals/spooling. The logical result is exactly-once, while physical transmission depends on the downstream contract.
-- **Branch isolation during Demand Generation:** lets successful branch batches proceed after a branch-specific output failure. Billing-stage failure remains a publication blocker. The tradeoff is operational `PartiallyFailed` recovery.
-- **Persisted values, no UI recalculation/editing:** keeps financial authority in backend Billing/Demand records. The tradeoff is less interactive editing, which is intentional for a controlled financial workflow.
-
-### 15.2 Unresolved assumptions requiring confirmation
-
-Before copying implementation tasks from `tasks.md`, confirm:
-
-- host route/policy names and whether the first worker uses the existing queue or a persisted work dispatcher;
-- Automizer/scheduler trigger schema, authentication, retry, and manual initiation permissions;
-- exact Frequency values and Month-Year/timezone policy;
-- omitted Branch semantics and authorized LOB/Branch scope resolution;
-- finalized schedule source, version/finalization watermark, stale rule, and selected entry contract;
-- receipt/waiver/reversal/adjustment event scope, ordering, duplicate identity, suspense/excess treatment, and conservation rule;
-- Current Due/Arrears treatment for part-paid and reversed installments;
-- ODI and Other Charges formulas, policy versions, caps, rounding, and ownership;
-- journal generation/posting/check ownership, transaction boundary, idempotency, and reconciliation behavior;
-- Billing failure scope, all-or-nothing versus account-level exclusion, and branch isolation after Billing succeeds;
-- zero-demand and empty-branch behavior;
-- controlled rerun and post-spooling revision policy;
-- downstream spooling mechanism, acknowledgement, retry limits, and logical idempotency capability;
-- financial retention/archive duration and purge authority;
-- FsCheck generators, integration database, performance thresholds, and UI polling interval.
-
-These are implementation decisions to confirm. They must not be hidden in code or used to relax the explicit Billing-before-Demand requirements.
+1. Confirm only implementation-level settings that are already requirements-driven: appSettings sections for Frequency, Billing completion/snapshot, charge policy, Journal Port adapter, roles/policies, retention, PDF renderer settings, polling, and pagination.
+2. Add Demand-owned Billing/Demand tables, constraints, INR precision, rowversion, minimum audit, and restricted deletion through a reviewed EF migration. Do not add a schedule watermark or downstream delivery table.
+3. Implement AccountsService worker recovery, source adapters, charge adapter, Journal Port, PDF renderer adapter, and configured publication gates.
+4. Add YARP aliases under the existing UI-composed prefix to AccountsService and forward Authorization.
+5. Enable a controlled LOB/Branch/period. Compare Billing Period Results, Journal Port references/checks, Demand Snapshot totals, zero-demand rows, NoDemand batches, and branch-isolated failures with approved source results.
+6. Deploy the UI with mock mode for local development and shared-gateway real mode. Confirm PDF export scope, deactivated-Branch history, no Billing edit controls, and minimal spool states.
+7. Monitor BillingIncomplete, journal check failures, allocation conflicts, reconciliation failures, idempotency conflicts, lease conflicts, PDF failures, and PartiallyFailed Branch outcomes.
+8. Roll back by disabling new triggers/actions while preserving immutable Runs, revisions, results, snapshots, rows, batches, minimal spool state, and audit records. Do not delete financial history.
 
 ## Implementation-ordered task list for `tasks.md`
 
-This sequence is the design checklist for the existing tasks file. It preserves dependency order and includes the internal Billing stage before Demand Generation. The task list below is not a source-code patch and does not modify `tasks.md`.
+This sequence is the design checklist for the existing `tasks.md`. It is preserved here for implementation order; this update does not modify `tasks.md`.
 
-1. **Confirm Billing contracts and configuration:** finalize finalized schedule/version, account cut-off, allocation event/policy, ODI/Other Charges, journal generation/posting/checks, snapshot publication, Automizer trigger, worker/queue boundary, idempotency, authorization, retention, and spool acknowledgement assumptions.
-2. **Backend Billing and Demand domain entities/enums:** create `DemandRun`, revisions, branch scope, `BillingStageRun`, `BillingPeriodResult`, `BillingAllocationEvidence`, `BillingSnapshot`, `DemandSnapshot`, `DemandRow`, `DemandBatch`, failure, audit, lease, spool-attempt, and outbox models; add stage/status/failure/source enums and value objects.
-3. **Backend typed exceptions and error codes:** add validation, BillingIncomplete, BillingScopeMismatch, schedule incomplete, allocation conflict, journal incomplete, Billing Snapshot blocked, idempotency conflict, concurrency, dependency, data-quality, reconciliation, and spooling results.
-4. **Backend contracts and source projections:** add start/rerun/query/response records, Billing stage/result/snapshot contracts, finalized schedule projections, allocation event/evidence projections, charge projections, journal request/check/acknowledgement records, authorization scope records, and mapper DTOs.
-5. **Backend EF configuration and context:** add Billing/Demand configurations, money precision, source-reference fields, publication/status constraints, allocation/journal/snapshot uniqueness, leases/rowversion, audit append-only rules, DbSets, and the reviewed EF migration command/output.
-6. **Backend repositories and ports:** implement Demand-owned persistence/queries, Billing result/snapshot repository, source adapters, account/scope adapters, journal adapter, unit-of-work, lease store, clock, worker queue/dispatcher, and spool transport; register DI in AccountsService.
-7. **Backend pure Billing helpers:** implement scope/period normalization, schedule-derived Scheduled Installment, allocation ordering/evidence/conservation, unpaid Current Due/Arrears, separate ODI/Other Charges, amount rounding, fingerprint, and Billing publication gate.
-8. **Backend pure Demand helpers:** implement Active eligibility, source-reference validation, Billing-to-Demand mapping, Total Charges/Total Demand, deterministic ordering, branch batching, aggregate reconciliation, zero/empty policy, and Demand publication gate.
-9. **Backend start/rerun CQRS slice:** implement authentication/policy integration, normalization, idempotent Run/BillingStageRun creation, durable lease, audit, accepted response, worker dispatch, recovery, and no-bypass orchestration state.
-10. **Backend Period Billing CQRS/worker slice:** implement schedule resolution, cut-off eligibility, event allocation exactly once, Billing Period Results/evidence, charge capture, journal generation/posting/checks, Billing failure states, and atomic Billing Snapshot publication.
-11. **Backend Demand Generation/publication slice:** implement Published Billing Snapshot guard, Demand Rows, branch batches, reconciliation, Demand Snapshot publication, stage transitions, totals, diagnostics, and no-output-before-Billing behavior.
-12. **Backend read CQRS slice:** implement Run/history, Billing stage/results/diagnostics, Demand Snapshot/rows, batches, failures, audit, and spool-attempt queries with mandatory scope predicates, deterministic ordering, filters, and pagination.
-13. **Backend spooling slice:** implement immutable batch readiness guard, spool/re-spool command, attempt/outbox persistence, stable downstream idempotency key, acknowledgement, retry state, audit, and no-recalculation behavior.
-14. **Backend controller and middleware:** add `DemandProcessingController`, overall-run-only start/query/rerun routes, Billing/Demand response mapping, endpoint authorization, safe Billing/Demand ProblemDetails codes, correlation handling, and OpenAPI metadata; do not add a bypass route.
-15. **Gateway routing:** add AccountsService YARP aliases for `/api/ua/api/demand-processing` and `/api/ua/api/demand-processing/{**catch-all}`, stripping `/api/ua/api`, prefixing `/api`, forwarding Authorization, and confirming route precedence.
-16. **Backend tests:** add FsCheck properties 1–7 with at least 100 iterations, xUnit schedule/allocation/journal/stage/error/edge tests, repository/transaction tests, authorization and idempotency tests, and WebApplicationFactory integration tests for worker wiring, publication gates, concurrency, reruns, and spooling.
-17. **Frontend model and service boundary:** add Demand Run/Billing/Demand stage models, Billing result/snapshot/reference types, service interface, real shared-axios implementation, mock implementation, toggle selector, and model/service barrel exports.
-18. **Frontend Demand Run screen:** add scope form, normalized request, Billing-first/Demand-second status components, BillingIncomplete/failed states, polling/retry/recovery states, confirmation, protected route, navigation, and permission gating. Do not add EMI or Billing edit controls.
-19. **Frontend Demand Generation Output screen:** add Billing-derived output columns, snapshot/reference display, server-side filters/pagination, INR formatting, loading/empty/failure/BillingIncomplete/last-good-data states, and no client-side authoritative recalculation.
-20. **Frontend Demand Spooling screen:** add Billing/Demand readiness guard, branch batch grid, persisted totals, confirmation dialog, spool/re-spool action, acknowledgement/attempt history, retry state, route, and navigation wiring.
-21. **Frontend tests:** add Vitest/RTL service-toggle/shared-axios tests, permission/route tests, stage status and BillingIncomplete/failed state tests, output filtering/pagination/error tests, and spooling action/retry/no-recalculation tests.
-22. **Migration and rollout validation:** review/apply the EF migration in deployment, seed/configure only approved English reference values, deploy worker/host/gateway configuration, run controlled schedule/allocation/journal/Billing Snapshot/Demand reconciliation, and enable broader scope only after metrics and audit checks pass.
+1. **Confirm implementation settings and existing contracts:** map appSettings for Frequency/default Monthly, Billing completion/snapshot checks, charge policy/defaults, Journal Port adapter/settings, roles/policies, retention, PDF renderer settings, polling, and pagination. Confirm the available internally consistent source/cut-off reference without introducing a new schedule watermark or source-version prerequisite.
+2. **Backend domain entities and enums:** create Demand Run, Run Revision, Branch scope, Billing Stage Run, Billing Period Result, Allocation Evidence, Billing Snapshot, Demand Snapshot, Demand Row, Demand Batch, failure, lease, and minimum audit models; add Run/stage/batch/failure/source/spool-status enums. Keep spooling to minimal state only.
+3. **Backend typed exceptions and error codes:** add validation, BillingIncomplete, BillingScopeMismatch, schedule, allocation, journal, snapshot, idempotency, concurrency, dependency, data-quality, reconciliation, PDF export, and spool-not-ready errors.
+4. **Backend contracts and source projections:** add Run/rerun/query/response records, Billing and Demand contracts, schedule/account/event projections, charge adapter contracts, Journal Port requests/check results, authorization scope records, PDF export request/document/file records, and mappers.
+5. **Backend EF configuration and context:** add configurations, `decimal(19,2)` precision, UTC fields, source references, publication/status constraints, allocation/journal/snapshot uniqueness, rowversion/lease fields, minimum audit append-only rules, DbSets, and the reviewed EF migration. Do not create a new schedule watermark or downstream delivery table.
+6. **Backend repositories and ports:** implement Demand repositories, Billing Snapshot repository, source adapters, charge policy adapter seam and default formula adapter, Journal Port adapter, authorization scope resolver, unit of work, lease store, UTC clock, and PDF export repository/renderer adapter. Register DI in AccountsService. Keep spooling to minimal persisted state.
+7. **Backend pure Billing helpers:** implement period normalization, schedule-derived installment, allocation ordering/evidence/conservation, Current Due/Arrears, default ODI and Other Charges formulas, cap/defaults, negative clamp with evidence, INR rounding, fingerprint, and Billing publication gate.
+8. **Backend pure Demand helpers:** implement Active eligibility, source-reference validation, Billing-to-Demand mapping, Total Charges/Total Demand, zero-demand preservation, deterministic ordering, Branch batching, NoDemand classification, aggregate reconciliation, and Demand publication gate.
+9. **Backend Start/Rerun CQRS slice:** implement authentication/policy integration, normalization, omitted-Branch Active scope resolution, deactivated-Branch validation, idempotent Run/Billing Stage creation, durable lease, minimum audit, accepted response, worker dispatch, recovery, and no-bypass orchestration.
+10. **Backend Period Billing CQRS/worker slice:** implement internally consistent source-reference handling, schedule resolution without a new watermark dependency, Active eligibility, exactly-once allocation, Billing Period Results/evidence, charge adapter invocation, Journal Port generation/posting/check orchestration, Billing failure states, and atomic Billing Snapshot publication.
+11. **Backend Demand Generation/publication slice:** implement Published Billing Snapshot guard, persisted-component Demand Rows, zero-demand rows, Branch Batches, NoDemand outcomes, branch failure isolation, reconciliation, Demand Snapshot publication, stage transitions, totals, and diagnostics.
+12. **Backend read CQRS slice:** implement Run/history, Billing diagnostics/results, Demand Rows, Batches, failures, minimum audit, and retained deactivated-Branch queries with mandatory authorization predicates, deterministic ordering, filters, and pagination.
+13. **Backend minimal spool-state slice:** implement authorized ReadyToSpool guard, NoDemand/Failed/NotReady rejection, idempotent `Spooled` transition, actor/UTC timestamp, minimum audit, and returned status. Keep downstream delivery outside this release.
+14. **Backend server-side PDF export slice:** implement Output and Batch export endpoints, authorized scoped persisted-data queries, document models, UTC generated-at metadata, totals, safe file response, and `IDemandPdfExportService`/`IPdfRendererAdapter`. Reuse an established PDF library if present; otherwise record and obtain approval for the renderer dependency/implementation rather than silently adding one.
+15. **Backend controller and middleware:** add DemandProcessingController, Run/row/batch/spool/PDF routes, configured endpoint authorization, response mapping, safe ProblemDetails codes, and correlation handling. Do not add Billing bypass, Demand bypass, or downstream delivery routes.
+16. **Gateway routing:** add AccountsService YARP aliases for the UI-composed Demand Processing prefix, rewrite to `/api/demand-processing`, forward Authorization, and confirm route precedence.
+17. **Backend tests:** add FsCheck properties 1-7 with at least 100 iterations, xUnit arithmetic/allocation/charge/journal/stage/error/PDF/spool-state edge tests, repository/transaction tests, authorization/idempotency tests, and WebApplicationFactory integration tests for worker wiring, publication gates, concurrency, reruns, deactivated history, exports, and branch isolation.
+18. **Frontend model and service boundary:** add Run/Billing/Demand/batch/PDF models, service interface, real shared-axios implementation, mock implementation, toggle selector, and barrel exports. Include deactivated-Branch labels and minimal spool statuses.
+19. **Frontend Demand Run screen:** add scope form, omitted-Branch behavior, Billing-first/Demand-second statuses, BillingIncomplete/failed/partial states, polling/retry/recovery, confirmation, protected route, navigation, and permission gating. Do not add EMI or Billing edit controls.
+20. **Frontend Demand Generation Output screen:** add persisted Billing-derived columns, deactivated-Branch history display, snapshot/reference display, server-side filters/pagination, INR formatting, loading/empty/failure/BillingIncomplete/last-good-data states, and authorized PDF download without client recalculation.
+21. **Frontend Demand Spooling screen:** add Branch Batch grid, deactivated-Branch history display, minimal readiness/status guard, persisted totals, confirmation dialog, `Spooled` action, route, navigation, authorized batch PDF download, and no downstream delivery UI.
+22. **Frontend tests and rollout validation:** add Vitest/RTL service-toggle/shared-axios tests, permission/route tests, stage/partial/NoDemand/deactivated-history tests, output filtering/paging/PDF tests, and minimal spool-state/no-recalculation tests. Review migration/configuration and enable controlled processing only after Billing, journal, Demand, export, audit, and branch-isolation checks pass.

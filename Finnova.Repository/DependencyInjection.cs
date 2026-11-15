@@ -11,8 +11,11 @@ public static class DependencyInjection
     /// <summary>
     /// Registers FinnovaDbContext and all repositories with the DI container.
     /// </summary>
-    public static IServiceCollection AddFinnovaRepository(this IServiceCollection services, string connectionString)
+    public static IServiceCollection AddFinnovaRepository(this IServiceCollection services, string? connectionString)
     {
+        if (string.IsNullOrWhiteSpace(connectionString))
+            throw new InvalidOperationException("Connection string 'FinnovaConnection' is missing or empty.");
+
         services.AddDbContext<FinnovaDbContext>(options =>
             options.UseSqlServer(connectionString));
 

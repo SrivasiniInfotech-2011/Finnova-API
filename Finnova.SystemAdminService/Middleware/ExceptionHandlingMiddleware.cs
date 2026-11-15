@@ -101,7 +101,7 @@ public class ExceptionHandlingMiddleware
                 NumberingSchemeInactiveException => (409, "ERR-DCN-409", ex.Message),
                 NumberSequenceExhaustedException => (409, "ERR-DCN-409", ex.Message),
                 NumberingSchemeValidationException => (400, "ERR-DCN-400", ex.Message), // template / scope-id consistency
-
+                KycAggregatorNotConfiguredException => (503, "ERR-KYC-503", ex.Message),
                 // ---- new Court branch (typed, no message sniffing) ----
                 CourtNotFoundException => (404, "ERR-CRT-404", ex.Message),
                 CourtDuplicateCodeException => (409, "ERR-CRT-409", ex.Message),

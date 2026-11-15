@@ -136,3 +136,14 @@ A caller MAY continue to register a host-specific replacement after `AddFinnovaS
 - Adding frontend models, services, pages, routes, navigation, tests, localization, or RTL support.
 - Diagnosing compiler errors that are not present in tracked evidence. Such diagnostics should be added to a later revision after the user supplies the build output.
 - Running `dotnet build`, `dotnet test`, `dotnet ef`, `npm run build`, `npm test`, or any other build, test, migration, deployment, or database command during document authoring.
+
+## Update: modular service registration
+
+Assumptions A2 (every host calls the same full registration) and A3 (every host scans the complete service assembly) are superseded. Registering handlers whose dependencies a host does not provide fails container validation at startup in Development. The accepted behavior is:
+
+- `AddFinnovaServices` registers the core service layer for every host.
+- Application Processing and Identity Verification are opt-in modules, enabled only by the host that serves them (Accounts and SystemAdmin respectively).
+- MediatR scans only the handler namespaces of enabled modules.
+- A null or blank `FinnovaConnection` fails startup with `InvalidOperationException` from `AddFinnovaRepository`.
+
+See the "Implementation update" section of `design.md`. Frontend impact remains NONE.

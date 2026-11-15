@@ -36,6 +36,18 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowUI");
 app.MapHealthChecks("/health");
+// Internal service endpoints (DNC issuance, KYC verification, service tokens) are never public.
+app.Use(async (ctx, next) =>
+{
+    var path = ctx.Request.Path.Value ?? string.Empty;
+    if (path.Contains("/internal/", StringComparison.OrdinalIgnoreCase) ||
+        path.EndsWith("/internal", StringComparison.OrdinalIgnoreCase))
+    {
+        ctx.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+    await next();
+});
 app.MapReverseProxy();
 
 app.Run();

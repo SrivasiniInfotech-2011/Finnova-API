@@ -25,6 +25,13 @@ public interface INumberingSchemeRepository : IRepository<NumberingScheme>
     /// <summary>All ACTIVE schemes of a document type (input of the pure SchemeResolver).</summary>
     Task<List<NumberingScheme>> GetActiveByDocumentTypeAsync(string documentType, CancellationToken ct = default);
 
+    /// <summary>
+    /// Atomically issues the next number for the scheme matching (documentType, scope, scopeId).
+    /// Null when no such scheme exists; throws when inactive or exhausted.
+    /// </summary>
+    Task<(NumberingScheme Scheme, long SequenceValue)?> IssueNextAsync(
+        string documentType, NumberScope scope, Guid? scopeId, DateTime utcNow, CancellationToken ct = default);
+
     /// <summary>Atomically issues the next number for a specific scheme (same semantics as IssueNextAsync). Null when the scheme does not exist.</summary>
     Task<(NumberingScheme Scheme, long SequenceValue)?> IssueNextByIdAsync(Guid schemeId, DateTime utcNow, CancellationToken ct = default);
 }
