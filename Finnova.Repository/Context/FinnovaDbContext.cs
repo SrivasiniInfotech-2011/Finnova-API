@@ -79,6 +79,19 @@ public class FinnovaDbContext : DbContext
     public DbSet<AppRole> AppRoles => Set<AppRole>();
     public DbSet<UserAccountRole> UserAccountRoles => Set<UserAccountRole>();
     public DbSet<ServiceCredential> ServiceCredentials => Set<ServiceCredential>();
+    public DbSet<DemandRun> DemandRuns => Set<DemandRun>();
+    public DbSet<DemandRunBranchScope> DemandRunBranchScopes => Set<DemandRunBranchScope>();
+    public DbSet<DemandRunRevision> DemandRunRevisions => Set<DemandRunRevision>();
+    public DbSet<BillingStageRun> BillingStageRuns => Set<BillingStageRun>();
+    public DbSet<BillingPeriodResult> BillingPeriodResults => Set<BillingPeriodResult>();
+    public DbSet<BillingAllocationEvidence> BillingAllocationEvidence => Set<BillingAllocationEvidence>();
+    public DbSet<BillingSnapshot> BillingSnapshots => Set<BillingSnapshot>();
+    public DbSet<DemandSnapshot> DemandSnapshots => Set<DemandSnapshot>();
+    public DbSet<DemandRow> DemandRows => Set<DemandRow>();
+    public DbSet<DemandBatch> DemandBatches => Set<DemandBatch>();
+    public DbSet<DemandFailure> DemandFailures => Set<DemandFailure>();
+    public DbSet<DemandProcessingLease> DemandProcessingLeases => Set<DemandProcessingLease>();
+    public DbSet<DemandAuditEntry> DemandAuditEntries => Set<DemandAuditEntry>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

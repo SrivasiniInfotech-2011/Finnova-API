@@ -60,7 +60,16 @@ public class ExceptionHandlingMiddleware
                 Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException =>
                     (StatusCodes.Status409Conflict, isLoan ? "ERR-ACC-409" : "ERR-GL-409",
                      "The record was changed by another request. Refresh and retry."),
-
+                DemandProcessingException d => (d.ErrorCode switch
+                {
+                    "ERR-DEMAND-NOT-FOUND" => StatusCodes.Status404NotFound,
+                    "ERR-DEMAND-DATA-QUALITY" or "ERR-DEMAND-RECONCILIATION" or "ERR-BILLING-SCHEDULE-INCOMPLETE" => StatusCodes.Status422UnprocessableEntity,
+                    "ERR-DEMAND-DEPENDENCY" => StatusCodes.Status503ServiceUnavailable,
+                    "ERR-DEMAND-BILLING-INCOMPLETE" or "ERR-DEMAND-BILLING-SCOPE" or "ERR-BILLING-ALLOCATION-CONFLICT" or "ERR-BILLING-JOURNAL-INCOMPLETE" or "ERR-BILLING-SNAPSHOT-BLOCKED" or "ERR-DEMAND-IDEMPOTENCY-CONFLICT" or "ERR-DEMAND-CONCURRENT" or "ERR-DEMAND-SPOOL-NOT-READY" => StatusCodes.Status409Conflict,
+                    "ERR-DEMAND-PDF-EXPORT" => StatusCodes.Status422UnprocessableEntity,
+                    _ => StatusCodes.Status400BadRequest
+                }, d.ErrorCode, d.Message),
+                UnauthorizedAccessException => (StatusCodes.Status403Forbidden, "ERR-AUTH-403", "You are not authorized for this Demand Processing scope."),
                 // ---- shared: validation failures and unhandled fallback ----
                 FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, isLoan ? "ERR-ACC-400" : validationCode, v.Message),
                 _ => (StatusCodes.Status500InternalServerError, isLoan ? "ERR-ACC-500" : fallbackCode, "Unexpected error.")
