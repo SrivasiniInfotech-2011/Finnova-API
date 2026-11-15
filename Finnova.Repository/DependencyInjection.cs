@@ -3,7 +3,6 @@ using Finnova.Repository.Interfaces;
 using Finnova.Repository.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-
 namespace Finnova.Repository;
 
 public static class DependencyInjection
@@ -69,6 +68,7 @@ public static class DependencyInjection
         services.AddScoped<IAccountAuditRepository, AccountAuditRepository>();
         services.AddScoped<IAppRoleRepository, AppRoleRepository>();
         services.AddScoped<INumberingReferenceRepository, NumberingReferenceRepository>();
+        services.AddScoped<IDemandRepository, DemandRepository>();
         return services;
     }
 }

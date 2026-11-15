@@ -15,7 +15,12 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-
+using Finnova.Service.DemandProcessing.Adapters;
+using Finnova.Service.DemandProcessing.Billing;
+using Finnova.Service.DemandProcessing.Configuration;
+using Finnova.Service.DemandProcessing.PdfExport;
+using Finnova.Service.DemandProcessing.Ports;
+using Finnova.Service.DemandProcessing.Processing;
 namespace Finnova.Service;
 
 /// <summary>Optional service-layer feature areas. A host enables only the areas it serves.</summary>
@@ -85,7 +90,21 @@ public static class DependencyInjection
 
         if (includeApplications) services.AddApplicationProcessingServices();
         if (includeIdentity) services.AddIdentityVerificationServices(configuration);
-
+        services.Configure<DemandProcessingOptions>(configuration.GetSection(DemandProcessingOptions.SectionName));
+        services.AddScoped<IAuthorizationScopeResolver, AuthorizationScopeResolver>();
+        services.AddScoped<IFinalizedSchedulePort, ConfiguredScheduleAdapter>();
+        services.AddScoped<IAccountSourcePort, DependencyAccountSourcePort>();
+        services.AddScoped<IAllocationEventPort, DependencyAllocationEventPort>();
+        services.AddScoped<IDemandLeaseStore, DemandLeaseStore>();
+        services.AddSingleton<IClock, SystemClock>();
+        services.AddScoped<IAllocationPolicy, AllocationPolicy>();
+        services.AddScoped<IChargePolicyAdapter, DefaultChargePolicyAdapter>();
+        services.AddScoped<IJournalPort, ConfiguredJournalPort>();
+        services.AddScoped<IDemandProcessor, DemandProcessor>();
+        services.AddSingleton<DemandWorkQueue>();
+        services.AddSingleton<IDemandWorkQueue>(sp => sp.GetRequiredService<DemandWorkQueue>());
+        services.AddScoped<IDemandPdfExportService, DemandPdfExportService>();
+        services.AddSingleton<IPdfRenderer, Finnova.Service.DemandProcessing.PdfExport.QuestPdfRenderer>();
         return services;
     }
 

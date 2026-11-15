@@ -58,7 +58,10 @@ builder.Services.AddAuthorization(options =>
         ctx.User.IsInRole("SystemAdmin") ||
         ctx.User.IsInRole("GLViewer")));
     options.AddPolicy("ApplicationProcessor", p => p.RequireRole("ApplicationProcessor"));
-
+    options.AddPolicy("DemandRun", p => p.RequireAuthenticatedUser().RequireAssertion(ctx => ctx.User.IsInRole("Operations") || ctx.User.IsInRole("Accounts") || ctx.User.IsInRole("SystemAdmin")));
+    options.AddPolicy("DemandOutputRead", p => p.RequireAuthenticatedUser().RequireAssertion(ctx => ctx.User.IsInRole("Operations") || ctx.User.IsInRole("Accounts") || ctx.User.IsInRole("BranchOperations") || ctx.User.IsInRole("SystemAdmin")));
+    options.AddPolicy("DemandSpool", p => p.RequireAuthenticatedUser().RequireAssertion(ctx => ctx.User.IsInRole("Operations") || ctx.User.IsInRole("BranchOperations") || ctx.User.IsInRole("SystemAdmin") || ctx.User.IsInRole("Automizer")));
+    options.AddPolicy("DemandPdfExport", p => p.RequireAuthenticatedUser().RequireAssertion(ctx => ctx.User.IsInRole("Operations") || ctx.User.IsInRole("Accounts") || ctx.User.IsInRole("BranchOperations") || ctx.User.IsInRole("SystemAdmin")));
     // Loan Accounts (application-account-creation). SystemAdmin is listed explicitly only for operations.
     options.AddPolicy("AccountsRead", p => p.RequireAssertion(ctx =>
         ctx.User.IsInRole("AccountsViewer") || ctx.User.IsInRole("ApplicationProcessor")));
@@ -73,6 +76,9 @@ builder.Services.AddFinnovaRepository(connectionString);
 
 // Service layer: core + Application Processing (this host serves the Application Processing handlers).
 builder.Services.AddFinnovaServices(builder.Configuration, FinnovaServiceModules.ApplicationProcessing);
+builder.Services.AddSingleton<Finnova.Service.DemandProcessing.Processing.DemandWorkQueue>();
+builder.Services.AddSingleton<Finnova.Service.DemandProcessing.Ports.IDemandWorkQueue>(sp => sp.GetRequiredService<Finnova.Service.DemandProcessing.Processing.DemandWorkQueue>());
+builder.Services.AddHostedService<Finnova.Service.DemandProcessing.Processing.DemandRunWorker>();
 
 // Blob storage (Azure / AWS) â€” provider selected via BlobStorage:Provider
 builder.Services.AddBlobStorage(builder.Configuration);
