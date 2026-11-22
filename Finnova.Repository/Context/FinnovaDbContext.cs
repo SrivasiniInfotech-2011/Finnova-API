@@ -92,6 +92,12 @@ public class FinnovaDbContext : DbContext
     public DbSet<DemandFailure> DemandFailures => Set<DemandFailure>();
     public DbSet<DemandProcessingLease> DemandProcessingLeases => Set<DemandProcessingLease>();
     public DbSet<DemandAuditEntry> DemandAuditEntries => Set<DemandAuditEntry>();
+    public DbSet<AppropriationRuleVersion> AppropriationRuleVersions => Set<AppropriationRuleVersion>();
+    public DbSet<AppropriationRuleDetail> AppropriationRuleDetails => Set<AppropriationRuleDetail>();
+    public DbSet<AppropriationRuleAuditEntry> AppropriationRuleAuditEntries => Set<AppropriationRuleAuditEntry>();
+    public DbSet<RuleMutationIdempotency> RuleMutationIdempotencies => Set<RuleMutationIdempotency>();
+    public DbSet<ReceiptAppropriation> ReceiptAppropriations => Set<ReceiptAppropriation>();
+    public DbSet<AppropriationAuditEntry> AppropriationAuditEntries => Set<AppropriationAuditEntry>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

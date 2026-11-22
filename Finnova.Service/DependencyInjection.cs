@@ -3,10 +3,17 @@ using Finnova.Service.Applications;
 using Finnova.Service.Applications.Financial;
 using Finnova.Service.Applications.Ports;
 using Finnova.Service.Applications.References;
+using Finnova.Service.AppropriationLogic.Ports;
 using Finnova.Service.Assets.CodeGeneration;
 using Finnova.Service.Auth;
 using Finnova.Service.Behaviors;
 using Finnova.Service.Customers;
+using Finnova.Service.DemandProcessing.Adapters;
+using Finnova.Service.DemandProcessing.Billing;
+using Finnova.Service.DemandProcessing.Configuration;
+using Finnova.Service.DemandProcessing.PdfExport;
+using Finnova.Service.DemandProcessing.Ports;
+using Finnova.Service.DemandProcessing.Processing;
 using Finnova.Service.Document.Ports;
 using Finnova.Service.GL.Ports;
 using Finnova.Service.IdentityVerification;
@@ -15,12 +22,6 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Finnova.Service.DemandProcessing.Adapters;
-using Finnova.Service.DemandProcessing.Billing;
-using Finnova.Service.DemandProcessing.Configuration;
-using Finnova.Service.DemandProcessing.PdfExport;
-using Finnova.Service.DemandProcessing.Ports;
-using Finnova.Service.DemandProcessing.Processing;
 namespace Finnova.Service;
 
 /// <summary>Optional service-layer feature areas. A host enables only the areas it serves.</summary>
@@ -44,6 +45,8 @@ public static class DependencyInjection
 {
     private const string ApplicationsNamespace = "Finnova.Service.Applications";
     private const string IdentityVerificationNamespace = "Finnova.Service.IdentityVerification";
+    private const string AppropriationLogicNamespace = "Finnova.Service.AppropriationLogic";
+    private const string ReceiptAppropriationNamespace = "Finnova.Service.ReceiptAppropriation";
 
     /// <summary>
     /// Registers the core service layer (MediatR handlers, validators, validation pipeline, auth token
@@ -69,7 +72,9 @@ public static class DependencyInjection
             cfg.RegisterServicesFromAssembly(serviceAssembly);
             cfg.TypeEvaluator = t =>
                 (includeApplications || !InNamespace(t, ApplicationsNamespace)) &&
-                (includeIdentity || !InNamespace(t, IdentityVerificationNamespace));
+                (includeIdentity || !InNamespace(t, IdentityVerificationNamespace)) &&
+                !InNamespace(t, AppropriationLogicNamespace) &&
+                !InNamespace(t, ReceiptAppropriationNamespace);
         });
 
         // FluentValidation + the pipeline that runs it before each handler.
@@ -105,6 +110,8 @@ public static class DependencyInjection
         services.AddSingleton<IDemandWorkQueue>(sp => sp.GetRequiredService<DemandWorkQueue>());
         services.AddScoped<IDemandPdfExportService, DemandPdfExportService>();
         services.AddSingleton<IPdfRenderer, Finnova.Service.DemandProcessing.PdfExport.QuestPdfRenderer>();
+        services.AddScoped<IPreviousDemandPort, NullPreviousDemandPort>();
+        services.AddScoped<Repository.Interfaces.IAppropriationLogicRepository, Finnova.Repository.Repositories.AppropriationLogicRepository>();
         return services;
     }
 
