@@ -1,19 +1,12 @@
 using Finnova.Repository;
 using Finnova.Service;
-using Finnova.Service.Accounts.Commands.CreateAccount;
-using Finnova.Service.Assets.CodeGeneration;
-using Finnova.Service.Auth;
-using Finnova.Service.Customers;
-using Finnova.Service.GL.Ports;
+using Finnova.Service.LoanAccounts;
 using Finnova.Service.Storage;
-using Finnova.Service.UserManagement.Abstractions;
-using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Security.Claims;
 using System.Text;
-using Finnova.Service.LoanAccounts;
 var builder = WebApplication.CreateBuilder(args);
 
 // Controllers. Serialize/bind enums by their string names (e.g. "Active", "Control") so the
@@ -68,6 +61,13 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("KycApprover", p => p.RequireRole("KycApprover"));
     options.AddPolicy("AccountsOps", p => p.RequireAssertion(ctx =>
         ctx.User.IsInRole("AccountsOperator") || ctx.User.IsInRole("SystemAdmin")));
+    options.AddPolicy("ReceiptAppropriationRead", p => p.RequireAuthenticatedUser().RequireAssertion(ctx => ctx.User.IsInRole("BranchCollectionOfficer") || ctx.User.IsInRole("SystemAdmin")));
+    options.AddPolicy("ReceiptAppropriationConfirm", p => p.RequireAuthenticatedUser().RequireAssertion(ctx => ctx.User.IsInRole("BranchCollectionOfficer") || ctx.User.IsInRole("SystemAdmin")));
+    // Receipt Processing (FINNOVA-61). Both policies accept the same roles; they are separate so reads can be widened later.
+    options.AddPolicy("ReceiptEntry", p => p.RequireAuthenticatedUser().RequireAssertion(ctx =>
+        ctx.User.IsInRole("Cashier") || ctx.User.IsInRole("BranchCollectionOfficer") || ctx.User.IsInRole("SystemAdmin")));
+    options.AddPolicy("ReceiptRead", p => p.RequireAuthenticatedUser().RequireAssertion(ctx =>
+        ctx.User.IsInRole("Cashier") || ctx.User.IsInRole("BranchCollectionOfficer") || ctx.User.IsInRole("SystemAdmin")));
 });
 
 // Repository (EF Core + SQL Server)

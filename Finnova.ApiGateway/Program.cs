@@ -1,53 +1,5 @@
-var builder = WebApplication.CreateBuilder(args);
-
-// YARP Reverse Proxy
-builder.Services.AddReverseProxy()
-    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
-
-// CORS — allow the UI origin
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowUI", policy =>
-    {
-        policy.WithOrigins(
-                builder.Configuration.GetValue<string>("AllowedOrigins") ?? "http://localhost:3000")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
-    });
-});
-
-// OpenAPI + Swagger
-// AddSwaggerGen requires the API Explorer services, which are not registered
-// automatically in a controller-less YARP gateway. Register them explicitly.
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-// Health checks
-builder.Services.AddHealthChecks();
-
-var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseCors("AllowUI");
-app.MapHealthChecks("/health");
-// Internal service endpoints (DNC issuance, KYC verification, service tokens) are never public.
-app.Use(async (ctx, next) =>
-{
-    var path = ctx.Request.Path.Value ?? string.Empty;
-    if (path.Contains("/internal/", StringComparison.OrdinalIgnoreCase) ||
-        path.EndsWith("/internal", StringComparison.OrdinalIgnoreCase))
-    {
-        ctx.Response.StatusCode = StatusCodes.Status404NotFound;
-        return;
-    }
-    await next();
-});
-app.MapReverseProxy();
-
-app.Run();
+--Receipt Processing dev seed(FINNOVA - 61).Do not run in production: the F&A Bank Master owns this table later.
+INSERT INTO fa_bank_accounts (Id, BankName, BankBranch, AccountNumber, MicrCode, GlCode, SlCode, IsActive, CreatedAt, UpdatedAt)
+VALUES
+  (NEWID(), 'HDFC Bank Ltd',      'Mumbai Fort',  '50200012345678', '400240002', '110100101', NULL,   1, SYSUTCDATETIME(), SYSUTCDATETIME()),
+  (NEWID(), 'State Bank of India', 'Pune Camp', '30012345678', '411002003', '110100102', 'SL01', 1, SYSUTCDATETIME(), SYSUTCDATETIME());

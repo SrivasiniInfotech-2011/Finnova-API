@@ -1,6 +1,7 @@
 <Solution>
   <Project Path="Finnova.AccountsService/Finnova.AccountsService.csproj" />
   <Project Path="Finnova.ApiGateway/Finnova.ApiGateway.csproj" />
+  <Project Path="Finnova.Data.Seeder/Finnova.Data.Seeder.csproj" Id="dc5bbccc-75dd-43c2-b0f7-1c439f465898" />
   <Project Path="Finnova.Models/Finnova.Models.csproj" />
   <Project Path="Finnova.Repository/Finnova.Repository.csproj" />
   <Project Path="Finnova.Service/Finnova.Service.csproj" />

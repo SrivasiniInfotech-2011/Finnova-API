@@ -98,6 +98,14 @@ public class FinnovaDbContext : DbContext
     public DbSet<RuleMutationIdempotency> RuleMutationIdempotencies => Set<RuleMutationIdempotency>();
     public DbSet<ReceiptAppropriation> ReceiptAppropriations => Set<ReceiptAppropriation>();
     public DbSet<AppropriationAuditEntry> AppropriationAuditEntries => Set<AppropriationAuditEntry>();
+    public DbSet<Receipt> Receipts => Set<Receipt>();
+    public DbSet<ReceiptLine> ReceiptLines => Set<ReceiptLine>();
+    public DbSet<ReceiptAddLess> ReceiptAddLessRows => Set<ReceiptAddLess>();
+    public DbSet<ReceiptCashDenomination> ReceiptCashDenominations => Set<ReceiptCashDenomination>();
+    public DbSet<ReceiptChequeDetail> ReceiptChequeDetails => Set<ReceiptChequeDetail>();
+    public DbSet<ReceiptBankTransferDetail> ReceiptBankTransferDetails => Set<ReceiptBankTransferDetail>();
+    public DbSet<ReceiptAuditEntry> ReceiptAuditEntries => Set<ReceiptAuditEntry>();
+    public DbSet<FaBankAccount> FaBankAccounts => Set<FaBankAccount>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

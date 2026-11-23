@@ -1,19 +1,152 @@
 # Copy-paste implementation tasks — Demand Processing sample data
 
-Apply these tasks only after approval. This file is the implementation payload; no code in these blocks was applied while authoring this specification. Do not add a fixture migration. Apply the repository's existing migrations only in the isolated Development/Testing database used by the later tests.
+Apply these tasks only after approval. This file is the implementation payload; no code in these blocks was applied while authoring the specification. Apply the tasks in order. Task 1 creates a real EF migration; every other task is plain source.
 
-## Task 1 — Add fixture options and private-setter helpers
+Layout summary:
 
-### MODIFY `Finnova.Service/DemandProcessing/Configuration/DemandProcessingOptions.cs`
+```text
+Finnova.Repository/Migrations/<ts>_SeedTamilNaduReferenceLocations.cs   reference data (all environments)
+Finnova.Service/...                                                     IPreviousDemandPort seam only
+Finnova.Models/...                                                      private-setter helpers for customer entities
+Finnova.Data/                                                           new console project (sample data tool)
+Finnova.Tests/DemandProcessing/Support/                                 test-only March adapters and receipt parser
+Finnova.Tests/DemandProcessing/                                         tests
+```
 
-Add these properties inside `DemandProcessingOptions`, after `BusinessTimezone`, without changing existing properties:
+No file in `Finnova.AccountsService`, `Finnova.UAService`, `Finnova.SystemAdminService`, or `Finnova.ApiGateway` changes.
+
+## Task 1 — Reference-data migration (Tamil Nadu state and cities)
+
+### Command (scaffold)
+
+Run from the solution root. The model does not change, so EF generates an empty migration and leaves the snapshot alone.
+
+```powershell
+dotnet ef migrations add SeedTamilNaduReferenceLocations --project Finnova.Repository --startup-project Finnova.AccountsService
+```
+
+Check that `Finnova.Repository/Migrations/FinnovaDbContextModelSnapshot.cs` has no diff (`git diff --stat`). If it does, stop and review before continuing.
+
+### MODIFY `Finnova.Repository/Migrations/<timestamp>_SeedTamilNaduReferenceLocations.cs`
+
+Replace the generated class body with the code below. Keep the generated `<timestamp>` file name. Do not edit the generated `.Designer.cs` file.
 
 ```csharp
-public bool UseSampleAdapters { get; set; }
-public bool SeedSampleDataOnStartup { get; set; }
-public string SampleDataKey { get; set; } = "SAMPLE-DP-V1";
-public DateOnly SampleAsOfDate { get; set; } = new(2026, 3, 31);
+using System;
+using System.Linq;
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace Finnova.Repository.Migrations
+{
+    /// <inheritdoc />
+    public partial class SeedTamilNaduReferenceLocations : Migration
+    {
+        // Parents appear before children so Down can delete in reverse order.
+        // Values are compile-time constants; nothing user-supplied reaches the SQL.
+        private static readonly (string Id, string Code, string Name, int Level, string ParentCode, string Description)[] Rows =
+        [
+            ("7a1e0000-0000-4000-8000-000000000001", "TN",  "Tamil Nadu",      2, "IND", "State of Tamil Nadu"),
+            ("7a1e0000-0000-4000-8000-000000000002", "CHN", "Chennai",         3, "TN",  "Capital of Tamil Nadu"),
+            ("7a1e0000-0000-4000-8000-000000000003", "CBE", "Coimbatore",      3, "TN",  "City in Tamil Nadu"),
+            ("7a1e0000-0000-4000-8000-000000000004", "MDU", "Madurai",         3, "TN",  "City in Tamil Nadu"),
+            ("7a1e0000-0000-4000-8000-000000000005", "SLM", "Salem",           3, "TN",  "City in Tamil Nadu"),
+            ("7a1e0000-0000-4000-8000-000000000006", "TRI", "Tiruchirappalli", 3, "TN",  "City in Tamil Nadu"),
+            ("7a1e0000-0000-4000-8000-000000000007", "TNJ", "Thanjavur",       3, "TN",  "City in Tamil Nadu")
+        ];
+
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            // Idempotent: insert only when the parent exists and has no child with this code
+            // (matches the unique index on ParentId + Code). The parent id is read from the
+            // database, so a parent created earlier with a different id is still used.
+            foreach (var row in Rows)
+            {
+                migrationBuilder.Sql($@"
+INSERT INTO [locations] ([Id], [Code], [Name], [Level], [ParentId], [Description], [IsActive], [CreatedAt], [UpdatedAt])
+SELECT '{row.Id}', N'{row.Code}', N'{row.Name}', {row.Level}, p.[Id], N'{row.Description}', 1, '2024-01-01T00:00:00', '2024-01-01T00:00:00'
+FROM [locations] p
+WHERE p.[Code] = N'{row.ParentCode}' AND p.[Level] = {row.Level - 1}
+  AND NOT EXISTS (SELECT 1 FROM [locations] c WHERE c.[ParentId] = p.[Id] AND c.[Code] = N'{row.Code}');");
+            }
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            // Remove only the rows this migration owns, children first, and only when nothing
+            // (for example sample zones) still hangs under them.
+            foreach (var row in Rows.Reverse())
+            {
+                migrationBuilder.Sql($@"
+DELETE FROM [locations]
+WHERE [Id] = '{row.Id}'
+  AND NOT EXISTS (SELECT 1 FROM [locations] c WHERE c.[ParentId] = '{row.Id}');");
+            }
+        }
+    }
+}
 ```
+
+The rows are not part of `HasData`, so EF never tries to reconcile them and the snapshot stays unchanged. If the project's C# language version rejects the collection expression `[ ... ]` for the array, replace it with `new (string, string, string, int, string, string)[] { ... }`.
+
+## Task 2 — Previous-demand seam in `Finnova.Service`
+
+### MODIFY `Finnova.Service/DemandProcessing/Ports/DemandPorts.cs`
+
+Append at the end of the file:
+
+```csharp
+public sealed record PreviousDemandResult(decimal Arrears, string SourceReference);
+
+public interface IPreviousDemandPort
+{
+    Task<PreviousDemandResult?> GetAsync(Guid accountId, DemandScope scope, DemandPeriod targetPeriod, string snapshotReference, CancellationToken ct);
+}
+```
+
+### CREATE `Finnova.Service/DemandProcessing/Adapters/NullPreviousDemandPort.cs`
+
+```csharp
+using Finnova.Models.Domain.ValueObjects;
+using Finnova.Service.DemandProcessing.Ports;
+
+namespace Finnova.Service.DemandProcessing.Adapters;
+
+public sealed class NullPreviousDemandPort : IPreviousDemandPort
+{
+    public Task<PreviousDemandResult?> GetAsync(Guid accountId, DemandScope scope, DemandPeriod targetPeriod, string snapshotReference, CancellationToken ct) => Task.FromResult<PreviousDemandResult?>(null);
+}
+```
+
+### MODIFY `Finnova.Service/DemandProcessing/Processing/DemandProcessor.cs`
+
+Add `IPreviousDemandPort previousDemand` to the primary constructor after `IAllocationEventPort events`. Replace only the allocation statement with:
+
+```csharp
+var previous = await previousDemand.GetAsync(account.AccountId, scope, period, snapshotReference, ct);
+var allocationResult = allocation.Apply(installment, previous?.Arrears ?? 0m, sourceEvents);
+```
+
+### MODIFY `Finnova.Service/DependencyInjection.cs`
+
+Next to the existing Demand Processing port registrations (the lines that register `IFinalizedSchedulePort`, `IAccountSourcePort`, and `IAllocationEventPort`), add:
+
+```csharp
+services.AddScoped<IPreviousDemandPort, NullPreviousDemandPort>();
+```
+
+Add this directive only if it is not already present with the other Demand Processing usings:
+
+```csharp
+using Finnova.Service.DemandProcessing.Adapters;
+```
+
+## Task 3 — Private-setter helpers on customer entities
+
+The customer entities have private setters, so the seeder needs fixed IDs and timestamps through explicit methods.
 
 ### MODIFY `Finnova.Models/Domain/Entities/Customer.cs`
 
@@ -73,9 +206,59 @@ public void SetFixtureTimestamps(DateTime createdAtUtc, DateTime updatedAtUtc)
 }
 ```
 
-## Task 2 — Create the immutable catalog and preflight validator
+## Task 4 — Create the `Finnova.Data` project
 
-### CREATE `Finnova.Service/DemandProcessing/SampleData/SampleDataCatalog.cs`
+### CREATE `Finnova.Data/Finnova.Data.csproj`
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Finnova.Data</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Finnova.Models\Finnova.Models.csproj" />
+    <ProjectReference Include="..\Finnova.Repository\Finnova.Repository.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="appsettings*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
+```
+
+### CREATE `Finnova.Data/appsettings.json`
+
+The connection string stays empty on purpose. Supply it with the environment variable `ConnectionStrings__FinnovaConnection`, or with a local file `appsettings.Development.local.json` (already ignored by `.gitignore` through the `appsettings.*.local.json` pattern).
+
+```json
+{
+  "ConnectionStrings": {
+    "FinnovaConnection": ""
+  }
+}
+```
+
+### MODIFY `Finnova.Backend.slnx`
+
+Add this line inside `<Solution>`, next to the other projects:
+
+```xml
+<Project Path="Finnova.Data/Finnova.Data.csproj" />
+```
+
+No service host gets a reference to this project.
+
+## Task 5 — Catalog, exceptions, options, and environment guard
+
+### CREATE `Finnova.Data/DemandSample/SampleDataCatalog.cs`
 
 ```csharp
 using System.Globalization;
@@ -83,7 +266,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
-namespace Finnova.Service.DemandProcessing.SampleData;
+namespace Finnova.Data.DemandSample;
 
 public sealed record SamplePeriod(int Year, int Month)
 {
@@ -107,6 +290,7 @@ public static class SampleDataCatalog
     public const string OrganizationCode = "SMPD";
     public const string LobKey = "SAMPLE-DP-LENDING";
     public const string Frequency = "Monthly";
+    public const int ReferenceLocationMaxLevel = 3;
     public const string SnapshotReference = "SAMPLE-DP|V1|ASOF|2026-03-31";
     public const string OwnershipModule = "DemandProcessing";
     public const string OwnershipType = "SAMPLE_OWNERSHIP";
@@ -161,6 +345,7 @@ public static class SampleDataCatalog
 
     public static IReadOnlyList<SampleReceipt> Receipts { get; } = BuildReceipts();
 
+    public static decimal Money(decimal value) => decimal.Round(value, 2, MidpointRounding.AwayFromZero);
     public static Guid StableId(string entityType, string logicalKey) => new(SHA256.HashData(Encoding.UTF8.GetBytes($"{DatasetKey}|{entityType}|{logicalKey}"))[..16]);
     public static string Hash(object value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value))));
 
@@ -224,14 +409,14 @@ public static class SampleDataCatalog
 }
 ```
 
-The `TNJ-B01` catalog row must be exactly `new("TNJ-B01", "Thanjavur Main Branch", "TNJ", "TNJ-Z01")`; the complete line above intentionally uses that exact city code and zone code. Do not alter it when copying.
+The `TNJ-B01` catalog row must be exactly `new("TNJ-B01", "Thanjavur Main Branch", "TNJ", "TNJ-Z01")`. Do not alter it when copying.
 
-## Task 3 — Add ownership, canonical collision handling, and the transactional seeder
+The catalog still lists `TN` and the six cities in `Locations`. The seeder treats every row with `Level <= ReferenceLocationMaxLevel` (3) as reference data supplied by the Task 1 migration. It verifies those rows and never writes or owns them.
 
-### CREATE `Finnova.Service/DemandProcessing/SampleData/SampleDataExceptions.cs`
+### CREATE `Finnova.Data/DemandSample/SampleDataExceptions.cs`
 
 ```csharp
-namespace Finnova.Service.DemandProcessing.SampleData;
+namespace Finnova.Data.DemandSample;
 
 public sealed class SampleDataCollisionException(string entityType, string logicalKey)
     : InvalidOperationException($"Sample data ownership collision for {entityType}:{logicalKey}.");
@@ -240,7 +425,48 @@ public sealed class SampleDataValidationException(string message) : InvalidOpera
 public sealed record SampleOwnership(string EntityType, string LogicalKey, Guid EntityId, string ContentHash);
 ```
 
-### CREATE `Finnova.Service/DemandProcessing/SampleData/SampleOwnershipStore.cs`
+### CREATE `Finnova.Data/DemandSample/SampleDataOptions.cs`
+
+```csharp
+namespace Finnova.Data.DemandSample;
+
+/// <summary>
+/// Fixed fixture settings. The seeder rejects any value other than the defaults;
+/// the type exists so tests can prove that rejection.
+/// </summary>
+public sealed class SampleDataOptions
+{
+    public string SampleDataKey { get; init; } = SampleDataCatalog.DatasetKey;
+    public DateOnly SampleAsOfDate { get; init; } = SampleDataCatalog.AsOfDate;
+    public string BusinessTimezone { get; init; } = "Asia/Kolkata";
+}
+```
+
+### CREATE `Finnova.Data/DemandSample/SampleDataEnvironmentGuard.cs`
+
+```csharp
+namespace Finnova.Data.DemandSample;
+
+public sealed class SampleDataEnvironmentException(string message) : InvalidOperationException(message);
+
+/// <summary>
+/// The data tool runs only in Development or Testing. There is deliberately no override.
+/// An unset, empty, or unrecognized environment is refused. The message never echoes the value.
+/// </summary>
+public static class SampleDataEnvironmentGuard
+{
+    public static string Require(string? environmentName)
+    {
+        if (string.Equals(environmentName, "Development", StringComparison.OrdinalIgnoreCase)) return "Development";
+        if (string.Equals(environmentName, "Testing", StringComparison.OrdinalIgnoreCase)) return "Testing";
+        throw new SampleDataEnvironmentException("The data tool runs only when DOTNET_ENVIRONMENT is Development or Testing.");
+    }
+}
+```
+
+## Task 6 — Ownership store
+
+### CREATE `Finnova.Data/DemandSample/SampleOwnershipStore.cs`
 
 ```csharp
 using Finnova.Models.Domain.Entities;
@@ -248,7 +474,7 @@ using Finnova.Repository.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace Finnova.Service.DemandProcessing.SampleData;
+namespace Finnova.Data.DemandSample;
 
 public sealed class SampleOwnershipStore(FinnovaDbContext db)
 {
@@ -288,24 +514,23 @@ public sealed class SampleOwnershipStore(FinnovaDbContext db)
 }
 ```
 
-### CREATE `Finnova.Service/DemandProcessing/SampleData/SampleDataSeeder.cs`
+## Task 7 — Transactional seeder
+
+### CREATE `Finnova.Data/DemandSample/SampleDataSeeder.cs`
 
 ```csharp
 using Finnova.Models.Domain.Entities;
 using Finnova.Models.Domain.Enums;
 using Finnova.Repository.Context;
-using Finnova.Service.DemandProcessing.Billing;
-using Finnova.Service.DemandProcessing.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
-namespace Finnova.Service.DemandProcessing.SampleData;
+namespace Finnova.Data.DemandSample;
 
-public sealed class SampleDataSeeder(FinnovaDbContext db, IOptions<DemandProcessingOptions> options, SampleOwnershipStore ownership, ILogger<SampleDataSeeder> logger)
+public sealed class SampleDataSeeder(FinnovaDbContext db, SampleDataOptions options, SampleOwnershipStore ownership, ILogger<SampleDataSeeder> logger)
 {
-    private DemandProcessingOptions Options => options.Value;
+    private SampleDataOptions Options => options;
 
     public async Task<string> SeedAsync(CancellationToken ct = default)
     {
@@ -313,6 +538,7 @@ public sealed class SampleDataSeeder(FinnovaDbContext db, IOptions<DemandProcess
         SampleDataCatalog.Validate();
         var india = await db.Locations.AsNoTracking().SingleOrDefaultAsync(x => x.Id == SampleDataCatalog.IndiaId, ct);
         if (india is null || india.Code != "IND" || india.Name != "India" || india.Level != 1 || india.ParentId is not null || !india.IsActive) throw new SampleDataValidationException("The external IND location invariants failed.");
+        await VerifyReferenceLocationsAsync(ct);
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
         try
         {
@@ -395,9 +621,22 @@ public sealed class SampleDataSeeder(FinnovaDbContext db, IOptions<DemandProcess
     private async Task<Dictionary<string, Location>> SeedLocationsAsync(CancellationToken ct)
     {
         var map = new Dictionary<string, Location>(StringComparer.Ordinal) { ["IND"] = await db.Locations.SingleAsync(x => x.Id == SampleDataCatalog.IndiaId, ct) };
-        foreach (var item in SampleDataCatalog.Locations) { var id = SampleDataCatalog.StableId("Location", item.Code); var row = await db.Locations.SingleOrDefaultAsync(x => x.Id == id, ct) ?? await db.Locations.SingleOrDefaultAsync(x => x.Code == item.Code, ct); if (row is not null) await RequireExistingAsync("Location", item.Code, id, row.Id, ct); else row = new Location { Id = id }; var parent = map[item.ParentCode]; row.Code = item.Code; row.Name = item.Name; row.Level = item.Level; row.ParentId = parent.Id; row.Description = SampleDataCatalog.DatasetKey; row.IsActive = true; row.CreatedAt = SampleDataCatalog.SeedTimestampUtc; row.UpdatedAt = SampleDataCatalog.SeedTimestampUtc; if (db.Entry(row).State == EntityState.Detached) db.Locations.Add(row); map[item.Code] = row; await ownership.RegisterAsync("Location", item.Code, id, SampleDataCatalog.Hash(new { row.Id, row.Code, row.Name, row.Level, row.ParentId, row.IsActive }), ct); }
+        foreach (var item in SampleDataCatalog.Locations) { if (item.Level <= SampleDataCatalog.ReferenceLocationMaxLevel) { map[item.Code] = await RequireReferenceLocationAsync(item, map[item.ParentCode], ct); continue; } var id = SampleDataCatalog.StableId("Location", item.Code); var row = await db.Locations.SingleOrDefaultAsync(x => x.Id == id, ct) ?? await db.Locations.SingleOrDefaultAsync(x => x.Code == item.Code, ct); if (row is not null) await RequireExistingAsync("Location", item.Code, id, row.Id, ct); else row = new Location { Id = id }; var parent = map[item.ParentCode]; row.Code = item.Code; row.Name = item.Name; row.Level = item.Level; row.ParentId = parent.Id; row.Description = SampleDataCatalog.DatasetKey; row.IsActive = true; row.CreatedAt = SampleDataCatalog.SeedTimestampUtc; row.UpdatedAt = SampleDataCatalog.SeedTimestampUtc; if (db.Entry(row).State == EntityState.Detached) db.Locations.Add(row); map[item.Code] = row; await ownership.RegisterAsync("Location", item.Code, id, SampleDataCatalog.Hash(new { row.Id, row.Code, row.Name, row.Level, row.ParentId, row.IsActive }), ct); }
         foreach (var item in SampleDataCatalog.Branches) { var id = SampleDataCatalog.StableId("Location", item.Code); var row = await db.Locations.SingleOrDefaultAsync(x => x.Id == id, ct) ?? await db.Locations.SingleOrDefaultAsync(x => x.Code == item.Code, ct); if (row is not null) await RequireExistingAsync("Location", item.Code, id, row.Id, ct); else row = new Location { Id = id }; var parent = map[item.ZoneCode]; row.Code = item.Code; row.Name = item.Name; row.Level = 5; row.ParentId = parent.Id; row.Description = $"{SampleDataCatalog.DatasetKey}|{item.CityCode}|{item.ZoneCode}"; row.IsActive = true; row.CreatedAt = SampleDataCatalog.SeedTimestampUtc; row.UpdatedAt = SampleDataCatalog.SeedTimestampUtc; if (db.Entry(row).State == EntityState.Detached) db.Locations.Add(row); map[item.Code] = row; await ownership.RegisterAsync("Location", item.Code, id, SampleDataCatalog.Hash(new { row.Id, row.Code, row.Name, row.Level, row.ParentId, row.Description, row.IsActive }), ct); }
         return map;
+    }
+
+    private async Task VerifyReferenceLocationsAsync(CancellationToken ct)
+    {
+        var map = new Dictionary<string, Location>(StringComparer.Ordinal) { ["IND"] = await db.Locations.SingleAsync(x => x.Id == SampleDataCatalog.IndiaId, ct) };
+        foreach (var item in SampleDataCatalog.Locations.Where(x => x.Level <= SampleDataCatalog.ReferenceLocationMaxLevel)) map[item.Code] = await RequireReferenceLocationAsync(item, map[item.ParentCode], ct);
+    }
+
+    private async Task<Location> RequireReferenceLocationAsync(SampleLocation item, Location parent, CancellationToken ct)
+    {
+        var row = await db.Locations.SingleOrDefaultAsync(x => x.Code == item.Code && x.ParentId == parent.Id, ct);
+        if (row is null || row.Level != item.Level || row.ParentId != parent.Id || !row.IsActive) throw new SampleDataValidationException($"Reference location {item.Code} is missing or invalid. Apply the reference-data migration first.");
+        return row;
     }
 
     private async Task<Dictionary<string, Customer>> SeedCustomersAsync(Guid organizationId, CancellationToken ct)
@@ -433,8 +672,8 @@ public sealed class SampleDataSeeder(FinnovaDbContext db, IOptions<DemandProcess
 
     private async Task SeedScheduleAsync(Application app, SampleLoan item, CancellationToken ct)
     {
-        var scheduleId = SampleDataCatalog.StableId("ApplicationSchedule", item.ApplicationNumber); var schedule = await db.ApplicationSchedules.Include(x => x.Installments).SingleOrDefaultAsync(x => x.Id == scheduleId, ct); if (schedule is not null) await RequireExistingAsync("ApplicationSchedule", item.ApplicationNumber, scheduleId, schedule.Id, ct); else schedule = new ApplicationSchedule { Id = scheduleId }; var principal = BillingRules.Money(item.Emi * .72m); var interest = BillingRules.Money(item.Emi - principal); schedule.ApplicationId = app.Id; schedule.IsFinalized = true; schedule.GeneratedAtUtc = SampleDataCatalog.SeedTimestampUtc; schedule.FinanceAmount = item.FinanceAmount; schedule.IrrPercent = 12m; schedule.Tenure = item.Tenure; schedule.RepaymentFrequency = RepaymentFrequency.Monthly; schedule.DisbursementDate = app.DisbursementDate; schedule.PeriodicInterestRate = 1m; schedule.EmiAmount = item.Emi; schedule.TotalInstallmentAmount = BillingRules.Money(item.Emi * 6m); schedule.TotalPrincipalAmount = BillingRules.Money(principal * 6m); schedule.TotalInterestAmount = BillingRules.Money(interest * 6m); if (db.Entry(schedule).State == EntityState.Detached) db.ApplicationSchedules.Add(schedule);
-        foreach (var (period, index) in SampleDataCatalog.Periods.Select((p, i) => (p, i + 1))) { var id = SampleDataCatalog.StableId("ApplicationInstallment", $"{item.ApplicationNumber}:{period.Key}"); var installment = await db.ApplicationInstallments.SingleOrDefaultAsync(x => x.Id == id, ct); if (installment is not null) await RequireExistingAsync("ApplicationInstallment", $"{item.ApplicationNumber}:{period.Key}", id, installment.Id, ct); else installment = new ApplicationInstallment { Id = id }; installment.ScheduleId = schedule.Id; installment.InstallmentNumber = index; installment.DueDate = period.DueDate; installment.OpeningBalance = BillingRules.Money(item.FinanceAmount - principal * (index - 1)); installment.PrincipalPortion = principal; installment.InterestPortion = interest; installment.InstallmentAmount = item.Emi; installment.ClosingBalance = BillingRules.Money(installment.OpeningBalance - principal); if (db.Entry(installment).State == EntityState.Detached) db.ApplicationInstallments.Add(installment); await ownership.RegisterAsync("ApplicationInstallment", $"{item.ApplicationNumber}:{period.Key}", id, SampleDataCatalog.Hash(new { installment.Id, installment.ScheduleId, installment.InstallmentNumber, installment.DueDate, installment.OpeningBalance, installment.InterestPortion, installment.PrincipalPortion, installment.InstallmentAmount, installment.ClosingBalance }), ct); }
+        var scheduleId = SampleDataCatalog.StableId("ApplicationSchedule", item.ApplicationNumber); var schedule = await db.ApplicationSchedules.Include(x => x.Installments).SingleOrDefaultAsync(x => x.Id == scheduleId, ct); if (schedule is not null) await RequireExistingAsync("ApplicationSchedule", item.ApplicationNumber, scheduleId, schedule.Id, ct); else schedule = new ApplicationSchedule { Id = scheduleId }; var principal = SampleDataCatalog.Money(item.Emi * .72m); var interest = SampleDataCatalog.Money(item.Emi - principal); schedule.ApplicationId = app.Id; schedule.IsFinalized = true; schedule.GeneratedAtUtc = SampleDataCatalog.SeedTimestampUtc; schedule.FinanceAmount = item.FinanceAmount; schedule.IrrPercent = 12m; schedule.Tenure = item.Tenure; schedule.RepaymentFrequency = RepaymentFrequency.Monthly; schedule.DisbursementDate = app.DisbursementDate; schedule.PeriodicInterestRate = 1m; schedule.EmiAmount = item.Emi; schedule.TotalInstallmentAmount = SampleDataCatalog.Money(item.Emi * 6m); schedule.TotalPrincipalAmount = SampleDataCatalog.Money(principal * 6m); schedule.TotalInterestAmount = SampleDataCatalog.Money(interest * 6m); if (db.Entry(schedule).State == EntityState.Detached) db.ApplicationSchedules.Add(schedule);
+        foreach (var (period, index) in SampleDataCatalog.Periods.Select((p, i) => (p, i + 1))) { var id = SampleDataCatalog.StableId("ApplicationInstallment", $"{item.ApplicationNumber}:{period.Key}"); var installment = await db.ApplicationInstallments.SingleOrDefaultAsync(x => x.Id == id, ct); if (installment is not null) await RequireExistingAsync("ApplicationInstallment", $"{item.ApplicationNumber}:{period.Key}", id, installment.Id, ct); else installment = new ApplicationInstallment { Id = id }; installment.ScheduleId = schedule.Id; installment.InstallmentNumber = index; installment.DueDate = period.DueDate; installment.OpeningBalance = SampleDataCatalog.Money(item.FinanceAmount - principal * (index - 1)); installment.PrincipalPortion = principal; installment.InterestPortion = interest; installment.InstallmentAmount = item.Emi; installment.ClosingBalance = SampleDataCatalog.Money(installment.OpeningBalance - principal); if (db.Entry(installment).State == EntityState.Detached) db.ApplicationInstallments.Add(installment); await ownership.RegisterAsync("ApplicationInstallment", $"{item.ApplicationNumber}:{period.Key}", id, SampleDataCatalog.Hash(new { installment.Id, installment.ScheduleId, installment.InstallmentNumber, installment.DueDate, installment.OpeningBalance, installment.InterestPortion, installment.PrincipalPortion, installment.InstallmentAmount, installment.ClosingBalance }), ct); }
         await ownership.RegisterAsync("ApplicationSchedule", item.ApplicationNumber, scheduleId, SampleDataCatalog.Hash(new { schedule.Id, schedule.ApplicationId, schedule.IsFinalized, schedule.FinanceAmount, schedule.EmiAmount, schedule.TotalInstallmentAmount, schedule.TotalPrincipalAmount, schedule.TotalInterestAmount, InstallmentCount = 6 }), ct);
     }
 
@@ -456,9 +695,9 @@ public sealed class SampleDataSeeder(FinnovaDbContext db, IOptions<DemandProcess
             run.BillingStageRunId = stage.Id; run.BillingSnapshotId = billing.Id; run.DemandSnapshotId = demand.Id; revision.BillingSnapshotId = billing.Id; revision.DemandSnapshotId = demand.Id;
             db.DemandRunRevisions.Update(revision); db.BillingStageRuns.Update(stage); db.BillingSnapshots.Update(billing); db.DemandSnapshots.Update(demand);
             var rows = new List<DemandRow>();
-            foreach (var item in SampleDataCatalog.Loans) { var loan = loans[item.Key]; var branch = locations[item.BranchCode]; var arrears = period.Key == "2026-02" && item.Key == "A002" ? 12000m : period.Key == "2026-02" && item.Key == "A004" ? 8000m : 0m; var resultId = SampleDataCatalog.StableId("BillingResult", $"{period.Key}:{item.Key}"); var result = new BillingPeriodResult { Id = resultId, BillingStageRunId = stage.Id, AccountId = loan.Id, AccountDisplay = item.AccountNumber, CustomerDisplay = item.CustomerKey, CustomerId = loan.CustomerId!.Value, LineOfBusinessId = lobId, BranchId = branch.Id, AccountStatusAtCutoff = "Active", IsEligible = true, Status = BillingPeriodResultStatus.Succeeded, ScheduleReference = $"{SampleDataCatalog.DatasetKey}|SCHEDULE|{item.ApplicationNumber}|{period.Key}", ScheduledPrincipal = BillingRules.Money(item.Emi * .72m), ScheduledInterestOrEmi = BillingRules.Money(item.Emi * .28m), ScheduledInstallment = item.Emi, CurrentDue = item.Emi, Arrears = arrears, Odi = 0m, OtherCharges = 0m, AllocationPolicyReference = "ConfiguredAllocationPolicy", ChargePolicyReference = "Default", ProcessingCutoffReference = SampleDataCatalog.SnapshotReference, CreatedAtUtc = SampleDataCatalog.SeedTimestampUtc }; db.BillingPeriodResults.Update(result); var row = new DemandRow { Id = SampleDataCatalog.StableId("DemandRow", $"{period.Key}:{item.Key}"), DemandRunRevisionId = revision.Id, DemandSnapshotId = demand.Id, BillingPeriodResultId = result.Id, AccountId = loan.Id, CustomerId = loan.CustomerId.Value, LineOfBusinessId = lobId, BranchId = branch.Id, AccountDisplay = item.AccountNumber, CustomerDisplay = item.CustomerKey, Status = DemandRowStatus.Completed, CurrentDue = item.Emi, Arrears = arrears, Odi = 0m, OtherCharges = 0m, TotalCharges = 0m, TotalDemand = BillingRules.Money(item.Emi + arrears), ScheduleReference = result.ScheduleReference, ProcessingCutoffReference = SampleDataCatalog.SnapshotReference, OrderingKey = loan.Id.ToString("N") }; rows.Add(row); db.DemandRows.Update(row); var evidence = new BillingAllocationEvidence { Id = SampleDataCatalog.StableId("BillingEvidence", $"{period.Key}:{item.Key}"), BillingStageRunId = stage.Id, BillingPeriodResultId = result.Id, EventType = AllocationEventType.OtherCharge, SourceEventId = result.Id, AllocationPolicyReference = "ConfiguredAllocationPolicy", AllocationSequence = 0, AllocatedAmount = 0m, TargetComponent = "CurrentDue", Outcome = AllocationOutcome.Excluded, SafeReason = "Historical fixture row has no source allocation event.", ApplicationKey = $"{SampleDataCatalog.DatasetKey}:{period.Key}:{item.Key}" }; db.BillingAllocationEvidence.Update(evidence); await ownership.RegisterAsync("BillingResult", $"{period.Key}:{item.Key}", resultId, SampleDataCatalog.Hash(new { result.Id, result.BillingStageRunId, result.AccountId, result.CustomerId, result.LineOfBusinessId, result.BranchId, result.CurrentDue, result.Arrears, result.Status }), ct); await ownership.RegisterAsync("DemandRow", $"{period.Key}:{item.Key}", row.Id, SampleDataCatalog.Hash(new { row.Id, row.DemandSnapshotId, row.AccountId, row.CustomerId, row.LineOfBusinessId, row.BranchId, row.CurrentDue, row.Arrears, row.TotalDemand }), ct); await ownership.RegisterAsync("BillingEvidence", $"{period.Key}:{item.Key}", evidence.Id, SampleDataCatalog.Hash(new { evidence.Id, evidence.BillingStageRunId, evidence.BillingPeriodResultId, evidence.EventType, evidence.AllocatedAmount, evidence.Outcome }), ct); }
-            foreach (var branch in SampleDataCatalog.Branches) { var batchId = SampleDataCatalog.StableId("DemandBatch", $"{period.Key}:{branch.Code}"); var batch = new DemandBatch { Id = batchId, DemandRunRevisionId = revision.Id, DemandSnapshotId = demand.Id, DemandRunId = run.Id, RevisionNumber = 1, BranchId = locations[branch.Code].Id, LineOfBusinessId = lobId, Frequency = SampleDataCatalog.Frequency, PeriodYear = period.Year, PeriodMonth = period.Month, Status = branch.Code == "MDU-B02" ? DemandBatchStatus.NoDemand : DemandBatchStatus.ReadyToSpool, SpoolIdempotencyKey = $"{run.Id:N}:1:{locations[branch.Code].Id:N}" }; foreach (var row in rows.Where(x => x.BranchId == batch.BranchId)) row.DemandBatchId = batch.Id; var branchRows = rows.Where(x => x.BranchId == batch.BranchId).ToArray(); batch.RowCount = branchRows.Length; batch.CurrentDueTotal = BillingRules.Money(branchRows.Sum(x => x.CurrentDue)); batch.ArrearsTotal = BillingRules.Money(branchRows.Sum(x => x.Arrears)); batch.TotalCharges = 0m; batch.TotalDemand = BillingRules.Money(branchRows.Sum(x => x.TotalDemand)); db.DemandBatches.Update(batch); await ownership.RegisterAsync("DemandBatch", $"{period.Key}:{branch.Code}", batchId, SampleDataCatalog.Hash(new { batch.Id, batch.DemandRunId, batch.RevisionNumber, batch.BranchId, batch.LineOfBusinessId, batch.RowCount, batch.Status, batch.CurrentDueTotal, batch.ArrearsTotal, batch.TotalDemand }), ct); }
-            run.RowCount = rows.Count; run.BatchCount = SampleDataCatalog.Branches.Count; run.CurrentDueTotal = BillingRules.Money(rows.Sum(x => x.CurrentDue)); run.ArrearsTotal = BillingRules.Money(rows.Sum(x => x.Arrears)); run.TotalCharges = 0m; run.TotalDemand = BillingRules.Money(rows.Sum(x => x.TotalDemand)); revision.RowCount = run.RowCount; revision.BatchCount = run.BatchCount; revision.CurrentDueTotal = run.CurrentDueTotal; revision.ArrearsTotal = run.ArrearsTotal; revision.TotalCharges = 0m; revision.TotalDemand = run.TotalDemand; stage.EligibleAccountCount = rows.Count; stage.SuccessfulResultCount = rows.Count; billing.ResultCount = rows.Count; billing.CurrentDueTotal = run.CurrentDueTotal; billing.ArrearsTotal = run.ArrearsTotal; billing.OdiTotal = 0m; billing.OtherChargesTotal = 0m; stage.BillingSnapshotId = billing.Id; stage.BillingSnapshotVersion = billing.Version; demand.RowCount = rows.Count; demand.BatchCount = run.BatchCount; demand.TotalDemand = run.TotalDemand;
+            foreach (var item in SampleDataCatalog.Loans) { var loan = loans[item.Key]; var branch = locations[item.BranchCode]; var arrears = period.Key == "2026-02" && item.Key == "A002" ? 12000m : period.Key == "2026-02" && item.Key == "A004" ? 8000m : 0m; var resultId = SampleDataCatalog.StableId("BillingResult", $"{period.Key}:{item.Key}"); var result = new BillingPeriodResult { Id = resultId, BillingStageRunId = stage.Id, AccountId = loan.Id, AccountDisplay = item.AccountNumber, CustomerDisplay = item.CustomerKey, CustomerId = loan.CustomerId!.Value, LineOfBusinessId = lobId, BranchId = branch.Id, AccountStatusAtCutoff = "Active", IsEligible = true, Status = BillingPeriodResultStatus.Succeeded, ScheduleReference = $"{SampleDataCatalog.DatasetKey}|SCHEDULE|{item.ApplicationNumber}|{period.Key}", ScheduledPrincipal = SampleDataCatalog.Money(item.Emi * .72m), ScheduledInterestOrEmi = SampleDataCatalog.Money(item.Emi * .28m), ScheduledInstallment = item.Emi, CurrentDue = item.Emi, Arrears = arrears, Odi = 0m, OtherCharges = 0m, AllocationPolicyReference = "ConfiguredAllocationPolicy", ChargePolicyReference = "Default", ProcessingCutoffReference = SampleDataCatalog.SnapshotReference, CreatedAtUtc = SampleDataCatalog.SeedTimestampUtc }; db.BillingPeriodResults.Update(result); var row = new DemandRow { Id = SampleDataCatalog.StableId("DemandRow", $"{period.Key}:{item.Key}"), DemandRunRevisionId = revision.Id, DemandSnapshotId = demand.Id, BillingPeriodResultId = result.Id, AccountId = loan.Id, CustomerId = loan.CustomerId.Value, LineOfBusinessId = lobId, BranchId = branch.Id, AccountDisplay = item.AccountNumber, CustomerDisplay = item.CustomerKey, Status = DemandRowStatus.Completed, CurrentDue = item.Emi, Arrears = arrears, Odi = 0m, OtherCharges = 0m, TotalCharges = 0m, TotalDemand = SampleDataCatalog.Money(item.Emi + arrears), ScheduleReference = result.ScheduleReference, ProcessingCutoffReference = SampleDataCatalog.SnapshotReference, OrderingKey = loan.Id.ToString("N") }; rows.Add(row); db.DemandRows.Update(row); var evidence = new BillingAllocationEvidence { Id = SampleDataCatalog.StableId("BillingEvidence", $"{period.Key}:{item.Key}"), BillingStageRunId = stage.Id, BillingPeriodResultId = result.Id, EventType = AllocationEventType.OtherCharge, SourceEventId = result.Id, AllocationPolicyReference = "ConfiguredAllocationPolicy", AllocationSequence = 0, AllocatedAmount = 0m, TargetComponent = "CurrentDue", Outcome = AllocationOutcome.Excluded, SafeReason = "Historical fixture row has no source allocation event.", ApplicationKey = $"{SampleDataCatalog.DatasetKey}:{period.Key}:{item.Key}" }; db.BillingAllocationEvidence.Update(evidence); await ownership.RegisterAsync("BillingResult", $"{period.Key}:{item.Key}", resultId, SampleDataCatalog.Hash(new { result.Id, result.BillingStageRunId, result.AccountId, result.CustomerId, result.LineOfBusinessId, result.BranchId, result.CurrentDue, result.Arrears, result.Status }), ct); await ownership.RegisterAsync("DemandRow", $"{period.Key}:{item.Key}", row.Id, SampleDataCatalog.Hash(new { row.Id, row.DemandSnapshotId, row.AccountId, row.CustomerId, row.LineOfBusinessId, row.BranchId, row.CurrentDue, row.Arrears, row.TotalDemand }), ct); await ownership.RegisterAsync("BillingEvidence", $"{period.Key}:{item.Key}", evidence.Id, SampleDataCatalog.Hash(new { evidence.Id, evidence.BillingStageRunId, evidence.BillingPeriodResultId, evidence.EventType, evidence.AllocatedAmount, evidence.Outcome }), ct); }
+            foreach (var branch in SampleDataCatalog.Branches) { var batchId = SampleDataCatalog.StableId("DemandBatch", $"{period.Key}:{branch.Code}"); var batch = new DemandBatch { Id = batchId, DemandRunRevisionId = revision.Id, DemandSnapshotId = demand.Id, DemandRunId = run.Id, RevisionNumber = 1, BranchId = locations[branch.Code].Id, LineOfBusinessId = lobId, Frequency = SampleDataCatalog.Frequency, PeriodYear = period.Year, PeriodMonth = period.Month, Status = branch.Code == "MDU-B02" ? DemandBatchStatus.NoDemand : DemandBatchStatus.ReadyToSpool, SpoolIdempotencyKey = $"{run.Id:N}:1:{locations[branch.Code].Id:N}" }; foreach (var row in rows.Where(x => x.BranchId == batch.BranchId)) row.DemandBatchId = batch.Id; var branchRows = rows.Where(x => x.BranchId == batch.BranchId).ToArray(); batch.RowCount = branchRows.Length; batch.CurrentDueTotal = SampleDataCatalog.Money(branchRows.Sum(x => x.CurrentDue)); batch.ArrearsTotal = SampleDataCatalog.Money(branchRows.Sum(x => x.Arrears)); batch.TotalCharges = 0m; batch.TotalDemand = SampleDataCatalog.Money(branchRows.Sum(x => x.TotalDemand)); db.DemandBatches.Update(batch); await ownership.RegisterAsync("DemandBatch", $"{period.Key}:{branch.Code}", batchId, SampleDataCatalog.Hash(new { batch.Id, batch.DemandRunId, batch.RevisionNumber, batch.BranchId, batch.LineOfBusinessId, batch.RowCount, batch.Status, batch.CurrentDueTotal, batch.ArrearsTotal, batch.TotalDemand }), ct); }
+            run.RowCount = rows.Count; run.BatchCount = SampleDataCatalog.Branches.Count; run.CurrentDueTotal = SampleDataCatalog.Money(rows.Sum(x => x.CurrentDue)); run.ArrearsTotal = SampleDataCatalog.Money(rows.Sum(x => x.Arrears)); run.TotalCharges = 0m; run.TotalDemand = SampleDataCatalog.Money(rows.Sum(x => x.TotalDemand)); revision.RowCount = run.RowCount; revision.BatchCount = run.BatchCount; revision.CurrentDueTotal = run.CurrentDueTotal; revision.ArrearsTotal = run.ArrearsTotal; revision.TotalCharges = 0m; revision.TotalDemand = run.TotalDemand; stage.EligibleAccountCount = rows.Count; stage.SuccessfulResultCount = rows.Count; billing.ResultCount = rows.Count; billing.CurrentDueTotal = run.CurrentDueTotal; billing.ArrearsTotal = run.ArrearsTotal; billing.OdiTotal = 0m; billing.OtherChargesTotal = 0m; stage.BillingSnapshotId = billing.Id; stage.BillingSnapshotVersion = billing.Version; demand.RowCount = rows.Count; demand.BatchCount = run.BatchCount; demand.TotalDemand = run.TotalDemand;
             await ownership.RegisterAsync("DemandRun", period.Key, run.Id, SampleDataCatalog.Hash(new { run.Id, run.LineOfBusinessId, run.Frequency, run.PeriodYear, run.PeriodMonth, run.BusinessTimezone, run.LogicalScopeKey, run.ProcessingCutoffReference, run.Status, run.BillingStatus, run.CurrentRevisionNumber, run.BillingStageRunId, run.BillingSnapshotId, run.DemandSnapshotId, run.RowCount, run.BatchCount, run.CurrentDueTotal, run.ArrearsTotal, run.TotalCharges, run.TotalDemand }), ct);
             await ownership.RegisterAsync("DemandRevision", period.Key, revision.Id, SampleDataCatalog.Hash(new { revision.Id, revision.DemandRunId, revision.RevisionNumber, revision.Status, revision.BillingSnapshotId, revision.DemandSnapshotId, revision.RowCount, revision.BatchCount, revision.CurrentDueTotal, revision.ArrearsTotal, revision.TotalCharges, revision.TotalDemand }), ct);
             await ownership.RegisterAsync("BillingStage", period.Key, stage.Id, SampleDataCatalog.Hash(new { stage.Id, stage.DemandRunId, stage.RevisionNumber, stage.Status, stage.BillingSnapshotId, stage.EligibleAccountCount, stage.SuccessfulResultCount }), ct);
@@ -494,47 +733,140 @@ public sealed class SampleDataSeeder(FinnovaDbContext db, IOptions<DemandProcess
 }
 ```
 
-The seeder deliberately calls `SaveChangesAsync` before calculating the fingerprint so newly added ownership rows are included. The manifest is excluded from the query, so the first and second fingerprints are equal. The implementation must retain the explicit ownership checks before every update; an existing deterministic row without ownership is a collision, not an adoptable row.
+Differences from the earlier revision, all already applied in the code above:
 
-## Task 4 — Add previous-demand seam and strict receipt parser
+- The constructor takes `SampleDataOptions` instead of `IOptions<DemandProcessingOptions>`.
+- Rounding uses `SampleDataCatalog.Money`.
+- `VerifyReferenceLocationsAsync` runs before the transaction opens. It resolves `TN` and the six cities by code under the expected parent and checks level and active flag. A mismatch throws `SampleDataValidationException` that names the reference-data migration. The locations loop then reuses those rows and never writes or owns them.
+- Zones and branches are still upserted with deterministic IDs and ownership records, with parent IDs taken from the resolved rows.
 
-### MODIFY `Finnova.Service/DemandProcessing/Ports/DemandPorts.cs`
+The seeder deliberately calls `SaveChangesAsync` before calculating the fingerprint so newly added ownership rows are included. The manifest is excluded from the query, so the first and second fingerprints are equal. Keep the explicit ownership checks before every update: an existing deterministic row without ownership is a collision and is never adopted.
 
-Append:
+## Task 8 — Verifier and command-line entry point
+
+### CREATE `Finnova.Data/DemandSample/SampleDataVerifier.cs`
 
 ```csharp
-public sealed record PreviousDemandResult(decimal Arrears, string SourceReference);
+using Finnova.Repository.Context;
+using Microsoft.EntityFrameworkCore;
 
-public interface IPreviousDemandPort
+namespace Finnova.Data.DemandSample;
+
+/// <summary>Read-only checks. Returns human-readable problems; an empty list means the data is intact.</summary>
+public sealed class SampleDataVerifier(FinnovaDbContext db)
 {
-    Task<PreviousDemandResult?> GetAsync(Guid accountId, DemandScope scope, DemandPeriod targetPeriod, string snapshotReference, CancellationToken ct);
+    public async Task<IReadOnlyList<string>> VerifyAsync(CancellationToken ct = default)
+    {
+        var problems = new List<string>();
+        var manifestCode = $"Manifest:{SampleDataCatalog.DatasetKey}";
+        var manifest = await db.LookupValues.AsNoTracking().SingleOrDefaultAsync(x => x.Module == SampleDataCatalog.OwnershipModule && x.LookupType == SampleDataCatalog.OwnershipType && x.Code == manifestCode, ct);
+        if (manifest is null) { problems.Add("The manifest is missing. Run the seed command."); return problems; }
+
+        var values = await db.LookupValues.AsNoTracking().Where(x => x.Module == SampleDataCatalog.OwnershipModule && x.LookupType == SampleDataCatalog.OwnershipType && x.Code != manifestCode).OrderBy(x => x.Code).Select(x => x.Code + "=" + x.Value).ToListAsync(ct);
+        var parts = manifest.Value.Split('|');
+        if (parts.Length != 4 || !string.Equals(parts[3], SampleDataCatalog.Hash(string.Join("\n", values)), StringComparison.Ordinal)) problems.Add("The manifest fingerprint does not match the ownership records.");
+
+        var loanIds = SampleDataCatalog.Loans.Select(x => SampleDataCatalog.StableId("LoanAccount", x.AccountNumber)).ToArray();
+        if (await db.LoanAccounts.CountAsync(x => loanIds.Contains(x.Id), ct) != SampleDataCatalog.Loans.Count) problems.Add("One or more sample loan accounts are missing.");
+
+        foreach (var period in SampleDataCatalog.HistoryPeriods)
+        {
+            var runId = SampleDataCatalog.StableId("DemandRun", period.Key);
+            var run = await db.DemandRuns.AsNoTracking().SingleOrDefaultAsync(x => x.Id == runId, ct);
+            if (run is null) { problems.Add($"History run {period.Key} is missing."); continue; }
+            if (await db.DemandRunBranchScopes.CountAsync(x => x.DemandRunId == runId, ct) != SampleDataCatalog.Branches.Count) problems.Add($"History run {period.Key} does not have all branch scopes.");
+            if (await db.DemandBatches.CountAsync(x => x.DemandRunId == runId, ct) != SampleDataCatalog.Branches.Count) problems.Add($"History run {period.Key} does not have all batches.");
+            if (await db.DemandRows.CountAsync(x => x.DemandSnapshotId == run.DemandSnapshotId, ct) != SampleDataCatalog.Loans.Count) problems.Add($"History run {period.Key} does not have all demand rows.");
+            if (!await db.BillingSnapshots.AnyAsync(x => x.Id == run.BillingSnapshotId && x.IsPublished, ct) || !await db.DemandSnapshots.AnyAsync(x => x.Id == run.DemandSnapshotId && x.IsPublished, ct)) problems.Add($"History run {period.Key} is not published.");
+        }
+        return problems;
+    }
 }
 ```
 
-### CREATE `Finnova.Service/DemandProcessing/Adapters/NullPreviousDemandPort.cs`
+### CREATE `Finnova.Data/Program.cs`
+
+The entry point is an explicit `Main` inside a named internal class, not top-level statements. This avoids a second global `Program` type in projects that reference both hosts and this tool.
 
 ```csharp
-using Finnova.Models.Domain.ValueObjects;
-using Finnova.Service.DemandProcessing.Ports;
+using Finnova.Data.DemandSample;
+using Finnova.Repository.Context;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
-namespace Finnova.Service.DemandProcessing.Adapters;
+namespace Finnova.Data;
 
-public sealed class NullPreviousDemandPort : IPreviousDemandPort
+internal static class DataToolProgram
 {
-    public Task<PreviousDemandResult?> GetAsync(Guid accountId, DemandScope scope, DemandPeriod targetPeriod, string snapshotReference, CancellationToken ct) => Task.FromResult<PreviousDemandResult?>(null);
+    private const string Usage = "Usage: Finnova.Data migrate | seed demand-sample | verify demand-sample";
+
+    private static async Task<int> Main(string[] args)
+    {
+        using var cts = new CancellationTokenSource();
+        Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
+        try
+        {
+            var command = args.Length > 0 ? args[0].ToLowerInvariant() : string.Empty;
+            var valid = (command == "migrate" && args.Length == 1)
+                || (command is "seed" or "verify" && args.Length == 2 && string.Equals(args[1], "demand-sample", StringComparison.OrdinalIgnoreCase));
+            if (!valid) { Console.Error.WriteLine(Usage); return 2; }
+
+            // Guard first: nothing below this line runs outside Development or Testing.
+            var environment = SampleDataEnvironmentGuard.Require(Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: true)
+                .AddJsonFile($"appsettings.{environment}.json", optional: true)
+                .AddJsonFile($"appsettings.{environment}.local.json", optional: true)
+                .AddEnvironmentVariables()
+                .Build();
+            var connection = configuration.GetConnectionString("FinnovaConnection");
+            if (string.IsNullOrWhiteSpace(connection)) { Console.Error.WriteLine("ConnectionStrings:FinnovaConnection is not configured."); return 2; }
+
+            using var loggers = LoggerFactory.Create(b => b.AddSimpleConsole(o => o.SingleLine = true));
+            await using var db = new FinnovaDbContext(new DbContextOptionsBuilder<FinnovaDbContext>().UseSqlServer(connection).Options);
+
+            switch (command)
+            {
+                case "migrate":
+                    await db.Database.MigrateAsync(cts.Token);
+                    Console.WriteLine("Migrations applied.");
+                    return 0;
+                case "seed":
+                    var seeder = new SampleDataSeeder(db, new SampleDataOptions(), new SampleOwnershipStore(db), loggers.CreateLogger<SampleDataSeeder>());
+                    Console.WriteLine($"Seed committed. Fingerprint {await seeder.SeedAsync(cts.Token)}");
+                    return 0;
+                default:
+                    var problems = await new SampleDataVerifier(db).VerifyAsync(cts.Token);
+                    foreach (var problem in problems) Console.Error.WriteLine(problem);
+                    if (problems.Count == 0) Console.WriteLine("Sample data verified.");
+                    return problems.Count == 0 ? 0 : 1;
+            }
+        }
+        catch (SampleDataEnvironmentException ex) { Console.Error.WriteLine(ex.Message); return 2; }
+        catch (Exception ex) when (ex is SampleDataValidationException or SampleDataCollisionException) { Console.Error.WriteLine(ex.Message); return 1; }
+        catch (OperationCanceledException) { Console.Error.WriteLine("Cancelled."); return 1; }
+        catch (Exception ex) { Console.Error.WriteLine($"{ex.GetType().Name}: {ex.Message}"); return 1; }
+    }
 }
 ```
 
-### MODIFY `Finnova.Service/DemandProcessing/Processing/DemandProcessor.cs`
+## Task 9 — Test-only March processing adapters
 
-Add `IPreviousDemandPort previousDemand` to the primary constructor after `IAllocationEventPort events`. Replace only the allocation statement with:
+These classes read the seeded tables so the unchanged processor can calculate March in tests. They are never registered by a host.
 
-```csharp
-var previous = await previousDemand.GetAsync(account.AccountId, scope, period, snapshotReference, ct);
-var allocationResult = allocation.Apply(installment, previous?.Arrears ?? 0m, sourceEvents);
+### MODIFY `Finnova.Tests/Finnova.Tests.csproj`
+
+Add this inside the existing `ProjectReference` `ItemGroup`:
+
+```xml
+<ProjectReference Include="..\Finnova.Data\Finnova.Data.csproj" />
 ```
 
-### CREATE `Finnova.Service/DemandProcessing/SampleData/SampleReceiptParser.cs`
+The SQL Server provider and `Microsoft.Data.SqlClient` already flow in through `Finnova.Repository`. Add `<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />` only if restore reports that they are missing.
+
+### CREATE `Finnova.Tests/DemandProcessing/Support/SampleReceiptParser.cs`
 
 ```csharp
 using System.Globalization;
@@ -542,7 +874,9 @@ using Finnova.Models.Contracts.DemandProcessing;
 using Finnova.Models.Domain.Entities;
 using Finnova.Models.Domain.Enums;
 
-namespace Finnova.Service.DemandProcessing.SampleData;
+using Finnova.Data.DemandSample;
+
+namespace Finnova.Tests.DemandProcessing.Support;
 
 public sealed record ReceiptParseResult(AllocationEvent? Event, string? ReasonCode, string SafeReference);
 
@@ -574,9 +908,7 @@ public static class SampleReceiptParser
 }
 ```
 
-## Task 5 — Create complete sample source ports
-
-### CREATE `Finnova.Service/DemandProcessing/SampleData/SampleSourcePorts.cs`
+### CREATE `Finnova.Tests/DemandProcessing/Support/SampleSourcePorts.cs`
 
 ```csharp
 using System.Runtime.CompilerServices;
@@ -589,7 +921,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
 
-namespace Finnova.Service.DemandProcessing.SampleData;
+using Finnova.Data.DemandSample;
+
+namespace Finnova.Tests.DemandProcessing.Support;
 
 public sealed class SampleAccountSourcePort(FinnovaDbContext db) : IAccountSourcePort
 {
@@ -657,117 +991,18 @@ public sealed class SamplePreviousDemandPort(FinnovaDbContext db, SampleOwnershi
 }
 ```
 
-The source-port code must retain the `scope.BranchIds.Contains` predicate in `ReadAsync`, exact branch-set comparison in `SamplePreviousDemandPort`, sequential null checks before using snapshot IDs, and `PeriodCutoffUtc` conversion. Do not replace these with a broad fixture-branch query or UTC end-of-day construction.
+The ports must keep the `scope.BranchIds.Contains` predicate in `ReadAsync`, the exact branch-set comparison in `SamplePreviousDemandPort`, sequential null checks before using snapshot IDs, and the `PeriodCutoffUtc` conversion. Do not replace them with a broad sample-branch query or a UTC end-of-day construction.
 
-## Task 6 — Register the fixture only for both flags in Accounts Service
+## Task 10 — Tests
 
-### MODIFY `Finnova.Service/DependencyInjection.cs`
-
-Add the normal non-fixture registration next to the existing Demand Processing port registrations:
-
-```csharp
-services.AddScoped<IPreviousDemandPort, NullPreviousDemandPort>();
-```
-
-Add the corresponding using with the existing Demand Processing usings:
-
-```csharp
-using Finnova.Service.DemandProcessing.Adapters;
-```
-
-### CREATE `Finnova.Service/DemandProcessing/SampleData/DemandProcessingSampleDataServiceCollectionExtensions.cs`
-
-```csharp
-using Finnova.Service.DemandProcessing.Ports;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-
-namespace Finnova.Service.DemandProcessing.SampleData;
-
-public static class DemandProcessingSampleDataServiceCollectionExtensions
-{
-    public static IServiceCollection AddDemandProcessingSampleData(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
-    {
-        var useAdapters = configuration.GetValue<bool>("DemandProcessing:UseSampleAdapters"); var seed = configuration.GetValue<bool>("DemandProcessing:SeedSampleDataOnStartup");
-        if (!useAdapters && !seed) return services;
-        if (!environment.IsDevelopment() && !environment.IsEnvironment("Testing")) throw new InvalidOperationException("Demand sample data is allowed only in Development or Testing.");
-        if (!useAdapters || !seed) return services;
-        services.AddScoped<SampleOwnershipStore>(); services.AddScoped<SampleDataSeeder>(); services.AddScoped<IAccountSourcePort, SampleAccountSourcePort>(); services.AddScoped<IFinalizedSchedulePort, SampleFinalizedSchedulePort>(); services.AddScoped<IAllocationEventPort, SampleAllocationEventPort>(); services.AddScoped<IPreviousDemandPort, SamplePreviousDemandPort>(); services.AddHostedService<SampleDataStartupSeeder>(); return services;
-    }
-}
-```
-
-### CREATE `Finnova.Service/DemandProcessing/SampleData/SampleDataStartupSeeder.cs`
-
-```csharp
-using Finnova.Repository.Context;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-
-namespace Finnova.Service.DemandProcessing.SampleData;
-
-public sealed class SampleDataStartupSeeder(IServiceScopeFactory scopes, ILogger<SampleDataStartupSeeder> logger) : IHostedService
-{
-    public async Task StartAsync(CancellationToken cancellationToken)
-    {
-        await using var scope = scopes.CreateAsyncScope(); var db = scope.ServiceProvider.GetRequiredService<FinnovaDbContext>(); await db.Database.MigrateAsync(cancellationToken); var fingerprint = await scope.ServiceProvider.GetRequiredService<SampleDataSeeder>().SeedAsync(cancellationToken); logger.LogInformation("Demand sample startup seed completed with {Fingerprint}.", fingerprint);
-    }
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-}
-```
-
-### MODIFY `Finnova.AccountsService/Program.cs`
-
-Add this directive with the other `using` directives at the top of the file, before `var builder`:
-
-```csharp
-using Finnova.Service.DemandProcessing.SampleData;
-```
-
-Immediately after the existing call to `builder.Services.AddFinnovaServices(builder.Configuration, FinnovaServiceModules.ApplicationProcessing);`, add only this statement:
-
-```csharp
-builder.Services.AddDemandProcessingSampleData(builder.Configuration, builder.Environment);
-```
-
-Do not put a using directive after a top-level statement. Do not add this call to UA or SystemAdmin. Production ports remain active for all partial configurations because the extension returns before adding fixture registrations.
-
-## Task 7 — Apply existing migrations only in the later isolated profile
-
-Do not create or modify an EF migration. The implementer applies existing migrations with:
-
-```powershell
-dotnet ef database update --project Finnova.Repository --startup-project Finnova.AccountsService --environment Testing
-```
-
-The future ignored Development/Testing configuration is:
-
-```json
-{
-  "DemandProcessing": {
-    "UseSampleAdapters": true,
-    "SeedSampleDataOnStartup": true,
-    "SampleDataKey": "SAMPLE-DP-V1",
-    "SampleAsOfDate": "2026-03-31",
-    "BusinessTimezone": "Asia/Kolkata"
-  }
-}
-```
-
-The configuration is not created during this authoring step and must never be committed to a production profile.
-
-## Task 8 — Add complete pure, catalog, and parser tests
+SQL tests need a SQL Server instance. Set `FINNOVA_SAMPLE_SQL_CONNECTION` to a server-level connection string (any database name). Each test appends a unique database name and drops only that database.
 
 ### CREATE `Finnova.Tests/DemandProcessing/SampleDataCatalogTests.cs`
 
 ```csharp
 using FsCheck;
 using FsCheck.Xunit;
-using Finnova.Service.DemandProcessing.SampleData;
+using Finnova.Data.DemandSample;
 using Xunit;
 
 namespace Finnova.Tests.DemandProcessing;
@@ -789,7 +1024,8 @@ public sealed class SampleDataCatalogTests
 ```csharp
 using Finnova.Models.Domain.Entities;
 using Finnova.Models.Domain.Enums;
-using Finnova.Service.DemandProcessing.SampleData;
+using Finnova.Data.DemandSample;
+using Finnova.Tests.DemandProcessing.Support;
 using Xunit;
 
 namespace Finnova.Tests.DemandProcessing;
@@ -811,65 +1047,192 @@ public sealed class SampleReceiptParserTests
 }
 ```
 
-### CREATE `Finnova.Tests/DemandProcessing/SampleDataCompositionTests.cs`
+### CREATE `Finnova.Tests/DemandProcessing/SampleDataGuardTests.cs`
 
 ```csharp
-using Finnova.Service.DemandProcessing.SampleData;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Finnova.Data.DemandSample;
 using Xunit;
 
 namespace Finnova.Tests.DemandProcessing;
 
-public sealed class SampleDataCompositionTests
+public sealed class SampleDataGuardTests
 {
-    private sealed class TestEnvironment : IHostEnvironment
-    {
-        public string EnvironmentName { get; set; } = "Testing";
-        public string ApplicationName { get; set; } = typeof(SampleDataCompositionTests).Assembly.GetName().Name!;
-        public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
-        public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; } = new Microsoft.Extensions.FileProviders.NullFileProvider();
-    }
-
-    private static IHostEnvironment Environment(string name) => new TestEnvironment { EnvironmentName = name };
+    [Theory]
+    [InlineData("Development", "Development")]
+    [InlineData("development", "Development")]
+    [InlineData("Testing", "Testing")]
+    [InlineData("TESTING", "Testing")]
+    public void AllowedEnvironmentsAreNormalized(string input, string expected) => Assert.Equal(expected, SampleDataEnvironmentGuard.Require(input));
 
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    public void PartialOrDisabledFlagsRegisterNoFixtureServices(bool adapters, bool seed)
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("Production")]
+    [InlineData("Staging")]
+    [InlineData("UAT")]
+    public void EveryOtherEnvironmentIsRefused(string? input) => Assert.Throws<SampleDataEnvironmentException>(() => SampleDataEnvironmentGuard.Require(input));
+
+    [Fact]
+    public void RefusalMessageDoesNotEchoTheEnvironmentValue()
     {
-        var services = new ServiceCollection(); var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["DemandProcessing:UseSampleAdapters"] = adapters.ToString(), ["DemandProcessing:SeedSampleDataOnStartup"] = seed.ToString() }).Build();
-        services.AddDemandProcessingSampleData(configuration, Environment("Testing"));
-        Assert.DoesNotContain(services, x => x.ServiceType == typeof(SampleAccountSourcePort)); Assert.DoesNotContain(services, x => x.ServiceType == typeof(IHostedService) && x.ImplementationType == typeof(SampleDataStartupSeeder));
+        var ex = Assert.Throws<SampleDataEnvironmentException>(() => SampleDataEnvironmentGuard.Require("prod-secret-name"));
+        Assert.DoesNotContain("prod-secret-name", ex.Message);
     }
 
     [Fact]
-    public void BothFlagsRegisterFixtureServices()
+    public void CatalogReferenceLocationsMatchTheMigrationList()
     {
-        var services = new ServiceCollection(); var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["DemandProcessing:UseSampleAdapters"] = "true", ["DemandProcessing:SeedSampleDataOnStartup"] = "true" }).Build();
-        services.AddDemandProcessingSampleData(configuration, Environment("Testing"));
-        Assert.Contains(services, x => x.ServiceType == typeof(SampleAccountSourcePort)); Assert.Contains(services, x => x.ServiceType == typeof(IHostedService) && x.ImplementationType == typeof(SampleDataStartupSeeder));
+        var codes = SampleDataCatalog.Locations.Where(x => x.Level <= SampleDataCatalog.ReferenceLocationMaxLevel).Select(x => x.Code).OrderBy(x => x).ToArray();
+        Assert.Equal(new[] { "CBE", "CHN", "MDU", "SLM", "TN", "TNJ", "TRI" }, codes);
     }
 
-    [Theory] [InlineData(true, false)] [InlineData(false, true)] public void AnyProductionFlagIsRejected(bool adapters, bool seed)
+    [Fact]
+    public void OptionsDefaultToTheFixedFixtureValues()
     {
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["DemandProcessing:UseSampleAdapters"] = adapters.ToString(), ["DemandProcessing:SeedSampleDataOnStartup"] = seed.ToString() }).Build();
-        Assert.Throws<InvalidOperationException>(() => new ServiceCollection().AddDemandProcessingSampleData(configuration, Environment(Environments.Production)));
+        Assert.Equal("SAMPLE-DP-V1", new SampleDataOptions().SampleDataKey);
+        Assert.Equal(new DateOnly(2026, 3, 31), new SampleDataOptions().SampleAsOfDate);
+        Assert.Equal("Asia/Kolkata", new SampleDataOptions().BusinessTimezone);
     }
 }
 ```
 
-## Task 9 — Add SQL Server seeder and exact-history tests
+### CREATE `Finnova.Tests/DemandProcessing/SampleDataIsolationTests.cs`
 
-### MODIFY `Finnova.Tests/Finnova.Tests.csproj`
+```csharp
+using Xunit;
 
-Add this package reference inside the existing package `ItemGroup`:
+namespace Finnova.Tests.DemandProcessing;
 
-```xml
-<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
+/// <summary>Fails if sample-data code or a reference to the data tool reaches a production project.</summary>
+public sealed class SampleDataIsolationTests
+{
+    private static readonly string[] ForbiddenTokens = ["Finnova.Data", "DemandSample", "UseSampleAdapters", "SeedSampleDataOnStartup"];
+
+    private static string RepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Finnova.Backend.slnx"))) dir = dir.Parent;
+        return dir?.FullName ?? throw new InvalidOperationException("Solution root was not found.");
+    }
+
+    [Theory]
+    [InlineData("Finnova.AccountsService")]
+    [InlineData("Finnova.UAService")]
+    [InlineData("Finnova.SystemAdminService")]
+    [InlineData("Finnova.ApiGateway")]
+    [InlineData("Finnova.Service")]
+    [InlineData("Finnova.Repository")]
+    [InlineData("Finnova.Models")]
+    public void ProductionProjectsContainNoSampleDataCodeOrReference(string project)
+    {
+        var root = Path.Combine(RepoRoot(), project);
+        var sep = Path.DirectorySeparatorChar;
+        var files = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories)
+            .Where(f => (f.EndsWith(".cs") || f.EndsWith(".csproj") || f.EndsWith(".json")) && !f.Contains($"{sep}bin{sep}") && !f.Contains($"{sep}obj{sep}"))
+            .ToArray();
+        Assert.NotEmpty(files);
+        foreach (var file in files)
+        {
+            var text = File.ReadAllText(file);
+            foreach (var token in ForbiddenTokens) Assert.False(text.Contains(token, StringComparison.Ordinal), $"{Path.GetRelativePath(RepoRoot(), file)} mentions '{token}'.");
+        }
+    }
+}
+```
+
+### CREATE `Finnova.Tests/DemandProcessing/ReferenceLocationMigrationSqlTests.cs`
+
+```csharp
+using Finnova.Data.DemandSample;
+using Finnova.Repository.Context;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.Extensions.Logging.Abstractions;
+using Xunit;
+
+namespace Finnova.Tests.DemandProcessing;
+
+public sealed class ReferenceLocationMigrationSqlTests
+{
+    private static readonly string[] CityCodes = ["CBE", "CHN", "MDU", "SLM", "TNJ", "TRI"];
+
+    private static string ConnectionString()
+    {
+        var baseConnection = Environment.GetEnvironmentVariable("FINNOVA_SAMPLE_SQL_CONNECTION") ?? throw new InvalidOperationException("FINNOVA_SAMPLE_SQL_CONNECTION must point to a SQL Server instance.");
+        return new SqlConnectionStringBuilder(baseConnection) { InitialCatalog = $"FinnovaRef_{Guid.NewGuid():N}" }.ConnectionString;
+    }
+
+    private static FinnovaDbContext Context(string connection) => new(new DbContextOptionsBuilder<FinnovaDbContext>().UseSqlServer(connection).Options);
+
+    [Fact]
+    public async Task MigrationCreatesTamilNaduAndSixCities()
+    {
+        var connection = ConnectionString();
+        try
+        {
+            await using var db = Context(connection);
+            await db.Database.MigrateAsync();
+            var tn = await db.Locations.SingleAsync(x => x.Code == "TN");
+            Assert.Equal(2, tn.Level);
+            Assert.Equal(SampleDataCatalog.IndiaId, tn.ParentId);
+            var cities = await db.Locations.Where(x => x.ParentId == tn.Id).OrderBy(x => x.Code).ToListAsync();
+            Assert.Equal(CityCodes, cities.Select(x => x.Code).ToArray());
+            Assert.All(cities, c => { Assert.Equal(3, c.Level); Assert.True(c.IsActive); });
+        }
+        finally { await using var cleanup = Context(connection); await cleanup.Database.EnsureDeletedAsync(); }
+    }
+
+    [Fact]
+    public async Task MigrationReusesAnExistingStateWithADifferentId()
+    {
+        var connection = ConnectionString();
+        try
+        {
+            await using var db = Context(connection);
+            var all = db.Database.GetMigrations().ToList();
+            Assert.EndsWith("SeedTamilNaduReferenceLocations", all[^1]);
+            var migrator = db.GetService<IMigrator>();
+            await migrator.MigrateAsync(all[^2]);
+            var adminId = Guid.NewGuid();
+            await db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO [locations] ([Id],[Code],[Name],[Level],[ParentId],[IsActive],[CreatedAt],[UpdatedAt]) VALUES ({adminId}, N'TN', N'Tamil Nadu (admin)', 2, {SampleDataCatalog.IndiaId}, 1, SYSUTCDATETIME(), SYSUTCDATETIME())");
+
+            await migrator.MigrateAsync(all[^1]);
+
+            var states = await db.Locations.Where(x => x.Code == "TN").ToListAsync();
+            var tn = Assert.Single(states);
+            Assert.Equal(adminId, tn.Id);
+            Assert.Equal(6, await db.Locations.CountAsync(x => x.ParentId == adminId));
+        }
+        finally { await using var cleanup = Context(connection); await cleanup.Database.EnsureDeletedAsync(); }
+    }
+
+    [Fact]
+    public async Task SeedFailsBeforeAnyWriteWhenAReferenceCityIsMissing()
+    {
+        var connection = ConnectionString();
+        try
+        {
+            await using (var setup = Context(connection))
+            {
+                await setup.Database.MigrateAsync();
+                await setup.Database.ExecuteSqlRawAsync("DELETE FROM [locations] WHERE [Code] = N'TNJ'");
+            }
+            await using (var db = Context(connection))
+            {
+                var seeder = new SampleDataSeeder(db, new SampleDataOptions(), new SampleOwnershipStore(db), NullLogger<SampleDataSeeder>.Instance);
+                var ex = await Assert.ThrowsAsync<SampleDataValidationException>(() => seeder.SeedAsync());
+                Assert.Contains("TNJ", ex.Message);
+                Assert.Contains("migration", ex.Message, StringComparison.OrdinalIgnoreCase);
+            }
+            await using var verify = Context(connection);
+            Assert.False(await verify.Organizations.AnyAsync(x => x.Code == SampleDataCatalog.OrganizationCode));
+            Assert.False(await verify.LookupValues.AnyAsync(x => x.Module == SampleDataCatalog.OwnershipModule && x.LookupType == SampleDataCatalog.OwnershipType));
+        }
+        finally { await using var cleanup = Context(connection); await cleanup.Database.EnsureDeletedAsync(); }
+    }
+}
 ```
 
 ### CREATE `Finnova.Tests/DemandProcessing/SampleDataSqlTests.cs`
@@ -877,12 +1240,11 @@ Add this package reference inside the existing package `ItemGroup`:
 ```csharp
 using Finnova.Models.Domain.ValueObjects;
 using Finnova.Repository.Context;
-using Finnova.Service.DemandProcessing.Configuration;
-using Finnova.Service.DemandProcessing.SampleData;
+using Finnova.Data.DemandSample;
+using Finnova.Tests.DemandProcessing.Support;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Microsoft.Data.SqlClient;
 using Xunit;
 
@@ -896,7 +1258,7 @@ public sealed class SampleDataSqlTests
     }
 
     private static FinnovaDbContext Context(string connection) => new(new DbContextOptionsBuilder<FinnovaDbContext>().UseSqlServer(connection).Options);
-    private static IOptions<DemandProcessingOptions> Options() => Microsoft.Extensions.Options.Options.Create(new DemandProcessingOptions { SampleDataKey = SampleDataCatalog.DatasetKey, SampleAsOfDate = SampleDataCatalog.AsOfDate, BusinessTimezone = "Asia/Kolkata" });
+    private static SampleDataOptions Options() => new();
     private static async Task<string> MigrateAndSeedAsync(string connection, CancellationToken ct)
     { await using var db = Context(connection); await db.Database.MigrateAsync(ct); var seed = new SampleDataSeeder(db, Options(), new SampleOwnershipStore(db), NullLogger<SampleDataSeeder>.Instance); return await seed.SeedAsync(ct); }
 
@@ -920,14 +1282,33 @@ public sealed class SampleDataSqlTests
         var connection = ConnectionString(); try { await MigrateAndSeedAsync(connection, CancellationToken.None); await using var db = Context(connection); var lob = SampleDataCatalog.StableId("LineOfBusiness", SampleDataCatalog.LobKey); var branches = SampleDataCatalog.Branches.Select(x => SampleDataCatalog.StableId("Location", x.Code)).ToArray(); var port = new SamplePreviousDemandPort(db, new SampleOwnershipStore(db)); var exact = DemandScope.Create(lob, branches); var result = await port.GetAsync(SampleDataCatalog.StableId("LoanAccount", "LN-DP-0002"), exact, DemandPeriod.Create(2026, 3), SampleDataCatalog.SnapshotReference, CancellationToken.None); Assert.NotNull(result); Assert.Equal(12000m, result!.Arrears); Assert.Null(await port.GetAsync(SampleDataCatalog.StableId("LoanAccount", "LN-DP-0002"), exact, DemandPeriod.Create(2026, 3), "wrong-marker", CancellationToken.None)); Assert.Null(await port.GetAsync(SampleDataCatalog.StableId("LoanAccount", "LN-DP-0002"), DemandScope.Create(lob, branches[..7]), DemandPeriod.Create(2026, 3), SampleDataCatalog.SnapshotReference, CancellationToken.None)); }
         finally { await using var cleanup = Context(connection); await cleanup.Database.EnsureDeletedAsync(); }
     }
+
+    [Fact]
+    public async Task ReferenceLocationsStayUnownedAndUnownedCollisionRollsBack()
+    {
+        var connection = ConnectionString();
+        try
+        {
+            await MigrateAndSeedAsync(connection, CancellationToken.None);
+            await using (var db = Context(connection))
+            {
+                Assert.False(await db.LookupValues.AnyAsync(x => x.Module == SampleDataCatalog.OwnershipModule && x.LookupType == SampleDataCatalog.OwnershipType && (x.Code == "Location:TN" || x.Code == "Location:CHN")));
+                var ownership = await db.LookupValues.SingleAsync(x => x.Code == "Organization:" + SampleDataCatalog.OrganizationCode);
+                db.LookupValues.Remove(ownership);
+                await db.SaveChangesAsync();
+            }
+            await Assert.ThrowsAsync<SampleDataCollisionException>(() => MigrateAndSeedAsync(connection, CancellationToken.None));
+        }
+        finally { await using var cleanup = Context(connection); await cleanup.Database.EnsureDeletedAsync(); }
+    }
 }
 ```
 
-Every test method remains inside `SampleDataSqlTests`; do not split methods after the closing brace or create another file with the same path.
-
-## Task 10 — Add one complete Accounts-host SQL factory and flow tests
+The class includes a fourth test, `ReferenceLocationsStayUnownedAndUnownedCollisionRollsBack`, which proves that `TN` and the cities never receive ownership records and that removing one ownership record turns the owned row into a collision that rolls the whole seed back. Every test method stays inside `SampleDataSqlTests`; do not split methods after the closing brace.
 
 ### CREATE `Finnova.Tests/DemandProcessing/SampleDemandProcessingSqlHostTests.cs`
+
+The factory migrates and seeds its own generated database first, then starts the real Accounts host and replaces the three throwing ports and the null previous-demand port with the test adapters. Production registrations are untouched.
 
 ```csharp
 using System.IdentityModel.Tokens.Jwt;
@@ -936,8 +1317,11 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
+using Finnova.Data.DemandSample;
+using Finnova.Models.Domain.Enums;
 using Finnova.Repository.Context;
-using Finnova.Service.DemandProcessing.SampleData;
+using Finnova.Service.DemandProcessing.Ports;
+using Finnova.Tests.DemandProcessing.Support;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.SqlClient;
@@ -946,6 +1330,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.IdentityModel.Tokens;
 using Xunit;
 
@@ -956,42 +1341,171 @@ public sealed class SampleDemandProcessingSqlHostTests : IAsyncLifetime
     private readonly SampleAccountsFactory _factory = new();
     private HttpClient _client = null!;
 
-    public async Task InitializeAsync() { _client = _factory.CreateClient(); await _factory.InitializeDatabaseAsync(); }
+    public async Task InitializeAsync() { await _factory.InitializeDatabaseAsync(); _client = _factory.CreateClient(); }
     public async Task DisposeAsync() { _client.Dispose(); await _factory.DisposeAsync(); }
 
+    private static Guid LobId => SampleDataCatalog.StableId("LineOfBusiness", SampleDataCatalog.LobKey);
+
     [Fact]
-    public async Task AuthenticatedMarchFlowUsesAllFixtureBranchesAndTotals()
+    public async Task AuthenticatedMarchFlowUsesAllSampleBranchesAndTotals()
     {
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _factory.Token(allBranches: true)); var lob = SampleDataCatalog.StableId("LineOfBusiness", SampleDataCatalog.LobKey); var response = await _client.PostAsJsonAsync("/api/demand-processing/runs", new { lineOfBusinessId = lob, periodYear = 2026, periodMonth = 3, frequency = "Monthly", idempotencyKey = "sample-march" }); Assert.True(response.StatusCode is HttpStatusCode.Accepted or HttpStatusCode.OK); var body = await response.Content.ReadAsStringAsync(); Assert.Contains("runId", body, StringComparison.OrdinalIgnoreCase); await _factory.WaitForCompletionAsync(); await using var scope = _factory.Services.CreateAsyncScope(); var db = scope.ServiceProvider.GetRequiredService<FinnovaDbContext>(); var run = await db.DemandRuns.SingleAsync(x => x.LineOfBusinessId == lob && x.PeriodYear == 2026 && x.PeriodMonth == 3); Assert.Equal(7, run.RowCount); Assert.Equal(8, run.BatchCount); Assert.Equal(48500m, run.CurrentDueTotal); Assert.Equal(18000m, run.ArrearsTotal); Assert.Equal(0m, run.TotalCharges); Assert.Equal(66500m, run.TotalDemand); Assert.Equal(1, await db.DemandBatches.CountAsync(x => x.DemandRunId == run.Id && x.Status == Finnova.Models.Domain.Enums.DemandBatchStatus.NoDemand));
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _factory.Token(allBranches: true));
+        var response = await _client.PostAsJsonAsync("/api/demand-processing/runs", new { lineOfBusinessId = LobId, periodYear = 2026, periodMonth = 3, frequency = "Monthly", idempotencyKey = "sample-march" });
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        await _factory.WaitForCompletionAsync();
+
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<FinnovaDbContext>();
+        var run = await db.DemandRuns.SingleAsync(x => x.LineOfBusinessId == LobId && x.PeriodYear == 2026 && x.PeriodMonth == 3);
+        Assert.Equal(7, run.RowCount);
+        Assert.Equal(8, run.BatchCount);
+        Assert.Equal(48500m, run.CurrentDueTotal);
+        Assert.Equal(18000m, run.ArrearsTotal);
+        Assert.Equal(0m, run.TotalCharges);
+        Assert.Equal(66500m, run.TotalDemand);
+        Assert.Equal(1, await db.DemandBatches.CountAsync(x => x.DemandRunId == run.Id && x.Status == DemandBatchStatus.NoDemand));
     }
 
     [Fact]
-    public async Task BranchScopedRunDoesNotReadOtherFixtureBranches()
+    public async Task BranchScopedRunDoesNotReadOtherSampleBranches()
     {
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _factory.Token(allBranches: false, branch: SampleDataCatalog.StableId("Location", "CHN-B01"))); var response = await _client.PostAsJsonAsync("/api/demand-processing/runs", new { lineOfBusinessId = SampleDataCatalog.StableId("LineOfBusiness", SampleDataCatalog.LobKey), branchId = SampleDataCatalog.StableId("Location", "CHN-B01"), periodYear = 2026, periodMonth = 3, frequency = "Monthly", idempotencyKey = "sample-branch" }); Assert.True(response.StatusCode is HttpStatusCode.Accepted or HttpStatusCode.OK); await _factory.WaitForCompletionAsync(); await using var scope = _factory.Services.CreateAsyncScope(); var db = scope.ServiceProvider.GetRequiredService<FinnovaDbContext>(); var run = await db.DemandRuns.OrderByDescending(x => x.RequestedAtUtc).FirstAsync(x => x.PeriodYear == 2026 && x.PeriodMonth == 3); Assert.All(await db.DemandRows.Where(x => x.DemandRunRevisionId == SampleDataCatalog.StableId("DemandRevision", "2026-03")).ToListAsync(), row => Assert.Equal(SampleDataCatalog.StableId("Location", "CHN-B01"), row.BranchId));
+        var branch = SampleDataCatalog.StableId("Location", "CHN-B01");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _factory.Token(allBranches: false, branch: branch));
+        var response = await _client.PostAsJsonAsync("/api/demand-processing/runs", new { lineOfBusinessId = LobId, branchId = branch, periodYear = 2026, periodMonth = 3, frequency = "Monthly", idempotencyKey = "sample-branch" });
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        await _factory.WaitForCompletionAsync();
+
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<FinnovaDbContext>();
+        var run = await db.DemandRuns.SingleAsync(x => x.LineOfBusinessId == LobId && x.PeriodYear == 2026 && x.PeriodMonth == 3);
+        var revisionIds = await db.DemandRunRevisions.Where(x => x.DemandRunId == run.Id).Select(x => x.Id).ToListAsync();
+        var rows = await db.DemandRows.Where(x => revisionIds.Contains(x.DemandRunRevisionId)).ToListAsync();
+        Assert.NotEmpty(rows);
+        Assert.All(rows, row => Assert.Equal(branch, row.BranchId));
     }
 
-    [Fact] public async Task MissingTokenRemainsUnauthorized() { var response = await _factory.CreateClient().GetAsync("/api/demand-processing/runs"); Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode); }
+    [Fact]
+    public async Task MissingTokenRemainsUnauthorized()
+    {
+        var response = await _factory.CreateClient().GetAsync("/api/demand-processing/runs");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 
     public sealed class SampleAccountsFactory : WebApplicationFactory<Finnova.AccountsService.Controllers.DemandProcessingController>
     {
-        private readonly string _connection; private readonly string _jwtKey;
-        public SampleAccountsFactory() { _jwtKey = Environment.GetEnvironmentVariable("FINNOVA_TEST_JWT_KEY") ?? throw new InvalidOperationException("FINNOVA_TEST_JWT_KEY is required."); var baseConnection = Environment.GetEnvironmentVariable("FINNOVA_SAMPLE_SQL_CONNECTION") ?? throw new InvalidOperationException("FINNOVA_SAMPLE_SQL_CONNECTION is required."); var builder = new SqlConnectionStringBuilder(baseConnection) { InitialCatalog = $"FinnovaHostSample_{Guid.NewGuid():N}" }; _connection = builder.ConnectionString; }
-        protected override void ConfigureWebHost(IWebHostBuilder builder) { builder.UseEnvironment("Testing"); builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:FinnovaConnection"] = _connection, ["Jwt:Issuer"] = "Finnova", ["Jwt:Audience"] = "FinnovaTests", ["Jwt:SigningKey"] = _jwtKey, ["DemandProcessing:UseSampleAdapters"] = "true", ["DemandProcessing:SeedSampleDataOnStartup"] = "true", ["DemandProcessing:SampleDataKey"] = SampleDataCatalog.DatasetKey, ["DemandProcessing:SampleAsOfDate"] = "2026-03-31", ["DemandProcessing:BusinessTimezone"] = "Asia/Kolkata" })); builder.ConfigureServices(services => { services.RemoveAll<DbContextOptions<FinnovaDbContext>>(); services.RemoveAll<IDbContextOptionsConfiguration<FinnovaDbContext>>(); services.AddDbContext<FinnovaDbContext>(o => o.UseSqlServer(_connection)); }); }
-        public async Task InitializeDatabaseAsync() { await using var scope = Services.CreateAsyncScope(); var db = scope.ServiceProvider.GetRequiredService<FinnovaDbContext>(); await db.Database.MigrateAsync(); await scope.ServiceProvider.GetRequiredService<SampleDataSeeder>().SeedAsync(); }
-        public string Token(bool allBranches, Guid? branch = null) { var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, "sample-test"), new(ClaimTypes.Role, "SystemAdmin"), new("lob", SampleDataCatalog.StableId("LineOfBusiness", SampleDataCatalog.LobKey).ToString()) }; if (allBranches) foreach (var item in SampleDataCatalog.Branches) claims.Add(new Claim("branch", SampleDataCatalog.StableId("Location", item.Code).ToString())); else if (branch.HasValue) claims.Add(new Claim("branch", branch.Value.ToString())); var token = new JwtSecurityToken("Finnova", "FinnovaTests", claims, DateTime.UtcNow.AddMinutes(-1), DateTime.UtcNow.AddMinutes(10), new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtKey)), SecurityAlgorithms.HmacSha256)); return new JwtSecurityTokenHandler().WriteToken(token); }
-        public async Task WaitForCompletionAsync() { for (var i = 0; i < 30; i++) { await Task.Delay(100); await using var scope = Services.CreateAsyncScope(); var db = scope.ServiceProvider.GetRequiredService<FinnovaDbContext>(); if (await db.DemandRuns.AnyAsync(x => x.PeriodYear == 2026 && x.PeriodMonth == 3 && x.Status == Finnova.Models.Domain.Enums.DemandRunStatus.Completed)) return; } throw new TimeoutException("Demand sample host run did not complete."); }
-        protected override void Dispose(bool disposing) { if (disposing) { using var db = new FinnovaDbContext(new DbContextOptionsBuilder<FinnovaDbContext>().UseSqlServer(_connection).Options); db.Database.EnsureDeleted(); } base.Dispose(disposing); }
+        private readonly string _connection;
+        private readonly string _jwtKey;
+
+        public SampleAccountsFactory()
+        {
+            _jwtKey = Environment.GetEnvironmentVariable("FINNOVA_TEST_JWT_KEY") ?? throw new InvalidOperationException("FINNOVA_TEST_JWT_KEY is required.");
+            var baseConnection = Environment.GetEnvironmentVariable("FINNOVA_SAMPLE_SQL_CONNECTION") ?? throw new InvalidOperationException("FINNOVA_SAMPLE_SQL_CONNECTION is required.");
+            _connection = new SqlConnectionStringBuilder(baseConnection) { InitialCatalog = $"FinnovaHostSample_{Guid.NewGuid():N}" }.ConnectionString;
+        }
+
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        {
+            builder.UseEnvironment("Testing");
+            builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:FinnovaConnection"] = _connection,
+                ["Jwt:Issuer"] = "Finnova",
+                ["Jwt:Audience"] = "FinnovaTests",
+                ["Jwt:SigningKey"] = _jwtKey,
+                ["DemandProcessing:BusinessTimezone"] = "Asia/Kolkata"
+            }));
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<DbContextOptions<FinnovaDbContext>>();
+                services.RemoveAll<IDbContextOptionsConfiguration<FinnovaDbContext>>();
+                services.AddDbContext<FinnovaDbContext>(o => o.UseSqlServer(_connection));
+
+                // Test-only adapters. Production registrations are never changed outside this factory.
+                services.AddScoped<SampleOwnershipStore>();
+                services.RemoveAll<IAccountSourcePort>(); services.AddScoped<IAccountSourcePort, SampleAccountSourcePort>();
+                services.RemoveAll<IFinalizedSchedulePort>(); services.AddScoped<IFinalizedSchedulePort, SampleFinalizedSchedulePort>();
+                services.RemoveAll<IAllocationEventPort>(); services.AddScoped<IAllocationEventPort, SampleAllocationEventPort>();
+                services.RemoveAll<IPreviousDemandPort>(); services.AddScoped<IPreviousDemandPort, SamplePreviousDemandPort>();
+            });
+        }
+
+        public async Task InitializeDatabaseAsync()
+        {
+            await using var db = new FinnovaDbContext(new DbContextOptionsBuilder<FinnovaDbContext>().UseSqlServer(_connection).Options);
+            await db.Database.MigrateAsync();
+            await new SampleDataSeeder(db, new SampleDataOptions(), new SampleOwnershipStore(db), NullLogger<SampleDataSeeder>.Instance).SeedAsync();
+        }
+
+        public string Token(bool allBranches, Guid? branch = null)
+        {
+            var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, "sample-test"), new(ClaimTypes.Role, "SystemAdmin"), new("lob", LobId.ToString()) };
+            if (allBranches) foreach (var item in SampleDataCatalog.Branches) claims.Add(new Claim("branch", SampleDataCatalog.StableId("Location", item.Code).ToString()));
+            else if (branch.HasValue) claims.Add(new Claim("branch", branch.Value.ToString()));
+            var token = new JwtSecurityToken("Finnova", "FinnovaTests", claims, DateTime.UtcNow.AddMinutes(-1), DateTime.UtcNow.AddMinutes(10), new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtKey)), SecurityAlgorithms.HmacSha256));
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public async Task WaitForCompletionAsync()
+        {
+            for (var i = 0; i < 50; i++)
+            {
+                await Task.Delay(100);
+                await using var scope = Services.CreateAsyncScope();
+                var db = scope.ServiceProvider.GetRequiredService<FinnovaDbContext>();
+                if (await db.DemandRuns.AnyAsync(x => x.PeriodYear == 2026 && x.PeriodMonth == 3 && x.Status == DemandRunStatus.Completed)) return;
+            }
+            throw new TimeoutException("The sample host run did not complete.");
+        }
+
+        private static Guid LobId => SampleDataCatalog.StableId("LineOfBusiness", SampleDataCatalog.LobKey);
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                using var db = new FinnovaDbContext(new DbContextOptionsBuilder<FinnovaDbContext>().UseSqlServer(_connection).Options);
+                db.Database.EnsureDeleted();
+            }
+            base.Dispose(disposing);
+        }
     }
 }
 ```
 
-The factory enables both flags, explicitly applies existing migrations, explicitly calls the seeder, and drops only its generated database. Its source file is declared once. If the host startup seeder also runs, the second seed is intentionally idempotent.
+The factory drops only its own generated database. Because the throwing production ports are replaced in `ConfigureServices`, this test is the only place a March run is calculated until real database-backed ports exist.
 
-## Task 11 — Verify existing gateway/UI composition without source changes
+## Task 11 — Run order and manual verification
 
-Do not create or modify a frontend file. After the later implementation is deployed to a Development/Testing profile, verify that the existing Finnova-UI service calls the existing gateway alias and that the current Demand Processing page displays the seeded history and March output. No UI route, model, label, localization, or RTL change is part of this fixture.
+Apply Tasks 1 to 10, then run these from the solution root. Use a local, non-shared SQL Server. Do not point them at a shared or production database; the tool refuses any environment other than Development or Testing, but the connection string is still your responsibility.
+
+```powershell
+dotnet build Finnova.Backend.slnx
+
+# Local sample database
+$env:DOTNET_ENVIRONMENT = "Development"
+$env:ConnectionStrings__FinnovaConnection = "<your local connection string>"
+dotnet run --project Finnova.Data -- migrate
+dotnet run --project Finnova.Data -- seed demand-sample
+dotnet run --project Finnova.Data -- verify demand-sample
+
+# Tests
+$env:FINNOVA_SAMPLE_SQL_CONNECTION = "<server-level connection string for a throwaway SQL Server>"
+dotnet test Finnova.Tests --filter "FullyQualifiedName~DemandProcessing"
+```
+
+Expected results:
+
+- `seed` prints `Seed committed. Fingerprint <64 hex characters>`. A second `seed` prints the same fingerprint.
+- `verify` prints `Sample data verified.` and exits `0`.
+- With `DOTNET_ENVIRONMENT=Production` (or unset), every command prints the refusal message and exits `2` without opening a connection.
+- `dotnet ef migrations list --project Finnova.Repository --startup-project Finnova.AccountsService` shows `SeedTamilNaduReferenceLocations` as the last entry.
+
+To start over locally, drop the local database and run `migrate` and `seed` again. There is no `reset` command.
+
+## Task 12 — Verify existing gateway and UI composition without source changes
+
+Do not create or modify a frontend file. After seeding a local Development database and starting the Accounts host and gateway, open the existing Demand Processing page in Finnova-UI with a user whose token carries the sample LOB and branch claims. The page should list the five seeded history runs (October 2025 to February 2026), with eight batches each and one `NoDemand` batch. A March run cannot be started from the UI against this host until real database-backed account, schedule, and allocation-event ports replace the current placeholders (Assumption 12).
 
 ## Authoring boundary
 
-The current work changes only `requirements.md`, `design.md`, `tasks.md`, and `.config.kiro`/`.config` in this specification directory. Do not apply any task block, create a migration, modify application source, modify the database, modify Finnova-UI, or run a build or test while authoring this specification.
+The authoring step changes only `requirements.md`, `design.md`, `tasks.md`, and the spec config in this directory. Do not apply any task block, create a migration, modify application source, modify the database, modify Finnova-UI, or run a build or test while authoring this specification.

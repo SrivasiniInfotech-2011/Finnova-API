@@ -72,6 +72,9 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("JveOperationsRecovery", policy => policy.RequireClaim("permission", "jve.operations.recovery"));
     options.AddPolicy("ServiceDncIssue", policy => policy.RequireClaim("permission", "svc.dcn.issue"));
     options.AddPolicy("ServiceKycVerify", policy => policy.RequireClaim("permission", "svc.kyc.verify"));
+    options.AddPolicy("AppropriationLogicRead", policy => policy.RequireAuthenticatedUser().RequireRole("SystemAdmin"));
+    options.AddPolicy("AppropriationLogicManage", policy => policy.RequireAuthenticatedUser().RequireRole("SystemAdmin"));
+    options.AddPolicy("AppropriationLogicResolve", policy => policy.RequireAuthenticatedUser().RequireAssertion(context => context.User.IsInRole("SystemAdmin") || context.User.HasClaim("scope", "appropriation-logic.resolve")));
 });
 
 // Repository (EF Core + SQL Server)

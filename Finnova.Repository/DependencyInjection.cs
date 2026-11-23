@@ -69,6 +69,12 @@ public static class DependencyInjection
         services.AddScoped<IAppRoleRepository, AppRoleRepository>();
         services.AddScoped<INumberingReferenceRepository, NumberingReferenceRepository>();
         services.AddScoped<IDemandRepository, DemandRepository>();
+        services.AddScoped<IAppropriationLogicRepository, AppropriationLogicRepository>();
+        services.AddScoped<IReceiptAppropriationRepository, ReceiptAppropriationRepository>();
+        services.AddScoped<IDemandRepository, DemandRepository>();
+        services.AddScoped<IReceiptRepository, ReceiptRepository>();
+        services.AddScoped<IReceiptAuditRepository, ReceiptAuditRepository>();
+        services.AddScoped<IReceiptReferenceRepository, ReceiptReferenceRepository>();
         return services;
     }
 }

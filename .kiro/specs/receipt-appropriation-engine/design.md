@@ -15,7 +15,7 @@ The design covers the backend and frontend slices required by the approved requi
 
 - **Backend:** contracts, domain entities and enums, pure allocation rules, persistence, repository ports, CQRS commands and queries, controller, exception mapping, authentication and authorization policy integration, audit, and API gateway routes.
 - **Frontend:** receipt context entry, Show/Suggest/Manual/Confirm workflow, allocation grid, service interface, mock and real implementations, environment toggle, route, navigation, and Vitest/React Testing Library coverage.
-- **Integration boundaries:** receipt data is owned by FINNOVA-61, eligible dues and balance reservation are owned by the authoritative due ledger, and active appropriation rules are owned by the Appropriation Logic Master. This feature consumes those capabilities and does not silently create competing sources of truth.
+- **Integration boundary:** FINNOVA-67 is the authoritative Appropriation Logic Master. FINNOVA-62 consumes its authenticated resolver contract for Suggest and Suggest-mode Confirm; it does not maintain a static rule, duplicate rule tables, or hard-code policy percentages.
 
 The design does not add receipt capture, rule-maintenance CRUD, GL posting, receipt authorization, reversal, or a second due ledger. It also does not modify source code in either repository. The later tasks document will contain implementation instructions and complete code snippets.
 
@@ -322,7 +322,7 @@ The UI does not store or expose JWT contents beyond the existing auth context. I
 3. Verify receipt status permits appropriation, customer is active/in scope, Company and LOB are present, and currency is INR.
 4. Load eligible dues from the authoritative ledger. Exclude outstanding amounts less than or equal to `0.00` and non-collectible statuses.
 5. Normalize each amount to a decimal with scale two only after validating its input scale. Assign the fixed sort key `(AccountNumber, DueTypeRank, DueDate, DueId)`.
-6. For Suggest, resolve exactly one active rule. Reject zero details, invalid direction, unsupported due types, negative percentages, or a percentage total other than exactly `100.00`.
+6. For Suggest, resolve the active FINNOVA-67 rule using authoritative Receipt CompanyId and LineOfBusinessId. Reject no-match, ambiguity, unsupported resolver contract versions, duplicate details, invalid mappings, percentages outside 0.00..100.00, and detail totals above 100.00. Permit totals below 100.00; the unallocated portion remains residual and is handled by Advance Account policy.
 
 ### 6.2 Manual calculation
 
@@ -415,6 +415,10 @@ The body is empty or contains an optional preview version, depending on the fina
 
 Suggest returns `200` and never inserts a persisted appropriation or audit entry.
 
+### FINNOVA-67 runtime evidence
+
+The Suggest preview and Suggest-mode Confirm request use the FINNOVA-67 resolution envelope. FINNOVA-62 re-resolves the rule during Confirm and rejects a changed Rule_Version as stale. The persisted appropriation and audit snapshot includes RuleId, RuleVersionId/version number, resolverContractVersion, CompanyId, LineOfBusinessId, UsedGlobalFallback, Direction, FullDue, and ordered detail ID, sequence, canonical due type, ledger code, and percentage. FINNOVA-62 applies Vertical/Horizontal traversal and Full Due; FINNOVA-67 only supplies configuration.
+
 ### 7.3 Confirm
 
 `POST /api/receipt-appropriation/{receiptId}/confirm`
@@ -475,7 +479,7 @@ Add service-layer ports under `Finnova.Service/ReceiptAppropriation/Ports`:
 
 - `IReceiptContextPort`: load a receipt, status, customer, Company, LOB, amount, and concurrency/version evidence.
 - `IPendingDuePort`: read eligible due projections and atomically reserve/apply confirmed allocations.
-- `IAppropriationRulePort`: resolve active rules by Company/LOB, including version and ordered details.
+- `IAppropriationRuleResolver`: authenticated FINNOVA-67 contract returning one active exact-LOB rule before one active global fallback, with Rule ID/version, resolver contract version, matched scope, fallback flag, direction, Full Due, ordered details, and ledger mappings. No local static rule source is permitted.
 - `IAdvanceAccountPort`: resolve one active account for Company/customer context.
 - `IAppropriationScopeResolver`: resolve Company/LOB/Branch/customer permissions from `ClaimsPrincipal`.
 - `IAppropriationClock`: reuse `IClock` if acceptable; otherwise use the existing clock abstraction for UTC confirmation timestamps.
@@ -673,9 +677,7 @@ The approved requirements record assumptions A1-A19. The following remain implem
 | A1, A12 | FINNOVA-61 supplies the authoritative Receipt and this feature stops before GL posting/authorization. | Confirm receipt identifiers, status names, Company/LOB fields, and receipt row-version contract. |
 | A2 | AccountsService and the Accounts gateway cluster host the feature. | Confirm no separate receipt/operations host is planned. |
 | A3, A18 | Due projections come from the authoritative demand/cash-flow ledger across all eligible customer contracts. | Identify the exact due entity/port, collectible statuses, balance version, and atomic reserve/update operation. |
-| A4 | Rule-master CRUD is out of scope; Suggest consumes active rules. | Confirm rule maintenance is another ticket and provide its read contract. |
-| A5 | Exactly one active rule is required; zero or multiple rules fail. | Confirm ambiguity and missing-rule behavior/messages. |
-| A6 | Details are ordered, use supported due types, and total exactly 100.00%. | Confirm duplicate due-type policy, zero-percent detail policy, and percentage scale. |
+| A4, A6 | FINNOVA-67 owns rule maintenance and exposes the authoritative resolver. FINNOVA-62 permits detail totals below 100.00, rejects totals above 100.00, and routes the residual through its Advance Account flow. | Confirm FINNOVA-67 resolver endpoint/port, contract version, due-head mappings, and final Legal Charges ledger code before implementing Tasks 4, 7, and 8. |
 | A7 | Full Due fills a due before the next eligible due subject to detail target. | Confirm Full Due semantics against the rule-master owner and screenshot. |
 | A8 | Vertical is Contract-first; Horizontal is detail-first and oldest-first inside the group. | Confirm Horizontal distribution policy and whether Contract means Account Number grouping. |
 | A9 | Manual lines cannot exceed current due balance. | Confirm the per-due cap is mandatory business policy. |

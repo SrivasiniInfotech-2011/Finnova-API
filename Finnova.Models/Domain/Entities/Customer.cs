@@ -50,6 +50,17 @@ public sealed class Customer
     public List<FactoringSubLimit> FactoringSubLimits { get; private set; } = new();
 
     public void SetGeneratedCode(string code) => CustomerCode = code;
+    public static Customer CreateWithId(Guid id)
+    {
+        if (id == Guid.Empty) throw new ArgumentException("Customer id is required.", nameof(id));
+        return new Customer { Id = id };
+    }
+
+    public void SetFixtureTimestamps(DateTime createdAtUtc, DateTime updatedAtUtc)
+    {
+        CreatedAtUtc = DateTime.SpecifyKind(createdAtUtc, DateTimeKind.Utc);
+        UpdatedAtUtc = DateTime.SpecifyKind(updatedAtUtc, DateTimeKind.Utc);
+    }
 
     public void Initialize(
         Guid companyId, bool isCustomer, bool isGuarantor, bool isCoApplicant, string customerTypeCode,

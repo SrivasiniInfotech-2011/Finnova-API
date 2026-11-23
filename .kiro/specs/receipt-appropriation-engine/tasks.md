@@ -18,7 +18,7 @@ Do not invent local replacement entities for the following authoritative sources
 
 - FINNOVA-61 Receipt context: receipt ID, customer, Company, LOB, amount, status, and row-version contract.
 - Authoritative demand/cash-flow due ledger: pending-due projection, collectible statuses, due balance version, and atomic reserve/update operation.
-- Appropriation Logic Master: active-rule projection, ordered details, version, direction, Full Due, and percentage precision.
+- FINNOVA-67 Appropriation Logic Master: authenticated resolver projection, exact-Lob-then-global precedence, resolver contract version, active rule version, direction, Full Due, canonical due-head mappings, ordered details, totals-up-to-100 semantics, and concurrency token.
 - Advance Account source: active account lookup and atomic posting/reservation contract.
 - Existing authorization scope source: Company, LOB, Branch, and customer scope resolution.
 
@@ -223,8 +223,8 @@ namespace Finnova.Service.ReceiptAppropriation.Ports;
 
 public sealed record ReceiptContext(Guid Id, Guid CustomerId, string CustomerCode, Guid CompanyId, Guid LineOfBusinessId, decimal Amount, string Currency, string Status, string Version);
 public sealed record PendingDueProjection(Guid Id, Guid AccountId, string AccountNumber, Guid CustomerId, CashFlowDueType DueType, DateOnly DueDate, decimal OutstandingAmount, string Status, string Version);
-public sealed record RuleDetailProjection(Guid Id, CashFlowDueType DueType, decimal Percentage, int Order);
-public sealed record AppropriationRuleProjection(Guid Id, string Version, Guid CompanyId, Guid LineOfBusinessId, AppropriationDirection Direction, bool FullDue, bool IsActive, IReadOnlyList<RuleDetailProjection> Details);
+public sealed record RuleDetailProjection(Guid Id, CashFlowDueType DueType, decimal Percentage, int Order, string CashFlowDueTypeCode);
+public sealed record AppropriationRuleResolutionResult(string Status, Guid? RuleId, Guid? RuleVersionId, int? VersionNumber, string ResolverContractVersion, Guid CompanyId, Guid? LineOfBusinessId, bool UsedGlobalFallback, AppropriationDirection? Direction, bool? FullDue, IReadOnlyList<RuleDetailProjection> Details, string? ErrorCode);
 public sealed record AdvanceAccountProjection(Guid Id, Guid CompanyId, Guid CustomerId, string Currency, bool IsActive, string Version);
 public sealed record AuthorizationScope(IReadOnlySet<Guid> CompanyIds, IReadOnlySet<Guid> LineOfBusinessIds, IReadOnlySet<Guid> BranchIds, bool CanAccessAllCustomers);
 public sealed record DueReservation(Guid DueId, decimal Amount, string Version);
@@ -239,9 +239,9 @@ public interface IPendingDuePort
     Task<IReadOnlyList<PendingDueProjection>> GetEligibleAsync(ReceiptContext receipt, CancellationToken ct);
     Task ReserveAsync(IReadOnlyList<DueReservation> reservations, CancellationToken ct);
 }
-public interface IAppropriationRulePort
+public interface IAppropriationRuleResolver
 {
-    Task<IReadOnlyList<AppropriationRuleProjection>> GetActiveAsync(Guid companyId, Guid lineOfBusinessId, CancellationToken ct);
+    Task<AppropriationRuleResolutionResult> ResolveAsync(Guid companyId, Guid lineOfBusinessId, CancellationToken ct);
 }
 public interface IAdvanceAccountPort
 {
@@ -418,7 +418,7 @@ public static class AppropriationCalculator
     public static CalculationResult Calculate(decimal receiptAmount, IReadOnlyList<PendingDueProjection> source, AppropriationRuleProjection rule)
     {
         if (receiptAmount <= 0m || Money(receiptAmount) != receiptAmount) throw new ArgumentOutOfRangeException(nameof(receiptAmount));
-        if (!rule.IsActive || rule.Details.Count == 0 || rule.Details.Sum(x => x.Percentage) != 100m) throw new InvalidOperationException("The active appropriation rule is invalid.");
+        if (!rule.IsActive || rule.Details.Count == 0 || rule.Details.Any(x => x.Percentage < 0m || x.Percentage > 100m) || rule.Details.Sum(x => x.Percentage) > 100m || rule.Details.Select(x => x.DueType).Distinct().Count() != rule.Details.Count) throw new InvalidOperationException("The active FINNOVA-67 appropriation rule is invalid.");
         var ordered = Order(source).ToList(); var remaining = Money(receiptAmount); var lines = ordered.ToDictionary(x => x.Id, x => new AllocationLine(x.Id, x.AccountId, x.AccountNumber, x.DueType, x.DueDate, Money(x.OutstandingAmount), 0m, null, null, null, x.Version));
         IEnumerable<RuleDetailProjection> details = rule.Details.OrderBy(x => x.Order);
         IEnumerable<PendingDueProjection> Traverse(RuleDetailProjection d) => rule.Direction == AppropriationDirection.Horizontal ? ordered.Where(x => x.DueType == d.DueType) : ordered;

@@ -182,8 +182,15 @@ public class ExceptionHandlingMiddleware
                     (StatusCodes.Status409Conflict, CustomerErrorCodes.DefaultBank, ex.Message),
                 CustomerBoundaryUnavailableException =>
                     (StatusCodes.Status503ServiceUnavailable, CustomerErrorCodes.BoundaryUnavailable, ex.Message),
-
-               // ---- shared: validation failures and unhandled fallback (path-scoped code) ----
+                Finnova.Models.Domain.Exceptions.AppropriationLogicException a => (a.ErrorCode switch
+                {
+                    "ERR-APPROP-RULE-NOT-FOUND" => StatusCodes.Status404NotFound,
+                    "ERR-APPROP-RULE-403" => StatusCodes.Status403Forbidden,
+                    "ERR-APPROP-RULE-AMBIGUOUS" or "ERR-APPROP-RULE-STALE" or "ERR-APPROP-IDEMPOTENCY-CONFLICT" => StatusCodes.Status409Conflict,
+                    "ERR-APPROP-RULE-DEPENDENCY" => StatusCodes.Status503ServiceUnavailable,
+                    _ => StatusCodes.Status422UnprocessableEntity
+                }, a.ErrorCode, a.Message),
+                // ---- shared: validation failures and unhandled fallback (path-scoped code) ----
                 FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, validationIdentityCode, v.Message),
                 _ => (StatusCodes.Status500InternalServerError, fallbackIdentityCode, "Unexpected error.")
 

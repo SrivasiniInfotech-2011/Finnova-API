@@ -77,3 +77,10 @@ public interface IDemandProcessor
 {
     Task ProcessAsync(Guid runId, CancellationToken ct);
 }
+
+public sealed record PreviousDemandResult(decimal Arrears, string SourceReference);
+
+public interface IPreviousDemandPort
+{
+    Task<PreviousDemandResult?> GetAsync(Guid accountId, DemandScope scope, DemandPeriod targetPeriod, string snapshotReference, CancellationToken ct);
+}

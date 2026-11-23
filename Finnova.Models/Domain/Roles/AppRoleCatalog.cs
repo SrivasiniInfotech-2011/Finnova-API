@@ -8,13 +8,16 @@ public static class AppRoleCatalog
     public const string AccountsViewer = "AccountsViewer";
     public const string AccountsOperator = "AccountsOperator";
     public const string KycApprover = "KycApprover";
-
+    public const string Cashier = "Cashier";
+    public const string BranchCollectionOfficer = "BranchCollectionOfficer";
     public static readonly IReadOnlyList<AppRoleDefinition> Roles = new[]
     {
         new AppRoleDefinition(new Guid("00000000-0000-0000-0003-000000000001"), ApplicationProcessor, "Creates and processes applications; submits KYC resolution requests (maker)."),
         new AppRoleDefinition(new Guid("00000000-0000-0000-0003-000000000002"), AccountsViewer, "Read-only access to Loan Accounts."),
         new AppRoleDefinition(new Guid("00000000-0000-0000-0003-000000000003"), AccountsOperator, "Operates the Account Creation queue and dead-letter recovery."),
         new AppRoleDefinition(new Guid("00000000-0000-0000-0003-000000000004"), KycApprover, "Approves or rejects KYC resolution requests (checker)."),
+        new AppRoleDefinition(new Guid("00000000-0000-0000-0003-000000000005"), Cashier, "Captures receipts at the branch counter."),
+        new AppRoleDefinition(new Guid("00000000-0000-0000-0003-000000000006"), BranchCollectionOfficer, "Captures collection receipts for branch customers."),
     };
 }
 

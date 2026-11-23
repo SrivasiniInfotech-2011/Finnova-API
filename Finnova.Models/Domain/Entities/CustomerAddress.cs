@@ -55,4 +55,18 @@ public sealed class CustomerAddress
         UpdatedAtUtc = DateTime.UtcNow;
     }
     public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
+
+    public static CustomerAddress CreateWithId(Guid id)
+    {
+        if (id == Guid.Empty) throw new ArgumentException("Customer address id is required.", nameof(id));
+        return new CustomerAddress { Id = id };
+    }
+
+    public void SetFixtureIdentity(Guid customerId) => CustomerId = customerId;
+
+    public void SetFixtureTimestamps(DateTime createdAtUtc, DateTime updatedAtUtc)
+    {
+        CreatedAtUtc = DateTime.SpecifyKind(createdAtUtc, DateTimeKind.Utc);
+        UpdatedAtUtc = DateTime.SpecifyKind(updatedAtUtc, DateTimeKind.Utc);
+    }
 }

@@ -34,6 +34,7 @@ public class ExceptionHandlingMiddleware
             var validationCode = isGl ? "ERR-GL-400" : "ERR-GL-400";
             var fallbackCode = isGl ? "ERR-GL-500" : "ERR-GL-500";
             var isLoan = ctx.Request.Path.StartsWithSegments("/api/loan-accounts", StringComparison.OrdinalIgnoreCase);
+            var isReceipt = ctx.Request.Path.StartsWithSegments("/api/receipts", StringComparison.OrdinalIgnoreCase);
             var (status, code, detail) = ex switch
             {
                 // ---- GL branch (typed, no message sniffing) ----
@@ -57,8 +58,9 @@ public class ExceptionHandlingMiddleware
                     "ERR-ACC-400" => StatusCodes.Status400BadRequest,
                     _ => StatusCodes.Status409Conflict
                 }, l.ErrorCode, l.Message),
+                ReceiptException rc => (rc.StatusCode, rc.ErrorCode, rc.Message),
                 Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException =>
-                    (StatusCodes.Status409Conflict, isLoan ? "ERR-ACC-409" : "ERR-GL-409",
+                    (StatusCodes.Status409Conflict, isReceipt ? "ERR-RCP-409" : isLoan ? "ERR-ACC-409" : "ERR-GL-409",
                      "The record was changed by another request. Refresh and retry."),
                 DemandProcessingException d => (d.ErrorCode switch
                 {
@@ -70,15 +72,26 @@ public class ExceptionHandlingMiddleware
                     _ => StatusCodes.Status400BadRequest
                 }, d.ErrorCode, d.Message),
                 UnauthorizedAccessException => (StatusCodes.Status403Forbidden, "ERR-AUTH-403", "You are not authorized for this Demand Processing scope."),
+                Finnova.Models.Domain.Exceptions.ReceiptAppropriationException a => (a.ErrorCode switch
+                {
+                    "ERR-APPROP-NOT-FOUND" => StatusCodes.Status404NotFound,
+                    "ERR-APPROP-403" => StatusCodes.Status403Forbidden,
+                    "ERR-APPROP-RULE-CONFIGURATION" or "ERR-APPROP-ADVANCE-ACCOUNT" or "ERR-APPROP-RECONCILIATION" => StatusCodes.Status422UnprocessableEntity,
+                    "ERR-APPROP-ALREADY-CONFIRMED" or "ERR-APPROP-IDEMPOTENCY-CONFLICT" or "ERR-APPROP-STALE-DATA" or "ERR-APPROP-CONCURRENCY" => StatusCodes.Status409Conflict,
+                    "ERR-APPROP-DEPENDENCY" => StatusCodes.Status503ServiceUnavailable,
+                    _ => StatusCodes.Status400BadRequest
+                }, a.ErrorCode, a.Message),
                 // ---- shared: validation failures and unhandled fallback ----
-                FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest, isLoan ? "ERR-ACC-400" : validationCode, v.Message),
-                _ => (StatusCodes.Status500InternalServerError, isLoan ? "ERR-ACC-500" : fallbackCode, "Unexpected error.")
+                FluentValidation.ValidationException v => (StatusCodes.Status400BadRequest,
+                    isReceipt ? "ERR-RCP-400" : isLoan ? "ERR-ACC-400" : validationCode,
+                    isReceipt ? string.Join("; ", v.Errors.Select(e => e.ErrorMessage).Distinct()) : v.Message),
             };
 
             var problem = new ProblemDetails { Status = status, Title = code, Detail = detail };
             problem.Extensions["code"] = code;
             problem.Extensions["message"] = detail;
             problem.Extensions["correlationId"] = ctx.TraceIdentifier;
+            if (ex is ReceiptException { Rule: { } rule }) problem.Extensions["rule"] = rule;
             ctx.Response.StatusCode = status;
             await ctx.Response.WriteAsJsonAsync(problem);
         }

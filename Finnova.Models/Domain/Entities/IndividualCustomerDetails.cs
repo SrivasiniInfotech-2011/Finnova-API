@@ -49,4 +49,18 @@ public sealed class IndividualCustomerDetails
         UpdatedAtUtc = DateTime.UtcNow;
     }
     public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
+
+    public static IndividualCustomerDetails CreateWithId(Guid id)
+    {
+        if (id == Guid.Empty) throw new ArgumentException("Individual details id is required.", nameof(id));
+        return new IndividualCustomerDetails { Id = id };
+    }
+
+    public void SetFixtureIdentity(Guid customerId) => CustomerId = customerId;
+
+    public void SetFixtureTimestamps(DateTime createdAtUtc, DateTime updatedAtUtc)
+    {
+        CreatedAtUtc = DateTime.SpecifyKind(createdAtUtc, DateTimeKind.Utc);
+        UpdatedAtUtc = DateTime.SpecifyKind(updatedAtUtc, DateTimeKind.Utc);
+    }
 }

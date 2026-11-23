@@ -37,7 +37,7 @@ public sealed class RoleSeedingAndGatewayTests
         using var db = LoanAccountTestData.NewDb();
         db.Database.EnsureCreated();
         db.Database.EnsureCreated();
-        Assert.Equal(4, db.AppRoles.Count());
+        Assert.Equal(AppRoleCatalog.Roles.Count, db.AppRoles.Count());
         foreach (var role in AppRoleCatalog.Roles) Assert.Single(db.AppRoles.Where(r => r.Name == role.Name));
     }
 
